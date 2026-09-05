@@ -1,0 +1,11 @@
+{
+  "name": "rhYciv",
+  "short_name": "rhYciv",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050a11",
+  "theme_color": "#07111c",
+  "icons": [
+    {"src": "/assets/rhyciv-app-icon.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
