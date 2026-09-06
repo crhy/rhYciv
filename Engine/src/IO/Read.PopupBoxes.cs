@@ -90,12 +90,17 @@ namespace Civ2engine.IO
                 }
             }
 
-            popupBox.Button ??= new List<string>();
-            popupBox.Button.Add("OK");
-            // Add cancel buttons if @options exist
-            if (popupBox.Options != null)
+            // Only synthesise buttons when the entry didn't declare any with "@button="
+            // lines; otherwise the explicit list is authoritative (appending here would
+            // produce a duplicate "OK" on every dialog that spells its buttons out).
+            if (popupBox.Button is not { Count: > 0 })
             {
-                popupBox.Button.Add("Cancel");
+                popupBox.Button = new List<string> { "OK" };
+                // Add a cancel button if @options exist
+                if (popupBox.Options != null)
+                {
+                    popupBox.Button.Add("Cancel");
+                }
             }
 
 

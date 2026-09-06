@@ -37,7 +37,7 @@ public class CivDialog : DynamicSizingDialog
         _active = host.ActiveInterface;
         _handleButtonClick = handleButtonClick;
         var normalizedDialogName = dialog.Name?.Trim() ?? string.Empty;
-        var title = DialogUtils.ReplacePlaceholders(dialog.Title, dialog.ReplaceStrings, dialog.ReplaceNumbers);
+        var title = DialogUtils.ReplacePlaceholders(dialog.Title, dialog.ReplaceStrings, dialog.ReplaceNumbers) ?? string.Empty;
         var isIntroDialog = string.Equals(normalizedDialogName, "INIT", StringComparison.OrdinalIgnoreCase) ||
                             title.Contains("In the Beginning", StringComparison.OrdinalIgnoreCase);
         var isNameDialog = string.Equals(normalizedDialogName, "NAME", StringComparison.OrdinalIgnoreCase) ||

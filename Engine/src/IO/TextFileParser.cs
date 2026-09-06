@@ -43,7 +43,13 @@ namespace Civ2engine
                         handler.ProcessSection(section, contents);
                         section = null;
                     }
-                    else if (line.StartsWith('@'))
+                    // A bare "@SECTION" header on its own line starts a new section, but only
+                    // for files whose sections are not blank-line separated. The popup/intro
+                    // format (allowBlanks) uses "@title=", "@width=", "@button=", "@options"
+                    // etc. as section *content* that PopupBoxReader parses, so those "@" lines
+                    // must not be mistaken for section breaks there - sections in that format
+                    // are always terminated by the blank-line handling above.
+                    else if (!allowBlanks && line.StartsWith('@'))
                     {
                         handler.ProcessSection(section, contents);
                         section = line[1..].TrimEnd();
