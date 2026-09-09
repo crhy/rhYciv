@@ -89,4 +89,60 @@ public class ShieldGridTests
 
     private static (int Rows, int PerRow) Grid(int cost, int maxRows = 10, int maxPerRow = 20) =>
         ShieldBoxLayout.Choose(cost, maxRows, maxPerRow, ShieldWidth, ShieldHeight);
+
+    // The production box in the city window, at roughly the size it is drawn.
+    private const float BoxWidth = 150f;
+    private const float BoxHeight = 190f;
+
+    [Fact]
+    public void ACheapItemIsDrawnAtItsNaturalSize()
+    {
+        var grid = ShieldBoxLayout.Fit(20, BoxWidth, BoxHeight, ShieldWidth, ShieldHeight);
+
+        Assert.Equal(ShieldWidth, grid.StepX);
+        Assert.Equal(ShieldHeight, grid.StepY);
+        Assert.Equal(20, grid.Rows * grid.PerRow);
+    }
+
+    [Theory]
+    [InlineData(120)]
+    [InlineData(200)]
+    [InlineData(300)]
+    [InlineData(600)]
+    public void AnExpensiveItemStillShowsItsWholeCost(int cost)
+    {
+        var grid = ShieldBoxLayout.Fit(cost, BoxWidth, BoxHeight, ShieldWidth, ShieldHeight);
+
+        // Every shield the item costs has somewhere to go. Without this a wonder
+        // came out as one row of however many fitted across the panel, which says
+        // nothing about how far along it is.
+        Assert.True(grid.Rows * grid.PerRow >= cost,
+            $"{cost} shields need a block of at least that many, got {grid.Rows}x{grid.PerRow}");
+    }
+
+    [Fact]
+    public void AnExpensiveItemClosesTheShieldsUpRatherThanSpillingOut()
+    {
+        // A box too small to hold the cost at the shields' natural size: 150 by 100
+        // takes twelve across and ten down, and the item costs two hundred.
+        const float shortBoxHeight = 100f;
+        var grid = ShieldBoxLayout.Fit(200, BoxWidth, shortBoxHeight, ShieldWidth, ShieldHeight);
+
+        Assert.True(grid.StepX < ShieldWidth, "the shields should overlap horizontally");
+        Assert.True(grid.StepY < ShieldHeight, "the shields should overlap vertically");
+        Assert.True(grid.PerRow * grid.StepX <= BoxWidth + ShieldWidth,
+            "the block should stay inside the box");
+        Assert.True(grid.Rows * grid.StepY <= shortBoxHeight + ShieldHeight,
+            "the block should stay inside the box");
+    }
+
+    [Fact]
+    public void ShieldsAreNeverSqueezedIntoAnUnreadableSmear()
+    {
+        // A ludicrous cost still has to be drawn as shields, not as a solid band.
+        var grid = ShieldBoxLayout.Fit(5000, BoxWidth, BoxHeight, ShieldWidth, ShieldHeight);
+
+        Assert.True(grid.StepX >= ShieldWidth * 0.45f - 0.01f);
+        Assert.True(grid.StepY >= ShieldHeight * 0.45f - 0.01f);
+    }
 }

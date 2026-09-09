@@ -44,6 +44,79 @@ public static class ShieldBoxLayout
     }
 
     /// <summary>
+    /// How the shields for an item are laid out in the production box: how many
+    /// rows, how many to a row, and how far apart to step. A step smaller than the
+    /// shield itself means they overlap.
+    /// </summary>
+    public readonly record struct ShieldGrid(int Rows, int PerRow, float StepX, float StepY);
+
+    /// <summary>
+    /// Fits the whole cost of an item into the box.
+    /// <para>
+    /// The block has to stand for the total, because that is the only way the
+    /// player can see how far along the item is: eleven shields in a row says
+    /// nothing about whether the item costs twenty or two hundred. Cheap items fit
+    /// at their natural size and are laid out as an even block. An expensive one --
+    /// a wonder at two hundred shields -- cannot, and used to fall back to a single
+    /// row of whatever happened to fit across the panel, which is what a Pyramid
+    /// looked like at eleven shields wide. It is drawn tighter instead, the shields
+    /// overlapping a little, until the whole cost is in the box.
+    /// </para>
+    /// </summary>
+    /// <param name="cost">Shields the item costs.</param>
+    /// <param name="boxWidth">Width available, in pixels.</param>
+    /// <param name="boxHeight">Height available, in pixels.</param>
+    /// <param name="shieldWidth">Drawn width of one shield.</param>
+    /// <param name="shieldHeight">Drawn height of one shield.</param>
+    public static ShieldGrid Fit(int cost, float boxWidth, float boxHeight,
+        float shieldWidth, float shieldHeight)
+    {
+        cost = Math.Max(1, cost);
+        shieldWidth = Math.Max(1f, shieldWidth);
+        shieldHeight = Math.Max(1f, shieldHeight);
+        boxWidth = Math.Max(shieldWidth, boxWidth);
+        boxHeight = Math.Max(shieldHeight, boxHeight);
+
+        var maxPerRow = Math.Max(1, (int)(boxWidth / shieldWidth));
+        var maxRows = Math.Max(1, (int)(boxHeight / shieldHeight));
+
+        if (cost <= maxPerRow * maxRows)
+        {
+            var (rows, perRow) = Choose(cost, maxRows, maxPerRow, shieldWidth, shieldHeight);
+            return new ShieldGrid(rows, perRow, shieldWidth, shieldHeight);
+        }
+
+        // Squeeze both directions by the same amount, so the shields keep their
+        // shape while they close up. The area the block needs grows with the square
+        // of the spacing, which is where the square root comes from; a couple of
+        // passes then correct the rounding down to whole shields.
+        var squeeze = (float)Math.Sqrt(boxWidth * boxHeight / (cost * shieldWidth * shieldHeight));
+        squeeze = Math.Clamp(squeeze, MinimumSqueeze, 1f);
+
+        var stepX = shieldWidth * squeeze;
+        var stepY = shieldHeight * squeeze;
+        var columns = Math.Max(1, (int)(boxWidth / stepX));
+        var rowCount = (int)Math.Ceiling(cost / (double)columns);
+
+        for (var pass = 0; pass < 4 && rowCount * stepY > boxHeight && squeeze > MinimumSqueeze; pass++)
+        {
+            squeeze = Math.Max(MinimumSqueeze, squeeze * 0.85f);
+            stepX = shieldWidth * squeeze;
+            stepY = shieldHeight * squeeze;
+            columns = Math.Max(1, (int)(boxWidth / stepX));
+            rowCount = (int)Math.Ceiling(cost / (double)columns);
+        }
+
+        return new ShieldGrid(rowCount, columns, stepX, stepY);
+    }
+
+    /// <summary>
+    /// How close together shields may be drawn, as a share of their own size. Past
+    /// this they stop reading as separate shields and the block becomes a smear.
+    /// </summary>
+    private const float MinimumSqueeze = 0.45f;
+
+    /// <summary>
     /// The arrangement closest to square among those that fit, or null if none do.
     /// </summary>
     private static (int Rows, int PerRow)? Squarest(int cost, int maxRows, int maxPerRow,

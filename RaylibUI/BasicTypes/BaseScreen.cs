@@ -149,6 +149,13 @@ public abstract class BaseScreen : BaseLayoutController, IScreen
         layoutController.Hovered?.OnMouseEnter();
     }
 
+    /// <summary>
+    /// Whether any window is open over the screen -- a message, a city, the
+    /// Civilopedia. Used to decide whether the player is in the middle of something
+    /// that a queued message should wait for.
+    /// </summary>
+    public bool HasOpenDialog => _dialogs.Count > 0;
+
     public void CloseDialog(IControlLayout? dialog)
     {
         if (dialog != null)

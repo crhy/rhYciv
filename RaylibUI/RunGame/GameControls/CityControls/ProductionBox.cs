@@ -338,14 +338,19 @@ public class ProductionBox : BaseControl
         var drawWidth = Width - 2 * Padding * scale;
         var inset = 3 * scale;
 
-        var maxPerRow = Math.Max(1, (int)((drawWidth - 2 * inset) / Math.Max(1f, _shieldWidth)));
-        var maxRows = Math.Max(1, Math.Min(roomForRows, _shieldBoxRows));
-        var (rows, perRow) = ShieldBoxLayout.Choose(_totalCost, maxRows, maxPerRow,
+        // The block stands for the whole cost, so an item's progress can be read
+        // against what it will take. A wonder does not fit at the shields' natural
+        // size and is drawn tighter, overlapping, rather than collapsing to a single
+        // row of whatever happened to fit across the panel.
+        var grid = ShieldBoxLayout.Fit(_totalCost,
+            drawWidth - 2 * inset, shieldBottom - shieldTop - 2 * inset,
             _shieldWidth, _shieldHeight);
+        var rows = grid.Rows;
+        var perRow = grid.PerRow;
 
         var posY = Bounds.Y + shieldTop;
         Graphics.DrawLineEx(new Vector2(posX, posY), new Vector2(posX + drawWidth, posY), 1f, _pen1);
-        var lineHeight = 6 * scale + rows * _shieldHeight;
+        var lineHeight = 6 * scale + rows * grid.StepY;
         posY = Bounds.Y + shieldTop + lineHeight;
         Graphics.DrawLineEx(new Vector2(posX, posY), new Vector2(posX + drawWidth, posY), 1f, _pen2);
 
@@ -356,7 +361,7 @@ public class ProductionBox : BaseControl
         // The block of shields is centred in the box at its natural size. It is a
         // count, and a count reads best as a block; stretching it to the panel's
         // width made ten shields into a sparse line.
-        var blockWidth = perRow * _shieldWidth;
+        var blockWidth = (perRow - 1) * grid.StepX + _shieldWidth;
         var firstX = posX + (drawWidth - blockWidth) / 2f;
 
         var count = 0;
@@ -365,8 +370,8 @@ public class ProductionBox : BaseControl
             for (var col = 0; col < perRow && count < progressShields; col++)
             {
                 Graphics.DrawTextureEx(_shieldIcon,
-                    new Vector2((int)(firstX + _shieldWidth * col),
-                        (int)(Bounds.Y + shieldTop + inset + _shieldHeight * row)),
+                    new Vector2((int)(firstX + grid.StepX * col),
+                        (int)(Bounds.Y + shieldTop + inset + grid.StepY * row)),
                     0f, _shieldScale, Color.White);
                 count++;
             }

@@ -534,7 +534,12 @@ public class GameScreen : BaseScreen
     {
         SessionLog.Record($"popup {dialogName}");
 
-        if (_currentPopupDialog != null)
+        // Queue behind a message already up, and behind anything the map is still
+        // playing out. Deliberately not behind an open window: a dialog raised while
+        // the city window is open is one the player has just asked for -- the price
+        // of buying production, say -- and holding that back until they closed the
+        // window would look like the button had done nothing.
+        if (_currentPopupDialog != null || _mapControl?.IsPlayingBack == true)
         {
             _queuedPopups.Enqueue(() => ShowPopup(dialogName, handleButtonClick, replaceNumbers, replaceStrings,
                 checkboxStates, options, textBoxes, dialogImage, listBox, buttons));
@@ -613,11 +618,40 @@ public class GameScreen : BaseScreen
         }
 
         popupClicked?.Invoke(arg1, arg2, arg3, arg4);
+    }
 
-        if (_currentPopupDialog == null && _queuedPopups.TryDequeue(out var nextPopup))
+    /// <summary>
+    /// Whether there is nothing in the player's way: no window open, and nothing
+    /// still being played out on the map.
+    /// </summary>
+    private bool ScreenIsClear => _currentPopupDialog == null && !HasOpenDialog && !_mapControl.IsPlayingBack;
+
+    /// <summary>
+    /// Lets the next message through, one at a time, and only once the player has
+    /// finished with whatever is in front of them.
+    /// <para>
+    /// Messages used to be released the moment the one before it closed, without
+    /// looking at what that message had opened. Answering "zoom to city" on a
+    /// disorder report put the city window up and the next report immediately on
+    /// top of it, so the city you had asked to look at was covered before you could
+    /// look at it. They also arrived over the top of a battle or a move that was
+    /// still being shown, which is the half of the turn worth watching.
+    /// </para>
+    /// </summary>
+    private void ReleaseQueuedPopup()
+    {
+        if (!ScreenIsClear || _queuedPopups.Count == 0)
         {
-            nextPopup();
+            return;
         }
+
+        _queuedPopups.Dequeue()();
+    }
+
+    public override void Draw(bool pulse)
+    {
+        ReleaseQueuedPopup();
+        base.Draw(pulse);
     }
 
     public void ToggleMapLayout()

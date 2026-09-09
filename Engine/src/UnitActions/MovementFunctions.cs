@@ -70,6 +70,44 @@ namespace RhyCiv.Engine.UnitActions
             CheckForUnitTurnEnded(instance, activeUnit);
         }
 
+        /// <summary>
+        /// Wakes anything sleeping next to a square something hostile has just
+        /// stepped into.
+        /// <para>
+        /// A unit told to sleep stayed asleep whatever walked past it, so a stack
+        /// left to hold a pass or a border could be walked round, or attacked, while
+        /// it was never offered to the player at all. Civ II wakes a sleeping unit
+        /// the moment an enemy comes within sight of it; coming alongside is the
+        /// case that matters, because that is the square an attack comes from.
+        /// </para>
+        /// <para>
+        /// Fortified units are deliberately left alone. Fortifying is a stance a
+        /// unit is meant to hold, not a way of not paying attention.
+        /// </para>
+        /// </summary>
+        private static void WakeSentriesNear(Unit mover, Tile arrivedAt)
+        {
+            if (mover.Dead)
+            {
+                return;
+            }
+
+            foreach (var tile in arrivedAt.Neighbours())
+            {
+                foreach (var watcher in tile.UnitsHere.ToList())
+                {
+                    if (watcher.Dead || watcher.Owner == mover.Owner ||
+                        watcher.Order != (int)OrderType.Sleep)
+                    {
+                        continue;
+                    }
+
+                    watcher.Order = (int)OrderType.NoOrders;
+                    watcher.WaitOrder = false;
+                }
+            }
+        }
+
         public static bool ActiveUnitCannotMove(Unit? activeUnit)
         {
             return activeUnit == null || activeUnit.Dead || activeUnit.CurrentLocation == null || activeUnit.TurnEnded;
@@ -750,6 +788,7 @@ namespace RhyCiv.Engine.UnitActions
                 }
                 
                 game.ActivePlayer.ActiveTile = tileTo;
+                WakeSentriesNear(unit, tileTo);
                 var mapUpdates = new List<Tile>();
                 foreach (var neighbourTile in tileTo.Neighbours(unit.TwoSpaceVisibility))
                 {

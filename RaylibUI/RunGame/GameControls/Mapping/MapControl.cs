@@ -477,6 +477,14 @@ public class MapControl : BaseControl
         DrawQuickInfo();
     }
 
+    /// <summary>
+    /// Whether the map still has movement or a battle to play out. A message that
+    /// arrives while an enemy is crossing the screen waits for it: the point of
+    /// showing the move at all is that the player gets to see what happened before
+    /// being told about it.
+    /// </summary>
+    public bool IsPlayingBack => _animationQueue.Count > 0 || !_currentView.IsDefault;
+
     public override bool OnMouseWheel(float amount)
     {
         if (!IsControlDown())
