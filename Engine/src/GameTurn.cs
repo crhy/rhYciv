@@ -3,6 +3,7 @@ using System.Linq;
 using RhyCiv.Engine.Advances;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.Production;
+using Model.Constants;
 using Model.Core.Cities;
 using Model.Core.Player;
 
@@ -57,10 +58,7 @@ namespace RhyCiv.Engine
                 if (city.FoodInStorage < 0)
                 {
                     city.FoodInStorage = 0;
-                    city.ShrinkCity(game);
-
-                    game.UpdateTiles([city.Location]);
-                    player.CityDecrease(city);
+                    Starve(game, city, player);
                 }
                 else if (city.SurplusHunger < 0 && city.FoodInStorage + city.SurplusHunger < 0)
                 {
@@ -73,15 +71,10 @@ namespace RhyCiv.Engine
                     {
                         if (city.CanGrow(rules))
                         {
+                            // GrowCity reports the square itself, so the size drawn
+                            // beside the city's name follows it up.
                             city.GrowCity(game);
                             city.ResetFoodStorage(foodRows);
-
-                            // The size is drawn on the map beside the city's name,
-                            // and the interface only learns a tile has changed when
-                            // it is told. Shrinking says so; growing did not, so a
-                            // city that had grown went on showing its old size until
-                            // something unrelated happened to redraw that square.
-                            game.UpdateTiles([city.Location]);
                         }
                         else
                         {
@@ -211,6 +204,36 @@ namespace RhyCiv.Engine
             }
 
             ResolveResearch(game, player);
+        }
+
+        /// <summary>
+        /// A city whose food store has run dry.
+        /// <para>
+        /// Civ II eats a settler before it eats a citizen: a city supporting
+        /// Settlers or Engineers disbands one of them, and only loses a population
+        /// point when it has none to give up. That is what makes over-building
+        /// settlers survivable, and it was missing -- the city went straight to
+        /// losing a citizen while the settlers that were eating its food carried on
+        /// as though nothing had happened.
+        /// </para>
+        /// </summary>
+        private static void Starve(Game game, City city, IPlayer player)
+        {
+            var settler = city.SupportedUnits
+                .FirstOrDefault(unit => !unit.Dead && unit.AiRole == AiRoleType.Settle);
+
+            if (settler == null)
+            {
+                city.ShrinkCity(game);
+                game.UpdateTiles([city.Location]);
+                player.CityDecrease(city);
+                return;
+            }
+
+            settler.Dead = true;
+            city.SetUnitSupport(game.Rules.Governments[city.Owner.Government]);
+            city.CalculateOutput(city.Owner.Government, game);
+            player.UnitLost(settler, null);
         }
 
         /// <summary>
