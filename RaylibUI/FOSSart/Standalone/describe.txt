@@ -766,142 +766,142 @@ Settlers are the foundation of expansion. They can found new cities and improve 
 Engineers are the advanced replacement for basic Settlers as a terrain-development force. They move twice as fast, perform improvement work at double the rate, and can carry out the most advanced terrain engineering, allowing a mature civilization to reshape its economy and military infrastructure much more quickly.
 
 @@Warriors
-Warriors are the cheapest basic fighting unit and require no technology. They are useful for protecting the first cities, escorting early Settlers, exploring dangerous territory, and providing an emergency garrison when production is scarce, but they should not be expected to stand against specialized troops for long.
+Every civilisation starts with men who fight because they are told to, armed with whatever the village can spare. Build a few to garrison your first cities and to walk beside your first settlers. They will lose to anything trained, so treat them as a stopgap and replace them the moment Bronze Working arrives.
 
 @@Phalanx
-The Phalanx is an inexpensive early defensive unit. Its stronger defense makes it a dependable city garrison and a useful escort for vulnerable civilian units, giving young civilizations a low-cost way to hold territory while more powerful offensive forces are developed.
+The Greek line of overlapping shields and levelled spears held ground that nothing else of its age could break. Put one in every border city and leave it there. It is the cheapest thing you can build that reliably survives being attacked, which frees everything else to go forward.
 
 @@Archers
-Archers provide one of the first meaningful offensive upgrades over Warriors. Their solid attack and respectable defense make them flexible early troops for clearing barbarians, attacking weak cities, and reinforcing exposed frontiers without requiring a large investment.
+Massed bowmen were the first way to hurt an enemy before he reached you, and the first troops worth training rather than merely levying. This is the first unit you can genuinely attack with, good enough to clear a barbarian camp or take a thinly held town. Keep a couple near the frontier, because they defend well enough to hold a city in an emergency.
 
 @@Legion
-The Legion is a powerful ancient-era assault unit built for taking ground. Its high early attack strength makes it excellent for breaking primitive defenses and turning an Iron Working advantage into rapid conquest, though its ordinary movement means it benefits greatly from roads and careful staging.
+Rome's short sword, heavy javelin and relentless drill took the ancient world with a formation almost anyone could be trained into. Iron Working is the moment your empire becomes a threat, and a stack of Legions will break anything the ancient world puts in front of it. Build the roads first, because the window closes as soon as a neighbour reaches Feudalism.
 
 @@Pikemen
-Pikemen are specialized defenders designed to blunt fast mounted attacks. They are cheap to build and receive a major defensive advantage against mounted opponents, making them especially valuable for protecting cities and narrow fronts when Horsemen, Knights, and similar units dominate the battlefield.
+The pike square ended the age of the charge, because horses will not run onto a wall of points however brave the rider. Against mounted troops they defend at double strength, which makes them cheap insurance anywhere cavalry might appear. Against everything else they are only a Phalanx, so garrison with them for the threat you actually expect.
 
 @@Musketeers
-Musketeers are durable gunpowder-era infantry with balanced attack and defense and twice the staying power of early troops. They make excellent general-purpose garrisons and can survive battles that would quickly destroy ancient units, giving expanding armies a sturdy force for holding captured territory.
+Gunpowder made a decade of training unnecessary, and armies stopped being the property of the rich. This is the first unit that is genuinely good at both jobs, holding a city as well as anything of its age and still able to march out and take one. Replace your ageing Phalanxes and Pikemen with them and your defensive worries largely end for an era.
 
 @@Fanatics
-Fanatics are unusually powerful for their low production cost, combining strong attack, strong defense, and good durability. Under Fundamentalism they require no normal unit support, allowing a Fundamentalist civilization to field very large armies without draining city production.
+Belief turned into a weapon: soldiers who fight without pay because they are certain the cause is worth dying for. Under Fundamentalism they cost nothing to support, so an army that would bankrupt any other government is very nearly free. No other government can raise them, which is most of the argument for adopting that one.
 
 @@Partisan
-Partisans are tough resistance troops that combine respectable attack and defense with the ability to ignore enemy zones of control. That freedom lets them slip through contested fronts, threaten roads and weak rear areas, reinforce resistance around captured territory, and force an invader to defend more than just the main battle line.
+Occupation creates its own army of men who know the ground, move through the gaps, and cannot be cornered because they are already home. They ignore zones of control, so they go where regular troops cannot: behind a front, into supply lines, around a city that believes itself safe. Use them to cut a corridor rather than to hold one, because they are far better at arriving than at staying.
 
 @@Alpine Troops
-Alpine Troops are elite infantry built for difficult terrain. They treat terrain as though it were connected by roads for movement, letting them cross mountains, hills, forests, and other rough country with extraordinary efficiency while still bringing strong attack and defense to the fight.
+Mountain regiments were trained to fight where roads do not go and to arrive having climbed what the enemy assumed was impassable. They treat every square as roaded, crossing broken country at the speed of an army on a highway. Send them at ground nobody thought needed watching, and at the long way round a defended pass.
 
 @@Riflemen
-Riflemen are strong industrial-era infantry with good attack, defense, and durability at a moderate cost. They are excellent line troops for defending cities and holding conquered ground, and they remain useful anywhere a player needs dependable strength without paying for the most advanced mechanized units.
+The rifle put an accurate, long-ranged weapon in a conscript's hands, and for a century afterwards defending was cheaper than attacking. Build them the turn Conscription arrives and you can largely stop worrying about your cities. They are the line every later offensive unit is designed to break, so keep them fortified and behind walls.
 
 @@Marines
-Marines are powerful assault infantry designed for invasions. Their amphibious capability lets them attack directly from ships, making them ideal for storming coastal cities and opening beachheads without first exposing a landing force on shore; their strong attack also makes them formidable conventional ground troops.
+Marines are trained to arrive by sea and fight from the moment the ramp comes down. They assault a city straight off the ship, so no coastal capital is ever safe from a fleet. Every other land unit has to come ashore and wait a turn, which is exactly the turn a defender needs.
 
 @@Paratroopers
-Paratroopers can leap over normal front lines by making paradrops into suitable land territory. Their ability to seize open tiles, cut transportation routes, reinforce distant positions, or appear behind enemy defenses makes them a strategic mobility unit rather than merely another infantry formation.
+Dropping men behind the line was the twentieth century's answer to a front that could not be broken through. They jump to any square you can see, which turns a defended border into a suggestion. They land alone and lightly armed, so drop them onto something worth holding and reinforce it quickly.
 
 @@Mech. Inf.
-Mechanized Infantry combines excellent defense, good attack, exceptional durability, and three-square movement. It is one of the best units for protecting late-game cities, escorting Armor and Howitzers, and rapidly reinforcing threatened sectors without sacrificing combat strength.
+Infantry that rides to the battle inside armour and gets out to fight is how modern armies kept foot soldiers relevant. This is the most solid defensive unit in the game, and fast enough to reach the trouble rather than wait for it. A few behind a front will hold it against anything short of a determined armoured push.
 
 @@Horsemen
-Horsemen are the first fast land combat unit, moving twice as far as ordinary infantry. They are useful for scouting, chasing barbarians, striking weak targets, and exploiting gaps before an opponent can react, making mobility their greatest advantage.
+The first soldiers who could choose where to fight, because they could get there before anybody else. They are not strong, but they are twice the speed of anything else on the board. Send them out to find the enemy, reach a hut first, and run down settlers caught in the open.
 
 @@Chariot
-The Chariot improves on Horsemen with a stronger attack while retaining two-square movement. It is a useful early raider and city attacker, especially on road networks where its speed allows concentrated attacks and rapid redeployment.
+Bronze-age shock: a platform that carried a fighting man into contact faster than anyone could run from him. Genuinely dangerous early, and worthless the moment a real defensive unit appears. Spend them while they are still worth something rather than saving them for a war you have not started.
 
 @@Elephants
-Elephants are powerful mobile ancient troops with a strong attack and two-square movement. They are well suited to aggressive campaigns in which speed matters, providing a hard-hitting alternative to slower infantry before the arrival of medieval cavalry.
+Elephants broke armies that had never met one, and trampled their own side when they had. A strong early attacker for anyone who reaches Polytheism, and no better protected than a horseman. Keep them moving forward, because standing still in the open is what gets them killed.
 
 @@Crusaders
-Crusaders are fast medieval shock troops with excellent offensive strength for their era. Their combination of movement and attack makes them ideal for deep raids, rapid sieges, and concentrating force against cities before defenders can be reinforced.
+Armies that crossed a continent because they had been told the other end of it was owed to them. This is the hardest-hitting mounted unit of its age by a clear margin. It cannot hold what it takes, so send a garrison up behind it or lose the city back within a turn.
 
 @@Knights
-Knights trade some of the Crusader's raw offense for better defense while keeping high mobility. They are versatile mounted troops that can attack, survive counterattacks, escort advancing armies, and hold newly captured positions more reliably than lightly protected cavalry.
+For three centuries the armoured horseman was the most expensive and most decisive thing on any battlefield. It has slightly less punch than a Crusader and enough armour to survive the counter-attack. That makes it the first mounted unit you can afford to leave standing in the field rather than shuttling home.
 
 @@Dragoons
-Dragoons bring mounted warfare into the gunpowder era. Two movement points, solid attack, and improved durability make them effective mobile reserves and raiders, able to reinforce a front quickly or exploit a breakthrough without being as fragile as earlier cavalry.
+Mounted infantry rode to the fight and dismounted to win it, which is how armies stayed mobile once standing in the open turned fatal. They are tougher than a knight and hit harder. This is the unit that keeps a Renaissance army moving while the muskets do the killing.
 
 @@Cavalry
-Cavalry is a fast, hard-hitting offensive unit with enough durability to sustain a campaign. Its eight-point attack and two-square movement make it excellent for breaking weakened defenses, overrunning exposed units, and turning tactical victories into rapid territorial gains.
+The last age in which horsemen decided battles was also the first in which machine guns cut them down in rows. Enormous attack for the price, and the best offensive value in the game for a short while. Use it before your enemies entrench behind Riflemen, because after that it dies for nothing.
 
 @@Armor
-Armor is the premier fast land assault unit of the modern era. With three-square movement, a very high attack value, strong defense, and excellent durability, it can smash through ordinary defenders and then exploit the breach before slower enemy forces can respond.
+The tank ended the trench by carrying its own protection forward instead of waiting for the guns to lift. Fast, heavily armed and very hard to stop, a stack of these is how modern wars are won here. Screen them from Artillery and never leave them parked in the open.
 
 @@Catapult
-The Catapult is an early siege weapon with very high attack strength but poor defense. It is most effective when protected by infantry and used to attack cities or fortified enemies, giving ancient armies the concentrated striking power needed to crack positions that ordinary troops struggle to defeat.
+The catapult was the first machine built to knock a wall down rather than find a way over it. It hits harder than anything else of its era and cannot defend itself at all. Never let one stand alone: keep a Phalanx on the square, and move it only when the target is already in reach.
 
 @@Cannon
-The Cannon is a stronger and more durable successor to the Catapult. Its high attack makes it a potent city-buster and battlefield offensive unit, but its weak defense still means it should advance behind protective troops rather than stand alone on exposed ground.
+Gunpowder artillery made the high stone wall obsolete within a generation, and every fortress built afterwards looks different. It is devastating on the attack and helpless on its own, exactly like the catapult it replaces. Move it with an escort and spend it on cities rather than on field battles.
 
 @@Artillery
-Artillery delivers tremendous offensive power and two points of firepower, allowing successful hits to do much more damage than earlier siege weapons. It is devastating against strong defenders when properly screened, and it gives industrial armies an efficient way to reduce tough positions before mobile units advance.
+Indirect fire killed men who never saw the guns, and did most of the killing in both world wars. It strikes twice for every round it wins, which tears through defenders that would hold against anything else. It still cannot defend itself, and it is worth every unit you assign to guard it.
 
 @@Howitzer
-The Howitzer is the ultimate ground siege unit: fast, extremely powerful, durable, and able to ignore the protection of City Walls when attacking. It is designed to break heavily fortified cities that would otherwise absorb enormous losses, making it one of the most important late-game conquest units.
+Howitzers were heavy guns built to break fortifications rather than to fight troops. Their shells ignore city walls entirely, turning the strongest defensive improvement in the game into no improvement at all. If a city has held out against everything else you own, this is the answer to it.
 
 @@Fighter
-The Fighter is a very fast air-superiority unit with extended visibility and the ability to attack enemy aircraft. It is valuable for intercepting hostile air power, scouting large areas, striking exposed targets, and protecting bombers and cities from enemy planes, though its limited fuel range requires careful basing.
+Fighters were built for one purpose: taking the sky away from the other side's aircraft. Besides the AEGIS Cruiser this is the only thing that can attack an aeroplane at all. It must reach a city, airbase or carrier by the end of its turn, or it simply comes down.
 
 @@Bomber
-The Bomber is a long-range heavy attack aircraft with enormous offensive strength and extended visibility. It can reach deep targets and devastate ground or naval units, but its weak defense means it depends on secure airbases, escorts, and careful target selection.
+The belief that a war could be won from above was tested to destruction over Europe. It hits harder than any other conventional unit and no ordinary ground troops can touch it. Fighters can, and it carries only two turns of fuel, so plan the way home before you take off.
 
 @@Helicopter
-The Helicopter is a highly mobile air assault unit with a strong attack and no normal fuel-turn limit. Its intended tradeoff is attrition when it remains away from a city, airbase, or carrier for too long, so it excels at rapid strikes, reaching otherwise inaccessible targets, and supporting fast offensives before returning to safety.
+The helicopter could put firepower onto ground with no airstrip within a hundred miles of it. Alone among aircraft it need not land at the end of a turn, so it can hold a position where nothing else can. A Fighter will destroy it easily, so keep it out of contested air.
 
 @@Stealth Fighter
-The Stealth Fighter is an advanced air-superiority aircraft with exceptional speed, improved combat strength, extended visibility, and the ability to attack other aircraft. It can cover enormous distances in a turn and is ideal for controlling the skies while also delivering precise attacks against vulnerable targets.
+Shaped and coated so that radar has almost nothing to send back. It is faster and better protected than a conventional fighter. This is the unit that takes air superiority back once an enemy has taken it from you.
 
 @@Stealth Bomber
-The Stealth Bomber is the strongest conventional air-strike unit in the roster. Its enormous attack, strong defense for a bomber, long movement, and extended visibility let it project force deep into enemy territory and destroy high-value targets while surviving threats that would endanger older bombers.
+The heaviest strike ever mounted from the air, and the hardest thing in the sky to intercept. It is expensive enough that losing one genuinely hurts. Send it after targets worth the price: a wonder city, a carrier, or a stack you have no way of reaching on the ground.
 
 @@Trireme
-The Trireme is the first naval transport and opens coastal exploration and overseas expansion. It can carry two units, but it must remain near land, so early voyages require careful island-hopping and route planning rather than unrestricted ocean travel.
+Oared warships fought by ramming and dared not spend a night out of sight of land. It must stay near the coast or risk being lost, so it explores a shoreline rather than an ocean. Ferry settlers along your own coast with it and wait for a better hull before crossing anything.
 
 @@Caravel
-The Caravel is a small ocean-going transport that carries three units and is no longer restricted to hugging the coast. It is ideal for exploration, colonization, diplomatic missions, and modest invasion forces during the age of sail.
+The caravel made the Atlantic crossable, being small, seaworthy and able to sail against the wind rather than waiting on it. This is the first hull that can leave the coast without fear. Discovery and your first colony on somebody else's continent both begin here.
 
 @@Galleon
-The Galleon is a dedicated sailing transport with room for four units and better durability than earlier transports. It lets players move meaningful armies across the sea, making sustained colonization and amphibious campaigns much easier to organize.
+A merchant hull built for cargo and distance, and rich enough to be worth taking. It carries more than anything before it and cannot defend itself. Never sail one without an escort, and never put your whole army in one bottom.
 
 @@Frigate
-The Frigate is a fast armed sailing ship that combines respectable naval attack with space for two passengers. It can escort transports, hunt weaker ships, bombard coastal targets, and still carry a small landing or diplomatic force, giving it unusual flexibility.
+The workhorse of the age of sail was fast enough to run, armed enough to fight, and roomy enough to carry troops. This is the first ship that can both escort a landing and win the battle that interrupts it. Two of them will clear a coast of anything older and still put a raiding party ashore.
 
 @@Ironclad
-The Ironclad is an early armored warship with strong defense and greatly improved durability. It is an effective coastal combatant for destroying wooden fleets and protecting sea lanes during the transition from sail to modern naval warfare.
+Armour plate over a steam hull made every wooden navy in the world worthless in a single afternoon. It does not wait on the wind and it shrugs off anything from the age of sail. Build them as soon as the Steam Engine arrives and sweep the sea clear before anyone catches up.
 
 @@Destroyer
-The Destroyer is the fastest conventional surface warship in the roster and has extended visibility. Its speed makes it excellent for reconnaissance, escort duty, chasing damaged ships, screening invasion fleets, and reacting quickly to naval threats across a wide area.
+Destroyers were small, fast ships built to screen a fleet and hunt what was beneath it. Their speed and long sight make them the eyes of a navy. They are also the first answer anybody has to a submarine, so keep one with anything valuable.
 
 @@Cruiser
-The Cruiser is a balanced modern warship with strong attack, defense, durability, firepower, and extended visibility. It is a dependable fleet centerpiece that can defeat lighter vessels, protect transports, and operate aggressively without the enormous production cost of a Battleship.
+A cruiser was strong enough to fight alone and fast enough to be somewhere else by morning. This is the first hull that can operate independently rather than as part of a battle line. Use them to hunt transports and close a coast without committing anything you cannot afford to lose.
 
 @@AEGIS Cruiser
-The AEGIS Cruiser is an advanced fleet-defense ship with powerful surface combat statistics, extended visibility, the ability to attack air units, and enhanced defense against air attack. It is especially valuable as an escort for Carriers and Transports when enemy aircraft and missiles threaten a fleet.
+Built around a radar and missile system designed to keep aircraft away from a fleet. It is the only ship that can shoot at aeroplanes, and it defends against them far better than anything else afloat. One with your fleet changes what an enemy air force is willing to attempt.
 
 @@Battleship
-The Battleship is the heaviest conventional surface combatant in rhYciv. Its massive attack and defense, four hit points, two firepower, and extended visibility make it ideal for winning major naval battles and supporting coastal offensives, although its high cost makes every loss significant.
+The battleship was the most powerful thing that ever floated, and obsolete within a generation of its peak. Nothing else at sea will stand against one. It costs as much as a small army, so keep it clear of submarines and aircraft, which is what finished off the real ones.
 
 @@Submarine
-The Submarine is a stealth-oriented naval attacker with very high attack, low defense, extended visibility, and the special advantages and restrictions of submarine warfare. Its large hold is intended for carrying missile weapons, allowing it to approach from the sea and deliver devastating surprise strikes while avoiding a conventional surface battle whenever possible.
+The submarine is a ship that wins by not being seen. It strikes very hard, cannot take a hit in return, and most units cannot see it until it attacks. Send it after transports and lone warships, and keep it well away from Destroyers.
 
 @@Carrier
-The Carrier is a mobile airbase at sea. It can carry up to eight air units, has excellent durability and extended visibility, and allows Fighters and Bombers to operate far from friendly cities, making it the foundation of long-range naval air power and overseas invasion support.
+The carrier replaced the battleship by carrying its guns in the air instead of on the deck. It is a mobile airbase: whatever it can reach, its aircraft can strike. It cannot defend itself against a serious attack, so it travels with a fleet or it does not travel.
 
 @@Transport
-The Transport is the main modern troop carrier, able to move up to eight units at five squares per turn while providing extended visibility. Its own combat ability is minimal, so its value comes from delivering large armies across oceans quickly and safely under the protection of escorting warships.
+The unglamorous hull decides wars, because an invasion is only ever as large as the shipping that carries it. It moves a whole army and cannot fight at all. Escort it, and never let it be caught at sea with your army aboard.
 
 @@Cruise Missile
-The Cruise Missile is a one-use precision strike weapon with extreme attack strength, high speed, and heavy firepower. It is destroyed after attacking, so it is best reserved for eliminating particularly dangerous defenders, ships, or other high-value targets that justify trading the missile for the kill.
+A pilotless aircraft that flies itself into the target and is gone. It hits enormously hard and is spent doing so. Keep them for things worth one missile each: a Battleship, a Carrier, or a stack one turn from your border.
 
 @@Nuclear
-The Nuclear unit is rhYciv's strategic weapon of mass destruction. Once nuclear weapons are enabled by the Manhattan Project and the required technology is available, it can devastate a target area, destroy military forces, cripple cities, and leave serious pollution behind; its extraordinary power is balanced by its one-use nature and severe diplomatic consequences.
+The weapon that ended one war has shaped every year since. It destroys what it strikes and poisons the ground around it long afterwards. Building the first one is less a military decision than a decision about what kind of game everybody is now playing.
 
 @@Diplomat
-Diplomats are non-combat agents that ignore enemy zones of control and perform political operations instead of fighting. Their intended missions include establishing embassies, investigating enemy cities, stealing technology, sabotaging production, inciting revolts, and bribing vulnerable units, making information and subversion alternatives to direct conquest.
+An envoy carried instructions and a purse, which in most periods amounted to much the same thing. Walked into somebody else's city he can report what is inside it, steal one of their secrets, or buy the place outright. He does not come home from any of it, so send him at something worth a unit.
 
 @@Spy
-The Spy is the faster and more capable successor to the Diplomat. Spies ignore zones of control, have extended visibility, and are intended to perform the full range of espionage missions with better effectiveness and survivability, giving an advanced civilization a powerful tool for intelligence, sabotage, theft, and covert influence.
+The spy is the professional successor to the envoy: better trained, further-seeing, and expected to come back. He does all the same work and walks away having spent only a move rather than his life. That difference is the entire argument for researching Espionage.
 
 @@Caravan
 Caravans are economic support units that ignore enemy zones of control. They can establish trade routes for long-term commerce and immediate rewards, deliver valuable commodities to distant cities, and contribute their production toward Wonders, allowing a trade-focused civilization to turn mobility into both wealth and accelerated construction.
