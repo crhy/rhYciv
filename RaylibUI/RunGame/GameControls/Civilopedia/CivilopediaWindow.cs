@@ -204,6 +204,20 @@ public class CivilopediaWindow : BaseDialog
                     iconWidth = Images.GetImageWidth(icons[0][0], _active, props.Listbox.IconScale);
                 }
 
+                // Unit art is drawn to fill its row, so the row is what decides how
+                // big a unit can be, and the classic row is 33 pixels -- laid out
+                // for a 640x480 screen. Half again as tall, with proportionally
+                // fewer rows so the list still fits its panel, is the difference
+                // between a recognisable unit and a smudge.
+                var rowHeight = props.Listbox.RowHeight;
+                var listboxRows = props.Listbox.Rows;
+                if (_pedia.InfoType == CivilopediaInfoType.Units)
+                {
+                    var tallerRow = rowHeight * 3 / 2;
+                    listboxRows = Math.Max(1, listboxRows * rowHeight / tallerRow);
+                    rowHeight = tallerRow;
+                }
+
                 List<ListboxGroup> groups = [];
                 for (var i = 0; i < names.Length; i++)
                 {
@@ -214,7 +228,19 @@ public class CivilopediaWindow : BaseDialog
                         {
                             Icon = icons[i][j],
                             ScaleIcon = props.Listbox.IconScale,
-                            Xoffset = (i % 2 == 1) ? iconOffset + 2 : 2
+                            Xoffset = (i % 2 == 1) ? iconOffset + 2 : 2,
+
+                            // Units are drawn to fill the row. The list's icon scale
+                            // is a fixed multiplier tuned to the classic sprites, and
+                            // the unit art it is applied to is a fraction of the row
+                            // it sits in, so every unit in the list came out tiny.
+                            // The cell has to be given a width as well: without one
+                            // it is however wide the art already is, and fitting art
+                            // to its own size does nothing.
+                            FitIconToCell = _pedia.InfoType == CivilopediaInfoType.Units,
+                            Width = _pedia.InfoType == CivilopediaInfoType.Units
+                                ? rowHeight
+                                : null
                         });
                     }
                     elements.Add(new ListboxGroupElement
@@ -230,13 +256,13 @@ public class CivilopediaWindow : BaseDialog
                         FrontColorOverride = AlreadyKnown(i) ? KnownAdvanceColour : null
                     });
 
-                    var group = new ListboxGroup() { Elements = elements, Height = props.Listbox.RowHeight };
+                    var group = new ListboxGroup() { Elements = elements, Height = rowHeight };
                     groups.Add(group);
                 }
 
                 var def = new ListboxDefinition()
                 {
-                    Rows = props.Listbox.Rows,
+                    Rows = listboxRows,
                     Columns = props.Listbox.Columns,
                     Type = ListboxType.Default,
                     VerticalScrollbar = props.Listbox.VerticalScrollbar,
