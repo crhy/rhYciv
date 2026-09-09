@@ -15,6 +15,16 @@ public class ListboxControlGroup : ControlGroup
 {
     public Action<ListboxControlGroup, bool> Selected { get; set; } = (_, _) => { };
     private readonly List<ListboxGroupElement> _elements;
+
+    /// <summary>
+    /// The row's labels paired with the element each came from, so a colour a row
+    /// asked for can be put back after the selection has moved. Changing the
+    /// selection repaints every row from the list's own palette, which used to
+    /// throw away any colour an individual row had chosen the first time the
+    /// selection moved -- so a row could be coloured, but only until the player
+    /// touched the list.
+    /// </summary>
+    private readonly List<(LabelControl Label, ListboxGroupElement Element)> _labels = [];
     private bool _softSelection;    // true = don't make final selection based on this
     private readonly IUserInterface _active;
     private readonly ListboxLooks _looks;
@@ -51,6 +61,7 @@ public class ListboxControlGroup : ControlGroup
                     label.Height = (int)group.Height;
                 }
                 Controls.Add(label);
+                _labels.Add((label, element));
             }
             else if (element.Icon is not null)
             {
@@ -153,6 +164,31 @@ public class ListboxControlGroup : ControlGroup
         if (Width > offset && Controls.Count > 0 && Controls[^1] is LabelControl)
         {
             Controls[^1].Width += Width - offset;
+        }
+    }
+
+    /// <summary>
+    /// Paints this row for the selection, keeping any colour the row asked for.
+    /// </summary>
+    public void ApplySelection(bool selected, ListboxLooks looks)
+    {
+        IsSelected = selected;
+
+        foreach (var (label, element) in _labels)
+        {
+            label.BackgroundColor = null;
+            label.Font = selected ? looks.SelectedTextFont : looks.Font;
+            label.ShadowOffset = selected ? looks.SelectedTextShadowOffset : looks.TextShadowOffset;
+
+            // A row's own colour wins when it is not the selected row. The selected
+            // row takes the list's highlight colours, because the point of them is
+            // to read against the selection band.
+            label.ColorFront = selected
+                ? looks.SelectedTextColorFront
+                : element.FrontColorOverride ?? looks.TextColorFront;
+            label.ColorShadow = selected
+                ? looks.SelectedTextColorShadow
+                : element.ShadowColorOverride ?? looks.TextColorShadow;
         }
     }
 

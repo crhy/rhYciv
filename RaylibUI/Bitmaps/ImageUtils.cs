@@ -577,7 +577,16 @@ public static class ImageUtils
 
         if (unit.Order == (int)OrderType.Fortified)
         {
-            viewElements.Add(new TextureElement(location: loc, texture: TextureCache.GetImage(active.UnitImages.Fortify), tile: tile));
+            // Fitted to the unit's own footprint, like the unit and its shield. This
+            // was drawn at whatever size the art happens to be, and the FOSS
+            // fortification marker is a full map tile, so beside a unit scaled down
+            // into a list row -- the Units Present and Units Supported boxes -- it
+            // came out several times the size of the unit it belonged to.
+            var fortifyTexture = TextureCache.GetImage(active.UnitImages.Fortify);
+            viewElements.Add(new TextureElement(location: loc, texture: fortifyTexture,
+                tile: tile,
+                renderScale: GetUnitRenderScale(unitImage, fortifyTexture, logicalSize),
+                maxDrawSize: logicalSize));
         }
 
         return logicalSize;

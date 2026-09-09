@@ -87,6 +87,16 @@ public class CivilopediaWindow : BaseDialog
         var props = _active.GetCivilopediaProperties(_pedia);
         var buttons = props.Buttons;
         
+        // Green, and only a little off the list's own black, so a known advance
+        // reads as marked rather than as a different kind of entry.
+        var KnownAdvanceColour = new Raylib_CSharp.Colors.Color(23, 97, 23, 255);
+
+        bool AlreadyKnown(int row) =>
+            _pedia.InfoType == CivilopediaInfoType.Advances &&
+            row >= 0 && row < _advances.Count &&
+            RhyCiv.Engine.Advances.AdvanceFunctions.HasTech(
+                _gameScreen.Player.Civilization, _advances[row].Index);
+
         switch (_pedia.WindowType)
         {
             case CivilopediaWindowType.Listbox:
@@ -212,7 +222,12 @@ public class CivilopediaWindow : BaseDialog
                         Text = names[i],
                         Xoffset = 4 + iconWidth + iconOffset,
                         TextSizeOverride = _active.Look.CivilopediaFontSize,
-                        VerticalAlignment = VerticalAlignment.Center
+                        VerticalAlignment = VerticalAlignment.Center,
+
+                        // Advances the civilisation already has are marked, so the
+                        // list of everything there is to know can be read as what is
+                        // left to learn. Nothing said which were which before.
+                        FrontColorOverride = AlreadyKnown(i) ? KnownAdvanceColour : null
                     });
 
                     var group = new ListboxGroup() { Elements = elements, Height = props.Listbox.RowHeight };
