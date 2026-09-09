@@ -375,7 +375,7 @@ public class CompatAlternateInterface(IMain main) : ClassicInterface(main)
                 new("-", Shortcut.None, Key.None),
                 new("Find &City|Shift+C", new Shortcut(Key.C, shift: true), Key.C),
                 new("-", Shortcut.None, Key.None),
-                new("&REVOLUTION|Shift+R", new Shortcut(Key.R, shift: true), Key.R)
+                new("&REVOLUTION|Shift+R", new Shortcut(Key.R, shift: true), Key.R, commandId: Revolution)
             }
         },
 

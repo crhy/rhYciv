@@ -38,6 +38,13 @@ namespace Model.Core
 
         public int Government { get; set; }
 
+        /// <summary>
+        /// Turns of Anarchy still to run before a new government can be chosen, or
+        /// zero when the civilisation is governed. A revolution is not instant: this
+        /// is what it costs.
+        /// </summary>
+        public int AnarchyTurnsRemaining { get; set; }
+
         public bool AnyUnitsAwaitingOrders => Units.Any(unit => unit.AwaitingOrders);
         
         public int LuxRate => 100 - TaxRate - ScienceRate;

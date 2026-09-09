@@ -835,6 +835,26 @@ The gates of %STRING0 are open and its standards have been torn down. Your troop
 @button=Ok
 After smoke, shouting, and shattered gates, %STRING0 wakes beneath a new banner. Its people now wait to learn what your victory will mean.
 
+@REVOLUTION
+@title=Revolution
+@width=300
+@button=Ok
+@button=Cancel
+Overthrowing the government will leave the %STRING0 in anarchy for %NUMBER0 turns. Nothing will be collected and nothing learned until a new order is settled on.
+
+@NEWGOVERNMENT
+@title=A New Order
+@width=300
+@button=Ok
+The anarchy is over. Your people are waiting to be told how they will be governed.
+
+@GOVERNMENTLEARNED
+@title=%STRING0
+@width=300
+@button=Ok
+@button=Cancel
+Your scholars have set out the workings of %STRING0. Adopting it means a revolution, and the anarchy that comes with one. Shall it be done?
+
 @BRIBEUNIT
 @title=Bribery
 @width=300

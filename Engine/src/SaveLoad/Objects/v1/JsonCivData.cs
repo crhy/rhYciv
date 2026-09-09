@@ -22,6 +22,7 @@ public class JsonCivData
         Science = civilization.Science;
         ResearchingAdvance = civilization.ReseachingAdvance;
         ResearchGoal = civilization.ResearchGoal >= 0 ? civilization.ResearchGoal : null;
+        AnarchyTurnsRemaining = civilization.AnarchyTurnsRemaining > 0 ? civilization.AnarchyTurnsRemaining : null;
         Advances = civilization.Advances.Clamp();
         SciRate = civilization.ScienceRate;
         TaxRate = civilization.TaxRate;
@@ -80,6 +81,12 @@ public class JsonCivData
     /// none rather than as aiming at whichever advance happens to be index zero.
     /// </summary>
     public int? ResearchGoal { get; set; }
+
+    /// <summary>
+    /// Turns of Anarchy still to run, absent when the civilisation is governed.
+    /// Nullable so a save written before revolutions existed loads as settled.
+    /// </summary>
+    public int? AnarchyTurnsRemaining { get; set; }
     public bool[]? Advances { get; set; }
     public int SciRate { get; set; }
     public int FutureTechCount { get; set; }

@@ -229,6 +229,35 @@ namespace RhyCiv.Engine
         {
         }
 
+        /// <summary>
+        /// A computer civilisation takes the most advanced government it can form,
+        /// which is the order the rules list them in. It has no reason to dither:
+        /// the anarchy is already paid for by the time this is asked.
+        /// </summary>
+        public void ChooseGovernment(IList<int> availableGovernments)
+        {
+            if (availableGovernments.Count == 0)
+            {
+                return;
+            }
+
+            GovernmentFunctions.AdoptGovernment(game, Civilization,
+                (Enums.GovernmentType)availableGovernments.Max());
+        }
+
+        /// <summary>
+        /// Revolts as soon as something better is available. A computer
+        /// civilisation left under Despotism all game is not playing the same game
+        /// as the player.
+        /// </summary>
+        public void GovernmentAvailable(int government)
+        {
+            if (GovernmentFunctions.CanRevolt(Civilization))
+            {
+                GovernmentFunctions.BeginRevolution(game, Civilization);
+            }
+        }
+
         public void FoodShortage(City city)
         {
         }

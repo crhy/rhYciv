@@ -35,6 +35,21 @@ namespace Model.Core.Player
         void MapChanged(List<Tile> tiles);
         void WaitingAtEndOfTurn();
         void NotifyAdvanceResearched(int advance);
+
+        /// <summary>
+        /// The anarchy following a revolution is over and a government has to be
+        /// chosen. The player is expected to answer by calling
+        /// <c>GovernmentFunctions.AdoptGovernment</c>; until they do, the
+        /// civilisation stays in anarchy and is asked again next turn.
+        /// </summary>
+        void ChooseGovernment(IList<int> availableGovernments);
+
+        /// <summary>
+        /// An advance has just opened a form of government the civilisation could
+        /// not previously adopt. Civ II offers the revolution at this point rather
+        /// than leaving the player to notice.
+        /// </summary>
+        void GovernmentAvailable(int government);
         void FoodShortage(City city);
 
         /// <summary>

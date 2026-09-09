@@ -98,6 +98,17 @@ public class MockPlayer : IPlayer
     {
     }
 
+    public IList<int> GovernmentsOffered { get; private set; } = new List<int>();
+
+    public virtual void ChooseGovernment(IList<int> availableGovernments)
+    {
+        GovernmentsOffered = availableGovernments;
+    }
+
+    public virtual void GovernmentAvailable(int government)
+    {
+    }
+
     public virtual void TurnStart(int turnNumber)
     {
     }

@@ -318,6 +318,7 @@ public class GameSerializer
             Science = jsonCivData.Science,
             ReseachingAdvance = researchingAdvance,
             ResearchGoal = researchGoal,
+            AnarchyTurnsRemaining = Math.Max(0, jsonCivData.AnarchyTurnsRemaining ?? 0),
             Advances = jsonCivData.Advances ?? [],
             ScienceRate = jsonCivData.SciRate,
             PlayerType = jsonCivData.PlayerType,

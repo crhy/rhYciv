@@ -137,6 +137,14 @@ namespace RhyCiv.Engine.Advances
                 civilization.ResearchGoal = -1;
             }
 
+            // A form of government has just become possible. Civ II offers the
+            // revolution at this point rather than leaving the player to notice.
+            if (GovernmentFunctions.GovernmentUnlockedBy(advanceIndex) is { } government &&
+                civilization.Id >= 0 && civilization.Id < game.Players.Length)
+            {
+                game.Players[civilization.Id].GovernmentAvailable((int)government);
+            }
+
             foreach (var effect in game.Rules.Advances[advanceIndex].Effects)
             {
                 if (effect.Key == Effects.EpochTech)

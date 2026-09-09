@@ -578,6 +578,63 @@ public class LocalPlayer : IPlayer
             new CivilopediaEntry(CivilopediaInfoType.Advances, CivilopediaWindowType.Info, civilopediaIndex)), stack: true);
     }
 
+    /// <summary>
+    /// The anarchy after a revolution has run out and a government has to be
+    /// chosen. Not answering leaves the civilisation in anarchy and asks again next
+    /// turn, which is the right way round: anarchy is a state, not a deadline.
+    /// </summary>
+    public void ChooseGovernment(IList<int> availableGovernments)
+    {
+        if (availableGovernments.Count == 0)
+        {
+            return;
+        }
+
+        var rules = _gameScreen.Game.Rules.Governments;
+        var names = availableGovernments
+            .Where(index => index >= 0 && index < rules.Length)
+            .Select(index => (Index: index, rules[index].Name))
+            .ToList();
+
+        if (names.Count == 0)
+        {
+            return;
+        }
+
+        _gameScreen.ShowPopup("NEWGOVERNMENT", handleButtonClick: (_, selected, _, _) =>
+        {
+            var chosen = names[Math.Clamp(selected, 0, names.Count - 1)];
+            GovernmentFunctions.AdoptGovernment(_gameScreen.Game, Civilization,
+                (GovernmentType)chosen.Index);
+            SessionLog.Record($"government is now {chosen.Name}");
+            _gameScreen.StatusPanel.Update();
+        }, options: names.Select(n => n.Name).ToList());
+    }
+
+    /// <summary>
+    /// An advance has opened a form of government. Civ II offers the revolution
+    /// here rather than leaving the player to notice for themselves and go looking
+    /// for the menu entry.
+    /// </summary>
+    public void GovernmentAvailable(int government)
+    {
+        var rules = _gameScreen.Game.Rules.Governments;
+        if (government < 0 || government >= rules.Length ||
+            !GovernmentFunctions.CanRevolt(Civilization))
+        {
+            return;
+        }
+
+        _gameScreen.ShowPopup("GOVERNMENTLEARNED", handleButtonClick: (button, _, _, _) =>
+        {
+            if (button == Labels.Ok)
+            {
+                GovernmentFunctions.BeginRevolution(_gameScreen.Game, Civilization);
+                _gameScreen.StatusPanel.Update();
+            }
+        }, replaceStrings: [rules[government].Name]);
+    }
+
     public void FoodShortage(City city)
     {
         _gameScreen.ShowCityDialog("FOODSHORTAGE", city);

@@ -415,12 +415,41 @@ namespace RhyCiv.Engine
                 unit.MovePointsLost = 0;
             }
 
+            ResolveAnarchy(activeCiv, player);
             ResolveAirFuel(activeCiv, player);
             ResolveShipsLostAtSea(activeCiv, player);
             ResolveGreatLibrary(activeCiv, player);
 
             // Update all cities
             this.CitiesTurn(player);
+        }
+
+        /// <summary>
+        /// Counts a revolution's anarchy down, and asks for a government when it
+        /// runs out. A civilisation that is not told what to become stays in
+        /// anarchy and is asked again next turn, which is the right way round --
+        /// anarchy is a state to be left, not a deadline to be missed.
+        /// </summary>
+        private void ResolveAnarchy(Civilization activeCiv, IPlayer player)
+        {
+            if (activeCiv.AnarchyTurnsRemaining > 0)
+            {
+                activeCiv.AnarchyTurnsRemaining--;
+            }
+
+            if (activeCiv.AnarchyTurnsRemaining > 0 ||
+                activeCiv.Government != (int)GovernmentType.Anarchy)
+            {
+                return;
+            }
+
+            var available = GovernmentFunctions.AvailableGovernments(activeCiv)
+                .Select(government => (int)government)
+                .ToList();
+            if (available.Count > 0)
+            {
+                player.ChooseGovernment(available);
+            }
         }
 
         /// <summary>
