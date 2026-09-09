@@ -363,11 +363,12 @@ public class GameScreen : BaseScreen
             replaceStrings: replaceStrings);
     }
 
-    public CityWindow ShowCityWindow(City city)
+    public CityWindow ShowCityWindow(City city, bool viewOnly = false)
     {
-        SessionLog.Record($"city window for {city.Name} (size {city.Size})");
-        var cityDialog = new CityWindow(this, city);
-        ShowDialog(cityDialog);
+        SessionLog.Record($"city window for {city.Name} (size {city.Size})" +
+                          (viewOnly ? " (report)" : string.Empty));
+        var cityDialog = new CityWindow(this, city, viewOnly);
+        ShowDialog(cityDialog, stack: viewOnly);
         return cityDialog;
     }
 

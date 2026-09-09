@@ -89,6 +89,13 @@ public class CityTileMap : BaseControl
 
     private void OnClick(object? sender, MouseEventArgs e)
     {
+        if (_cityWindow.ViewOnly)
+        {
+            // Somebody else's city, opened by a Diplomat's report. Their citizens
+            // are not ours to move about.
+            return;
+        }
+
         var city = _cityWindow.City;
         var gameScreen = _cityWindow.CurrentGameScreen;
 

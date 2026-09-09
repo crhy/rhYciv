@@ -41,10 +41,22 @@ public class CityWindow : BaseDialog
     private readonly Color _citizensLabelColor;
     private readonly Color _citizensLabelShadow;
 
-    public CityWindow(GameScreen gameScreen, City city) : base(gameScreen.Main)
+    /// <summary>
+    /// Whether this window may only be looked at.
+    /// <para>
+    /// Set when a Diplomat's report opens somebody else's city. Everything is shown
+    /// -- what it is building, what it has built, what is standing in it -- and
+    /// nothing can be touched: the buttons that would spend its owner's gold or
+    /// change its owner's mind are not there.
+    /// </para>
+    /// </summary>
+    public bool ViewOnly { get; }
+
+    public CityWindow(GameScreen gameScreen, City city, bool viewOnly = false) : base(gameScreen.Main)
     {
         CurrentGameScreen = gameScreen;
         City = city;
+        ViewOnly = viewOnly;
         _active = gameScreen.MainWindow.ActiveInterface;
         var game = CurrentGameScreen.Game;
 
@@ -72,9 +84,12 @@ public class CityWindow : BaseDialog
         mapButton.Click += (_, _) => infoArea.SetActiveMode(CityDisplayMode.SupportMap);
         Controls.Add(mapButton);
 
-        var renameButton = new CityButton(this, "Rename");
-        renameButton.Click += (_, _) => { };
-        Controls.Add(renameButton);
+        if (!viewOnly)
+        {
+            var renameButton = new CityButton(this, "Rename");
+            renameButton.Click += (_, _) => { };
+            Controls.Add(renameButton);
+        }
 
         var happyButton = new CityButton(this, "Happy");
         happyButton.Click += (_, _) => infoArea.SetActiveMode(CityDisplayMode.Happiness);

@@ -109,6 +109,13 @@ public class UnitsPresentBox : Listbox
 
         var unit = city.UnitsInCity[args.Index];
 
+        if (_cityWindow.ViewOnly)
+        {
+            // Their garrison. Seeing it is the point of the report; ordering it is
+            // not on offer.
+            return;
+        }
+
         CityUnitMenu.Show(_cityWindow, unit);
     }
 

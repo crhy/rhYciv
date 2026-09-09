@@ -902,50 +902,116 @@ public class LocalPlayer : IPlayer
     /// </summary>
     public void DiplomatArrived(Unit diplomat, Tile target)
     {
-        var game = _gameScreen.Game;
         var city = DiplomatActions.EnemyCityAt(diplomat, target);
         var unit = DiplomatActions.BribableUnitAt(diplomat, target);
 
         SessionLog.Record($"diplomat at {target.X},{target.Y} " +
                           $"(city={city?.Name ?? "none"}, unit={unit?.Name ?? "none"})");
 
-        if (city != null && unit != null)
-        {
-            // Both are possible, so let the player say which.
-            _gameScreen.ShowPopup("DIPLOMATACTION", handleButtonClick: (button, selection, _, _) =>
-            {
-                if (button != Labels.Ok)
-                {
-                    return;
-                }
-
-                if (selection == 0)
-                {
-                    OfferToIncite(diplomat, city);
-                }
-                else
-                {
-                    OfferToBribe(diplomat, unit);
-                }
-            });
-            return;
-        }
-
+        var choices = new List<(string Label, Action Take)>();
         if (city != null)
         {
-            OfferToIncite(diplomat, city);
-            return;
+            choices.Add(($"Investigate {city.Name}", () => OfferToInvestigate(diplomat, city)));
+
+            // Offered even where it cannot be done, so the refusal can say why:
+            // a capital cannot be bought, and that is worth learning once.
+            choices.Add(($"Incite a revolt in {city.Name}", () => OfferToIncite(diplomat, city)));
         }
 
         if (unit != null)
         {
-            OfferToBribe(diplomat, unit);
+            choices.Add(($"Bribe the {unit.Name}", () => OfferToBribe(diplomat, unit)));
+        }
+
+        switch (choices.Count)
+        {
+            case 0:
+                // Something is here, but not something that can be dealt with: a
+                // stack keeping an eye on each other, or a garrison that has to be
+                // taken with the city.
+                _gameScreen.ShowPopup("CANNOTBRIBE");
+                return;
+            case 1:
+                choices[0].Take();
+                return;
+            default:
+                ShowDiplomatChoices(choices);
+                return;
+        }
+    }
+
+    /// <summary>
+    /// What this agent can do here. Built from what is actually on the square rather
+    /// than read from the game's text, because the list changes with the square --
+    /// and because the dialog it used to ask for was never in the text at all, so
+    /// arriving at a defended city put up nothing whatever and the Diplomat stood
+    /// there having achieved nothing.
+    /// </summary>
+    private void ShowDiplomatChoices(List<(string Label, Action Take)> choices)
+    {
+        var elements = new DialogElements
+        {
+            Name = "DIPLOMATACTION_DYNAMIC",
+            Title = "Your Agent Reports",
+            Compact = true,
+            Width = 260,
+            Button = [Labels.Ok, Labels.Cancel],
+            Text = ["What are your orders?"],
+            LineStyles = [TextStyles.Left],
+            Options = new OptionsDefinition { Texts = choices.Select(c => c.Label).ToList() }
+        };
+
+        CivDialog? dialog = null;
+        dialog = new CivDialog(_gameScreen.Main, elements, (button, selected, _, _) =>
+        {
+            _gameScreen.CloseDialog(dialog);
+            if (button == Labels.Ok && selected >= 0 && selected < choices.Count)
+            {
+                choices[selected].Take();
+            }
+        });
+        _gameScreen.ShowDialog(dialog, stack: true);
+    }
+
+    /// <summary>
+    /// Looking inside somebody else's city. A Spy comes home having spent a move; a
+    /// Diplomat does not come home, so that is asked about first.
+    /// </summary>
+    private void OfferToInvestigate(Unit agent, City city)
+    {
+        if (DiplomatActions.IsSpy(agent))
+        {
+            Investigate(agent, city);
             return;
         }
 
-        // Something is here, but not something that can be bought: a stack keeping
-        // an eye on each other, or a garrison that has to be taken with the city.
-        _gameScreen.ShowPopup("CANNOTBRIBE");
+        _gameScreen.ShowPopup("INVESTIGATECITY", handleButtonClick: (button, _, _, _) =>
+        {
+            if (button == Labels.Ok)
+            {
+                Investigate(agent, city);
+            }
+        }, replaceStrings: [city.Name]);
+    }
+
+    private void Investigate(Unit agent, City city)
+    {
+        if (!DiplomatActions.InvestigateCity(_gameScreen.Game, agent, city))
+        {
+            return;
+        }
+
+        SessionLog.Record($"investigated {city.Name} (size {city.Size})");
+        _gameScreen.ForceRedraw();
+
+        // The city as its owner sees it, and nothing in it can be touched. What the
+        // player came for is the garrison, which the Units Present box lists.
+        _gameScreen.ShowCityWindow(city, viewOnly: true);
+
+        if (!agent.AwaitingOrders)
+        {
+            _gameScreen.Game.ChooseNextUnit();
+        }
     }
 
     private void OfferToBribe(Unit diplomat, Unit target)

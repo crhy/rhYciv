@@ -52,6 +52,14 @@ namespace RhyCiv.Engine.UnitActions
         public static bool IsDiplomat(Unit unit) =>
             !unit.Dead && unit.AiRole == AiRoleType.Diplomacy;
 
+        /// <summary>
+        /// Whether this is a Spy rather than a Diplomat. A Spy does the same work
+        /// and survives more of it: Civ II sends a Diplomat home in a body bag after
+        /// almost anything it does, while a Spy walks away from the easier jobs.
+        /// </summary>
+        public static bool IsSpy(Unit unit) =>
+            IsDiplomat(unit) && unit.Type == (int)UnitType.Spy;
+
         /// <summary>The enemy city on a square, if there is one.</summary>
         public static City? EnemyCityAt(Unit diplomat, Tile tile) =>
             tile.CityHere is { } city && city.Owner != diplomat.Owner ? city : null;
@@ -95,7 +103,44 @@ namespace RhyCiv.Engine.UnitActions
             return target;
         }
 
-        /// <summary>Whether a city can be bought out from under its owner.</summary>
+        /// <summary>
+        /// Looks inside somebody else's city: what it is building, what it has
+        /// built, and -- the reason anybody does this -- what is standing in it.
+        /// <para>
+        /// Civ II charges a Diplomat its life for the report and lets a Spy walk
+        /// away having spent a move. That difference is the whole argument for
+        /// researching the Spy, so it is the difference kept here.
+        /// </para>
+        /// </summary>
+        /// <returns>Whether the report was obtained.</returns>
+        public static bool InvestigateCity(IGame game, Unit agent, City city)
+        {
+            if (!IsDiplomat(agent) || city.Owner == agent.Owner)
+            {
+                return false;
+            }
+
+            if (IsSpy(agent))
+            {
+                // A move, not the unit. Spending a whole move point rather than the
+                // single step the walk in would have cost is what stops a Spy
+                // reading a line of cities in one turn.
+                agent.MovePointsLost += game.Rules.Cosmic.MovementMultiplier;
+                if (agent.MovePoints < 0)
+                {
+                    agent.MovePointsLost = agent.MaxMovePoints;
+                }
+            }
+            else
+            {
+                agent.Dead = true;
+                game.Players[agent.Owner.Id].UnitLost(agent, null);
+            }
+
+            return true;
+        }
+
+        /// <summary>Whether a city can be bought out from under its owner.</summary>        /// <summary>Whether a city can be bought out from under its owner.</summary>
         public static bool CanIncite(City city) =>
             !city.ImprovementExists(Effects.Capital);
 

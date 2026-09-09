@@ -70,7 +70,13 @@ public class ProductionBox : BaseControl
         // repeatedly allowed 1024px FOSS unit art to escape the production panel.
         // ProductionBox draws the icon itself into a fixed slot below.
         _icon.Visible = false;
-        Controls = [_label, _buyButton, _changeButton];
+
+        // Somebody else's city, seen through a Diplomat's report: what it is
+        // building is worth knowing, but it is not ours to buy or change. A button
+        // that is present and does nothing is worse than one that is not there.
+        Controls = _cityWindow.ViewOnly
+            ? [_label]
+            : [_label, _buyButton, _changeButton];
 
         // CityWindow inserts this control into the tree after the constructor.
         // Do not call OnResize here; child controls can resolve the CityWindow

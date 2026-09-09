@@ -835,6 +835,51 @@ The gates of %STRING0 are open and its standards have been torn down. Your troop
 @button=Ok
 After smoke, shouting, and shattered gates, %STRING0 wakes beneath a new banner. Its people now wait to learn what your victory will mean.
 
+@BRIBEUNIT
+@title=Bribery
+@width=300
+@button=Ok
+@button=Cancel
+The commander of the %STRING0 will take your side for %NUMBER0 gold. Your treasury holds %NUMBER1.
+
+@INCITEREVOLT
+@title=Incite a Revolt
+@width=300
+@button=Ok
+@button=Cancel
+The citizens of %STRING0 can be turned against the %STRING1 for %NUMBER0 gold. Your treasury holds %NUMBER1. The city would come over to you, and its garrison with it.
+
+@NODIPLOMATGOLD
+@title=Not Enough Gold
+@width=300
+@button=Ok
+The price is %NUMBER0 gold. Your treasury holds %NUMBER1.
+
+@CANNOTBRIBE
+@title=Nothing For Sale
+@width=300
+@button=Ok
+There is nobody here whose loyalty is for sale. A lone commander in the open can be bought; units watching one another cannot, and a garrison comes only with the city it defends.
+
+@CANNOTINCITE
+@title=%STRING0 Cannot Be Bought
+@width=300
+@button=Ok
+%STRING0 is the seat of their government. No amount of gold will turn a capital against its own.
+
+@INVESTIGATECITY
+@title=Send In Your Diplomat
+@width=300
+@button=Ok
+@button=Cancel
+Your Diplomat can bring back a full account of %STRING0 -- what it is building, what it has built, and what is standing in it. He will not come back with it.
+
+@INVESTIGATEREPORT
+@title=Report From %STRING0
+@width=300
+@button=Ok
+Your agent has been through %STRING0 and counted what is there.
+
 @CITYLOST
 @title=%STRING0 Is Lost
 @width=360
