@@ -170,7 +170,27 @@ public class LocalPlayer : IPlayer
                 StartResearching(researchPossibilities[selectedIndex]);
             }, replaceStrings: [activeInterface.GetScientistName(Civilization.Epoch)],
             listBox: ResearchListbox(researchPossibilities, preselected),
-            extraButtons: [GoalButton]);
+            buttons: ResearchButtons());
+    }
+
+    /// <summary>
+    /// The chooser's buttons, in the order they are read: what to work towards,
+    /// then what a highlighted advance is, then the decision. The confirming button
+    /// is last because that is where the eye finishes, and Goal is first because it
+    /// is the question you ask before you answer this one.
+    /// <para>
+    /// Whatever else the ruleset's text defines for this dialog is kept, so a
+    /// translated Info button survives; only the order is imposed, and Goal is added
+    /// because no ruleset knows about it.
+    /// </para>
+    /// </summary>
+    private List<string> ResearchButtons()
+    {
+        var defined = _gameScreen.Main.ActiveInterface.GetDialog("RESEARCH")?.Button ?? [];
+        var buttons = new List<string> { GoalButton };
+        buttons.AddRange(defined.Where(b => b != GoalButton && b != Labels.Ok));
+        buttons.Add(Labels.Ok);
+        return buttons;
     }
 
     /// <summary>

@@ -40,16 +40,54 @@ public class CivDialog : DynamicSizingDialog
         && d.Listbox is null
         && (d.Image is null || d.Image.Image.Any(n => n is null));
 
-    /// <summary>Inner-panel width to request for a dialog, in logical pixels.</summary>
+    /// <summary>
+    /// Inner-panel width to request for a text dialog, in logical pixels.
+    /// <para>
+    /// This was 62% of the window, which on a 1080p screen is eleven hundred pixels
+    /// and about a hundred and forty characters to a line. Prose that wide is hard
+    /// to read -- the eye loses its place coming back to the left margin -- and it
+    /// left most of the game's messages as one long band across the middle of the
+    /// screen. A third of the window puts a line at roughly sixty characters, which
+    /// is the measure a book is set to, and the dialog grows downwards into a
+    /// paragraph instead.
+    /// </para>
+    /// </summary>
     private static int MessagePanelWidth() =>
-        Math.Clamp((int)(DisplayScale.Width * 0.62f), 560, 1100);
+        Math.Clamp((int)(DisplayScale.Width * 0.34f), 420, 620);
 
-    private static int RequestedWidth(Main host, DialogElements d) =>
-        IsMessageLayout(d)
-            ? MessagePanelWidth()
-            : d.Width == null
+    private static int RequestedWidth(Main host, DialogElements d)
+    {
+        if (!IsMessageLayout(d))
+        {
+            return d.Width == null
                 ? host.ActiveInterface.DefaultDialogWidth
                 : (int)(1.5 * d.Width);
+        }
+
+        // A comfortable measure, but never narrower than a line that is not allowed
+        // to break. Text marked as being on its own line is never wrapped, so a long
+        // one -- a web address, say -- used to run straight out through the side of
+        // the dialog and get cut off by the frame.
+        var width = MessagePanelWidth();
+        if (d.Text is { Count: > 0 } && d.LineStyles is { Count: > 0 })
+        {
+            var look = host.ActiveInterface.Look;
+            var fontSize = look.LabelFontSize + 4;
+            for (var i = 0; i < d.Text.Count && i < d.LineStyles.Count; i++)
+            {
+                if (d.LineStyles[i] == TextStyles.Left)
+                {
+                    continue;
+                }
+
+                var line = DialogUtils.ReplacePlaceholders(d.Text[i], d.ReplaceStrings, d.ReplaceNumbers) ?? string.Empty;
+                var measured = (int)MathF.Ceiling(TextRendering.Measure(look.LabelFont, line, fontSize, 1f).X);
+                width = Math.Max(width, measured + 24);
+            }
+        }
+
+        return Math.Min(width, Math.Max(320, DisplayScale.Width - 48));
+    }
 
     public CivDialog(Main host, DialogElements dialog, Action<string, int, IList<bool>?, IDictionary<string, string>?> handleButtonClick) :
         base(host, DialogUtils.ReplacePlaceholders(dialog.Title, dialog.ReplaceStrings, dialog.ReplaceNumbers),

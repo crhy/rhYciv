@@ -20,6 +20,20 @@ public class GotoOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
     private List<City> _cities = gameScreen.Player.Civilization.Cities;
     private bool _allCities;
 
+    /// <summary>
+    /// The button that widens the list from the player's own cities to everybody's,
+    /// and narrows it again. It says what pressing it will show, not what is being
+    /// shown now.
+    /// <para>
+    /// This used to have no button of its own: the dialog offers Ok and Cancel, and
+    /// anything that was not Ok was taken as a request to swap the list -- so
+    /// Cancel reopened the dialog with the other set of cities instead of closing
+    /// it, and there was no way out of the dialog at all except to pick a
+    /// destination.
+    /// </para>
+    /// </summary>
+    private string ToggleButton => _allCities ? "Own Cities" : "All Cities";
+
     public override bool Update()
     {
         return SetCommandState(GameScreen.Player.ActiveUnit != null ? CommandStatus.Normal : CommandStatus.Invalid);
@@ -34,30 +48,38 @@ public class GotoOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
 
     private void HandleButtonClick(string button, int index, IList<bool>? arg3, IDictionary<string, string>? arg4)
     {
-        var activeUnit = GameScreen.Player.ActiveUnit!;
-        if (button == Labels.Ok)
-        {
-            var city = _cities[index];
-            var path = Path.CalculatePathBetween(GameScreen.Game, activeUnit.CurrentLocation, city.Location,
-                activeUnit.Domain,
-                activeUnit.MaxMovePoints, activeUnit.Owner, activeUnit.Alpine, activeUnit.IgnoreZonesOfControl);
-            if (path != null)
-            {
-                activeUnit.Order = (int)OrderType.GoTo;
-                activeUnit.GoToX = city.Location.X;
-                activeUnit.GoToY = city.Location.Y;
-                path.Follow(GameScreen.Game, activeUnit);
-                if (activeUnit.MovePoints <= 0)
-                {
-                    GameScreen.Game.ChooseNextUnit();
-                }
-            }
-        }
-        else
+        if (button == ToggleButton)
         {
             _allCities = !_allCities;
-            var cities = _allCities ? GameScreen.Game.AllCities : GameScreen.Player.Civilization.Cities;
-            Show(cities, activeUnit);
+            Show(_allCities ? GameScreen.Game.AllCities : GameScreen.Player.Civilization.Cities,
+                GameScreen.Player.ActiveUnit!);
+            return;
+        }
+
+        if (button != Labels.Ok || GameScreen.Player.ActiveUnit is not { } activeUnit ||
+            index < 0 || index >= _cities.Count)
+        {
+            // Cancel, or a list with nothing in it. The dialog has already closed.
+            return;
+        }
+
+        var city = _cities[index];
+        var path = Path.CalculatePathBetween(GameScreen.Game, activeUnit.CurrentLocation, city.Location,
+            activeUnit.Domain,
+            activeUnit.MaxMovePoints, activeUnit.Owner, activeUnit.Alpine, activeUnit.IgnoreZonesOfControl);
+        if (path == null)
+        {
+            return;
+        }
+
+        activeUnit.Order = (int)OrderType.GoTo;
+        activeUnit.GoToX = city.Location.X;
+        activeUnit.GoToY = city.Location.Y;
+        activeUnit.GoToMapIndex = city.Location.Z;
+        path.Follow(GameScreen.Game, activeUnit);
+        if (activeUnit.MovePoints <= 0)
+        {
+            GameScreen.Game.ChooseNextUnit();
         }
     }
 
@@ -70,7 +92,13 @@ public class GotoOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
             .ToList();
         var listbox = new ListboxDefinition();
         listbox.Update(_cities.Select(c => c.Name).ToList());
+
+        // Ok, then the widen/narrow toggle, then the way out.
+        var defined = GameScreen.Main.ActiveInterface.GetDialog("GOTO")?.Button ?? [];
+        var buttons = new List<string> { Labels.Ok, ToggleButton };
+        buttons.AddRange(defined.Where(b => b != Labels.Ok && b != ToggleButton));
+
         GameScreen.ShowPopup("GOTO", handleButtonClick: HandleButtonClick,
-            listBox: listbox);
+            listBox: listbox, buttons: buttons);
     }
 }

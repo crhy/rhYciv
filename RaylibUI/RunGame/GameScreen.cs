@@ -530,14 +530,14 @@ public class GameScreen : BaseScreen
         List<TextBoxDefinition>? textBoxes = null,
         DialogImageElements? dialogImage = null,
         ListboxDefinition? listBox = null,
-        IList<string>? extraButtons = null)
+        IList<string>? buttons = null)
     {
         SessionLog.Record($"popup {dialogName}");
 
         if (_currentPopupDialog != null)
         {
             _queuedPopups.Enqueue(() => ShowPopup(dialogName, handleButtonClick, replaceNumbers, replaceStrings,
-                checkboxStates, options, textBoxes, dialogImage, listBox, extraButtons));
+                checkboxStates, options, textBoxes, dialogImage, listBox, buttons));
             return true;
         }
 
@@ -545,12 +545,12 @@ public class GameScreen : BaseScreen
         if (popupBox != null)
         {
             var dialog = new DialogElements(popupBox);
-            if (extraButtons is { Count: > 0 })
+            if (buttons is { Count: > 0 })
             {
-                // A fresh list: DialogElements takes the one held by the cached
-                // dialog definition, so appending in place would grow the game's own
-                // copy by another button every time the dialog was opened.
-                dialog.Button = (dialog.Button ?? []).Concat(extraButtons).ToList();
+                // A fresh list rather than the caller's, and never the one the
+                // cached dialog definition holds: writing to that would change the
+                // game's own copy of the dialog for every later use of it.
+                dialog.Button = buttons.ToList();
             }
             if (options != null)
             {

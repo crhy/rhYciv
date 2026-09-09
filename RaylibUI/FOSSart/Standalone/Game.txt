@@ -23,7 +23,13 @@ Released under the GPL. The bundled ruleset derives from Freeciv; the art and
 the written material are the project's own. Full attribution for every shipped
 file is in ASSET-MANIFEST.tsv, and the licences are in LICENSE and NOTICE.md.
 ^
-github.com/crhy/rhYciv
+^rhYciv.org
+^rhYciv.com
+^
+^Discord: discord.gg/wyWN7HrcHX
+^Telegram: t.me/+JaW5Iy5CTN9hNmRh
+^
+^github.com/crhy/rhYciv
 @CONQUEST
 @title=The World Is Yours
 @width=560

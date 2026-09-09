@@ -265,6 +265,63 @@ public class Listbox : BaseControl
         }
     }
 
+    /// <summary>
+    /// Typing a letter jumps to the next row that starts with it, wrapping round.
+    /// <para>
+    /// A list of cities is the reason this exists: picking one out of thirty by
+    /// walking the arrow keys is slow, and typing its first letter is what every
+    /// list of names has done since long before this game. Pressing the same letter
+    /// again steps to the next name under it, so several cities beginning with the
+    /// same letter are all reachable.
+    /// </para>
+    /// </summary>
+    public override bool OnCharPressed(char charPressed)
+    {
+        if (!_def.Selectable || _controls.Count == 0 || !char.IsLetterOrDigit(charPressed))
+        {
+            return base.OnCharPressed(charPressed);
+        }
+
+        for (var offset = 1; offset <= _controls.Count; offset++)
+        {
+            var index = (_def.SelectedId + offset) % _controls.Count;
+            if (!RowStartsWith(index, charPressed))
+            {
+                continue;
+            }
+
+            _def.SelectedId = index;
+            _controls[index].SelectThis(true);
+            return true;
+        }
+
+        // No name under that letter. Still handled: a letter typed at a list is a
+        // search, and letting it fall through would hand it to the dialog as a
+        // shortcut the player did not mean to press.
+        return true;
+    }
+
+    private bool RowStartsWith(int index, char letter)
+    {
+        if (index < 0 || index >= _def.Groups.Count)
+        {
+            return false;
+        }
+
+        foreach (var element in _def.Groups[index].Elements)
+        {
+            var text = element.Text;
+            if (string.IsNullOrEmpty(text))
+            {
+                continue;
+            }
+
+            return char.ToUpperInvariant(text[0]) == char.ToUpperInvariant(letter);
+        }
+
+        return false;
+    }
+
     public override bool OnKeyPressed(KeyboardKey key)
     {
         if (!_def.Selectable || _controls.Count == 0) return base.OnKeyPressed(key);
