@@ -15,7 +15,7 @@ public static class TextRendering
     private const float UiTextScale = 1.0f;
     private const float MapTextScale = 1.0f;
     public const int MinimumUiFontSize = 16;
-    public const int MinimumMapFontSize = 16;
+    public const int MinimumMapFontSize = 20;
     public const int MinimumFittedFontSize = 13;
 
     public static int LegibleUiFontSize(int fontSize)

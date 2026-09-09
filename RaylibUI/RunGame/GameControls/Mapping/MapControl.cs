@@ -359,8 +359,10 @@ public class MapControl : BaseControl
 
     // City name and population size on the map. The number is deliberately close to
     // the name rather than two thirds of it, and both grow with zoom until the cap.
-    private const int CityNameFontBase = 22;
-    private const int CitySizeFontBase = 18;
+    // Raised from 22 and 18, which were still being reported as too small to read at
+    // 1080p: a city's name is the label the eye goes to most often on the map.
+    private const int CityNameFontBase = 28;
+    private const int CitySizeFontBase = 23;
     private const int MapLabelZoomCap = 16;
 
     private Rectangle _currentBounds;

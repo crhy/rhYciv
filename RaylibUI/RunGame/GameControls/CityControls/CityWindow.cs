@@ -381,12 +381,19 @@ public class CityWindow : BaseDialog
     }
 
     /// <summary>
-    /// Closes this window and opens the next city along, in the order the player's
-    /// cities were founded. Does nothing when they only hold one.
+    /// Closes this window and opens the next city along, alphabetically. Does
+    /// nothing when the player holds only one.
+    /// <para>
+    /// It used to step in the order the cities were founded, which is an order only
+    /// the game knows. By name, left and right walk the same list the player sees
+    /// everywhere else that cities are listed.
+    /// </para>
     /// </summary>
     private void StepToAnotherCity(int step)
     {
-        var cities = CurrentGameScreen.Player.Civilization.Cities;
+        var cities = CurrentGameScreen.Player.Civilization.Cities
+            .OrderBy(city => city.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
         if (cities.Count < 2)
         {
             return;
