@@ -166,69 +166,73 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
 
         var menus = new List<DropdownMenuContents>();
         
-        var map = MenuMap;
-        foreach (var menu in map)
+        foreach (var menu in MenuMap)
         {
-            // Find rows with separator and remove them
-            List<int> separatorRows = [];
-            for (var i = 0; i < menu.Defaults.Count; i++)
-            {
-                if (menu.Defaults[i].MenuText == "-")
-                {
-                    separatorRows.Add(i);
-                }
-            }
-            for (var i = separatorRows.Count; i-- > 0;)
-            {
-                menu.Defaults.RemoveAt(separatorRows[i]);
-                separatorRows[i] -= i + 2;
-            }
-
-            //separatorRows = new List<int> { 0, 1, 2, 3, 4, 5, 6 };
-            var menuContent = new DropdownMenuContents { Commands = new List<MenuCommand>(), SeparatorRows = separatorRows.ToArray() };
             var loaded = MenuLoader.For(menu.Key);
-            if (loaded.Count > 0)
-            {
-                menuContent.Title = loaded[0].MenuText;
-                menuContent.HotKey = loaded[0].Hotkey;
-            }
-            else
-            {
-                menuContent.Title = menu.Defaults[0].MenuText;
-                menuContent.HotKey = menu.Defaults[0].Hotkey;
-            }
+            var entries = new List<MenuCommand>();
 
-            var loadIndex = 0;
+            // Where the rules between groups of entries go. They are counted against
+            // the entries that actually make it into the menu, and counted as the menu
+            // is built, because an entry can be left out here -- a command the ruleset
+            // doesn't provide -- or turn into several, and the row numbers were
+            // previously worked out from the unfiltered list, which slid every rule
+            // below such an entry out of place.
+            var separatorRows = new List<int>();
+
             for (var i = 1; i < menu.Defaults.Count; i++)
             {
                 var baseCommand = menu.Defaults[i];
-                var content = loaded.Count > i ? loaded[i] : baseCommand;
 
-                if (baseCommand.Repeat)
+                if (baseCommand.MenuText == "-")
                 {
-                    var comandsList = commands.Where(c =>
-                        c.Id.StartsWith(baseCommand.CommandId) && menu.Defaults.All(d => d.CommandId != c.Id));
-
-                    foreach (var gameCommand in comandsList)
+                    // A rule above the first entry, or two in a row, separates nothing.
+                    if (entries.Count > 0 && !separatorRows.Contains(entries.Count))
                     {
-                        menuContent.Commands.Add(new MenuCommand(
-                            baseCommand.MenuText.Replace(
-                                "%STRING0", gameCommand.Name), Key.None,
-                            gameCommand.ActivationKeys[0], gameCommand));
+                        separatorRows.Add(entries.Count);
                     }
 
                     continue;
                 }
-                
+
+                var content = loaded.Count > i ? loaded[i] : baseCommand;
+
+                if (baseCommand.Repeat)
+                {
+                    // One entry per command sharing the template's prefix, less the
+                    // ones the menu already names in full.
+                    var repeated = commands.Where(c =>
+                        c.Id.StartsWith(baseCommand.CommandId) && menu.Defaults.All(d => d.CommandId != c.Id));
+
+                    foreach (var gameCommand in repeated)
+                    {
+                        entries.Add(new MenuCommand(
+                            baseCommand.MenuText.Replace("%STRING0", gameCommand.Name), Key.None,
+                            gameCommand.ActivationKeys.FirstOrDefault(), gameCommand));
+                    }
+
+                    continue;
+                }
+
                 var command = commands.FirstOrDefault(c => c.Id == baseCommand.CommandId);
                 if (command == null && baseCommand.OmitIfNoCommand)
                 {
                     continue;
                 }
-                
-                var menuCommand = new MenuCommand(content.MenuText, content.Hotkey, content.Shortcut, command);
-                menuContent.Commands.Add(menuCommand);
+
+                entries.Add(new MenuCommand(content.MenuText, content.Hotkey, content.Shortcut, command));
             }
+
+            // A rule under the last entry has nothing beneath it to separate.
+            separatorRows.Remove(entries.Count);
+
+            var menuContent = new DropdownMenuContents
+            {
+                Commands = entries,
+                SeparatorRows = separatorRows.ToArray(),
+                Title = loaded.Count > 0 ? loaded[0].MenuText : menu.Defaults[0].MenuText,
+                HotKey = loaded.Count > 0 ? loaded[0].Hotkey : menu.Defaults[0].Hotkey
+            };
+
             menus.Add(menuContent);
         }
 

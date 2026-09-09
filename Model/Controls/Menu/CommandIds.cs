@@ -29,6 +29,9 @@ public static class CommandIds
     public const string MediumZoomOut = "MEDIUM_ZOOM_OUT";
     public const string MaxZoomOut = "MAX_ZOOM_OUT";
     public const string ShowMapGrid = "SHOW_MAP_GRID";
+    public const string MovePieces = "MOVE_PIECES";
+    public const string ViewPieces = "VIEW_PIECES";
+    public const string CenterView = "CENTER_VIEW";
     public const string MapLayoutToggle = "MAP_LAYOUT";
     
     public const string WaitOrder = "UNIT_ORDER_WAIT";
@@ -43,6 +46,7 @@ public static class CommandIds
     public const string FortifyOrder = "UNIT_ORDER_FORTIFY";
     public const string DisbandOrder = "UNIT_ORDER_DISBAND";
     public const string SetHomeCityOrder = "UNIT_ORDER_SET_HOME_CITY";
+    public const string ActivateUnitOrder = "UNIT_ORDER_ACTIVATE";
     public const string BuildImprovementOrderBase = "UNIT_ORDER_BUILD_IMPROVEMENT";
     public const string BuildImprovementOrderNormal = BuildImprovementOrderBase + "_NORMAL";
     public const string BuildImprovementOrderForeground = BuildImprovementOrderBase + "_FRONT";
@@ -50,7 +54,6 @@ public static class CommandIds
 
     public const string BuildRoadOrder = BuildImprovementOrderNormal + "_ROAD";
     public const string BuildIrrigationOrder = BuildImprovementOrderNormal + "_IRRIGATION";
-    public const string BuildMineOrder = BuildImprovementOrderNormal + "_MINE";
     
     public const string EndTurn = "END_PLAYER_TURN";
     
@@ -65,4 +68,6 @@ public static class CommandIds
     
     public const string CheatRevealMapCommand = "CHEAT_REVEAL_MAP";
     public const string CheatChangeMoneyCommand = "CHEAT_CHANGE_MONEY";
+    public const string CheatTechnologyAdvance = "CHEAT_TECHNOLOGY_ADVANCE";
+    public const string CheatForceGovernment = "CHEAT_FORCE_GOVERNMENT";
 }

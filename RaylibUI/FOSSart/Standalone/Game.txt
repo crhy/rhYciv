@@ -855,6 +855,12 @@ The anarchy is over. Your people are waiting to be told how they will be governe
 @button=Cancel
 Your scholars have set out the workings of %STRING0. Adopting it means a revolution, and the anarchy that comes with one. Shall it be done?
 
+@TECHFROMCONQUEST
+@title=Taken With The City
+@width=300
+@button=Ok
+Among the spoils of %STRING0 your scholars have found the secret of %STRING1. What its people knew is now yours.
+
 @CHANGEPRODUCTION
 @title=Change Production
 @width=300

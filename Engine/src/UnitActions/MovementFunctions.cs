@@ -827,6 +827,12 @@ namespace RhyCiv.Engine.UnitActions
                         
                         game.Players[loser.Id].CityLost(tileTo.CityHere);
 
+                        // The capture is reported before its spoils. It used to be
+                        // the other way round, which put "you have learned Writing"
+                        // in front of "the gates of Ulundi are open" and left the
+                        // discovery with nothing to attribute itself to.
+                        game.Players[unit.Owner.Id].CityCaptured(tileTo.CityHere);
+
                         if (!game.ScenarioData.ForbidTechFromConquests)
                         {
                             var techs = AdvanceFunctions.CalculateResearchTheft(game, unit.Owner, loser);
@@ -835,7 +841,6 @@ namespace RhyCiv.Engine.UnitActions
                                 game.Players[unit.Owner.Id].SelectTechFromConquest(techs);
                             }
                         }
-                        game.Players[unit.Owner.Id].CityCaptured(tileTo.CityHere);
                         
                     }
                     mapUpdates.Add(tileTo);

@@ -929,13 +929,43 @@ public class LocalPlayer : IPlayer
         _gameScreen.ShowDialog(dialog, stack: true);
     }
 
+    /// <summary>
+    /// A captured city has given up one of its owner's secrets.
+    /// <para>
+    /// The advance was handed over in silence: it arrived in the tree with nothing
+    /// to say where it had come from, so the most interesting thing that can happen
+    /// when a city falls went unremarked. Which advance is not the player's to
+    /// choose -- it is whatever the city happened to know.
+    /// </para>
+    /// </summary>
     public void SelectTechFromConquest(List<Advance> techs)
     {
+        if (techs.Count == 0)
+        {
+            return;
+        }
+
         var advance = _gameScreen.Game.Random.ChooseFrom(techs);
         _gameScreen.Game.GiveAdvance(advance.Index, Civilization);
-        
-        //TODO: Show popup
+
+        if (!AdvanceFunctions.HasTech(Civilization, advance.Index))
+        {
+            // Barred from it by its advance group, so nothing was taken.
+            return;
+        }
+
+        SessionLog.Record($"took {advance.Name} with a captured city");
+        _gameScreen.ShowPopup("TECHFROMCONQUEST",
+            replaceStrings: [_capturedCityName ?? Labels.For(LabelIndex.City), advance.Name]);
     }
+
+    /// <summary>
+    /// The city taken most recently. Capturing a city can hand over one of its
+    /// owner's advances, and the two are reported separately -- the capture, then
+    /// its spoils -- so the name has to be carried across for the second message to
+    /// be able to say where the discovery came from.
+    /// </summary>
+    private string? _capturedCityName;
 
     /// <summary>
     /// A city of ours has been taken. Also unimplemented, so losing a city said
@@ -1199,6 +1229,7 @@ public class LocalPlayer : IPlayer
     public void CityCaptured(City city)
     {
         SessionLog.Record($"captured {city.Name} (size {city.Size})");
+        _capturedCityName = city.Name;
         _gameScreen.ShowPopup("CITYCAPTURE",
             handleButtonClick: (_, _, _, _) => _gameScreen.ShowCityWindow(city),
             replaceStrings: [city.Name]);
