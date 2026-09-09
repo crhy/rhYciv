@@ -31,9 +31,16 @@ internal class MoveAnimation : BaseGameView
             }
         }
         
-        // Get view elements of units on previous tile of moving unit
+        // Get view elements of units on previous tile of moving unit.
+        //
+        // Nothing is drawn for a square with a city on it. The map never shows a
+        // city's garrison -- the flag over the city says one is there -- but the
+        // bystanders in a move were drawn whatever they were standing on, so a unit
+        // walking out of a city made its garrison flash into view for the length of
+        // the step and then vanish again.
         var viewElementsPrevTileUnits = new List<IViewElement>();
-        var prevTileUnit = map.TileC2(activeUnit.PrevXy[0], activeUnit.PrevXy[1]).UnitsHere.FirstOrDefault();
+        var previousTile = map.TileC2(activeUnit.PrevXy[0], activeUnit.PrevXy[1]);
+        var prevTileUnit = previousTile.CityHere == null ? previousTile.UnitsHere.FirstOrDefault() : null;
         if (prevTileUnit != null)
         {
             ImageUtils.GetUnitTextures(prevTileUnit, activeInterface, gameScreen.Game, viewElementsPrevTileUnits,
@@ -42,7 +49,9 @@ internal class MoveAnimation : BaseGameView
 
         // Get view elements of units on next tile of moving unit
         var viewElementsNextTileUnits = new List<IViewElement>();
-        var nextTileUnit = activeUnit.CurrentLocation.UnitsHere.Where(u => u != activeUnit && !activeUnit.CarriedUnits.Contains(u)).FirstOrDefault();
+        var nextTileUnit = activeUnit.CurrentLocation.CityHere != null
+            ? null
+            : activeUnit.CurrentLocation.UnitsHere.FirstOrDefault(u => u != activeUnit && !activeUnit.CarriedUnits.Contains(u));
         if (nextTileUnit != null)
         {
             ImageUtils.GetUnitTextures(nextTileUnit, activeInterface, gameScreen.Game, viewElementsNextTileUnits,

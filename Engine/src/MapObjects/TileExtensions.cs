@@ -159,6 +159,44 @@ namespace RhyCiv.Engine.MapObjects
             return tile.Map.Neighbours(tile, twoSpaces);
         }
         
+        /// <summary>
+        /// Whether what this civilisation remembers of the square disagrees with
+        /// what is on it.
+        /// <para>
+        /// A square is only reported to the players when it is first uncovered, so a
+        /// city founded, taken or grown out of sight was never told to anybody who
+        /// had already explored the ground it stands on. Walking up to it did not
+        /// help: the square was long since explored, so nothing counted as new.
+        /// Units are drawn from life whenever they can be seen, which is how an
+        /// enemy city came to be shown on the map as a lone fortified warrior
+        /// standing where the city is.
+        /// </para>
+        /// </summary>
+        public static bool KnowledgeIsStale(this Tile tile, int civilizationId)
+        {
+            if (tile.PlayerKnowledge == null || tile.PlayerKnowledge.Length <= civilizationId)
+            {
+                return true;
+            }
+
+            var known = tile.PlayerKnowledge[civilizationId];
+            if (known == null)
+            {
+                return true;
+            }
+
+            var city = tile.CityHere;
+            if (city == null)
+            {
+                return known.CityHere != null;
+            }
+
+            return known.CityHere == null ||
+                   known.CityHere.OwnerId != city.OwnerId ||
+                   known.CityHere.Size != city.Size ||
+                   known.CityHere.Name != city.Name;
+        }
+
         public static void UpdatePlayer(this Tile tile,int civilizationId)
         {
             if (tile.PlayerKnowledge == null || tile.PlayerKnowledge.Length <= civilizationId)

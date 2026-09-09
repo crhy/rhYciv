@@ -792,11 +792,26 @@ namespace RhyCiv.Engine.UnitActions
                 var mapUpdates = new List<Tile>();
                 foreach (var neighbourTile in tileTo.Neighbours(unit.TwoSpaceVisibility))
                 {
-                    if(!neighbourTile.IsVisible(unit.Owner.Id))
+                    if (!neighbourTile.IsVisible(unit.Owner.Id))
                     {
                         neighbourTile.SetVisible(unit.Owner.Id);
                         mapUpdates.Add(neighbourTile);
                     }
+                    else if (neighbourTile.KnowledgeIsStale(unit.Owner.Id))
+                    {
+                        // Explored ground can still hold a surprise: a city founded,
+                        // taken or grown while nobody was watching. Only squares
+                        // whose record actually disagrees with what is there are
+                        // reported, because reporting every square in sight on every
+                        // step would have the interface recomposing a screenful of
+                        // terrain for each unit that moves.
+                        mapUpdates.Add(neighbourTile);
+                    }
+                }
+
+                if (tileTo.KnowledgeIsStale(unit.Owner.Id))
+                {
+                    mapUpdates.Add(tileTo);
                 }
                 
                 if(tileTo.CityHere != null && tileTo.CityHere.Owner.Id != unit.Owner.Id)
