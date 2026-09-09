@@ -45,16 +45,22 @@ namespace Model.Core
         public bool WonderMovies { get; set; }
 
         // CITY REPORT OPTIONS
-        public bool WarnWhenCityGrowthHalted { get; set; }
-        public bool ShowCityImprovementsBuilt { get; set; }
-        public bool ShowNonCombatUnitsBuilt { get; set; }
-        public bool ShowInvalidBuildInstructions { get; set; }
-        public bool AnnounceCitiesInDisorder { get; set; }
-        public bool AnnounceOrderRestored { get; set; }
-        public bool AnnounceWeLoveKingDay { get; set; }
-        public bool WarnWhenFoodDangerouslyLow { get; set; }
-        public bool WarnWhenPollutionOccurs { get; set; }
-        public bool WarnChangProductWillCostShields { get; set; }
+        //
+        // On to begin with, as they are in Civ II: these decide which of the
+        // messages a city sends its ruler actually get through, and a player who
+        // has never opened the City Report Options dialog expects to be told when
+        // a city falls into disorder. They all defaulted to off, which was
+        // invisible only because nothing consulted them at all.
+        public bool WarnWhenCityGrowthHalted { get; set; } = true;
+        public bool ShowCityImprovementsBuilt { get; set; } = true;
+        public bool ShowNonCombatUnitsBuilt { get; set; } = true;
+        public bool ShowInvalidBuildInstructions { get; set; } = true;
+        public bool AnnounceCitiesInDisorder { get; set; } = true;
+        public bool AnnounceOrderRestored { get; set; } = true;
+        public bool AnnounceWeLoveKingDay { get; set; } = true;
+        public bool WarnWhenFoodDangerouslyLow { get; set; } = true;
+        public bool WarnWhenPollutionOccurs { get; set; } = true;
+        public bool WarnChangProductWillCostShields { get; set; } = true;
         public bool ZoomToCityNotDefaultAction { get; set; }
 
         public bool CheatPenaltyWarningDisabled { get; set; }

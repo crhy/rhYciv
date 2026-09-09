@@ -833,6 +833,14 @@ namespace RhyCiv.Engine.UnitActions
                         // discovery with nothing to attribute itself to.
                         game.Players[unit.Owner.Id].CityCaptured(tileTo.CityHere);
 
+                        // Wonders stand where they were built. Taking the city takes
+                        // them, which is worth being told about: a captured Colossus
+                        // is worth more than the city around it.
+                        foreach (var wonder in tileTo.CityHere.Improvements.Where(i => i.IsWonder))
+                        {
+                            game.Players[unit.Owner.Id].WonderCaptured(tileTo.CityHere, wonder);
+                        }
+
                         if (!game.ScenarioData.ForbidTechFromConquests)
                         {
                             var techs = AdvanceFunctions.CalculateResearchTheft(game, unit.Owner, loser);

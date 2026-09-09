@@ -117,8 +117,11 @@ namespace RhyCiv.Engine.Production
         {
             if (!city.ImprovementExists(Improvement.Type))
             {
-                //Ocean improvements can't be built inland
-                if (!city.IsNextToOcean() && Improvement.Effects.ContainsKey(Effects.OceanRequired))
+                // Ocean improvements can't be built inland. The cheap test comes
+                // first: asking whether the city is coastal walks its neighbours,
+                // and for the great majority of buildings the answer does not
+                // matter.
+                if (Improvement.Effects.ContainsKey(Effects.OceanRequired) && !city.IsNextToOcean())
                 {
                     return false;
                 }

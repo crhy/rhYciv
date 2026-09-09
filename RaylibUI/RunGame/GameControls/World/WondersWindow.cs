@@ -5,6 +5,7 @@ using RhyCiv.Engine.Production;
 using Model;
 using Model.Controls;
 using Model.Core;
+using Model.Core.Cities;
 using Raylib_CSharp.Colors;
 using Raylib_CSharp.Interact;
 using RaylibUI.BasicTypes;
@@ -37,17 +38,34 @@ public class WondersWindow : BaseDialog
         BackgroundImage = ImageUtils.PaintDialogBase(_active, _width, _height, LayoutPadding,
             Images.ExtractBitmap(back, _active));
 
-        var wonders = game.Rules.Improvements.Where(i => i.IsWonder).ToList();
-
+        // Every wonder in the ruleset, with where it stands and who holds it.
+        // This report used to build one blank row per city of the player's own
+        // civilisation and fill in nothing at all, so pressing F7 opened a window
+        // of empty lines: the one place in the game that answers "who has built
+        // what" answered nothing.
         List<ListboxGroup> groups = [];
-        for (var i = 0; i < _civ.Cities.Count; i++)
+        foreach (var (wonder, city) in WonderProgress.AllWonders(game))
         {
-            var group = new ListboxGroup()
+            var known = city != null &&
+                        (city.Owner == _civ || city.WhoKnowsAboutIt.Length <= _civ.Id ||
+                         city.WhoKnowsAboutIt[_civ.Id]);
+
+            var where = city switch
             {
-                Elements = [],
-                Height = 24
+                null => UnderConstruction(game, wonder),
+                not null when known => $"{city.Name} ({city.Owner.Adjective})",
+                _ => "?"
             };
-            groups.Add(group);
+
+            groups.Add(new ListboxGroup
+            {
+                Elements =
+                [
+                    new() { Text = wonder.Name, Width = 240, TextSizeOverride = 16 },
+                    new() { Text = where, TextSizeOverride = 16 }
+                ],
+                Height = 24
+            });
         }
 
         var def = new ListboxDefinition()
@@ -79,6 +97,24 @@ public class WondersWindow : BaseDialog
         };
         btn.Click += (_, _) => _gameScreen.CloseDialog(this); ;
         Controls.Add(btn);
+    }
+
+    /// <summary>
+    /// What to say about a wonder nobody has finished: who is working on it, if
+    /// the player has been told, and otherwise that it is simply not built.
+    /// </summary>
+    private string UnderConstruction(IGame game, Improvement wonder)
+    {
+        var building = game.AllCities
+            .Where(city => WonderProgress.WonderUnderConstruction(city)?.Type == wonder.Type)
+            .Where(city => city.Owner == _civ ||
+                           city.WhoKnowsAboutIt.Length <= _civ.Id || city.WhoKnowsAboutIt[_civ.Id])
+            .Select(city => $"{city.Name} ({city.Owner.Adjective})")
+            .ToList();
+
+        return building.Count > 0
+            ? string.Join(", ", building)
+            : Labels.For(LabelIndex.NONEYET);
     }
 
     public override int Width => _width;

@@ -58,7 +58,9 @@ internal class MockGame : IGame
 
     public IGameDate Date => throw new NotImplementedException();
     public int TurnNumber => throw new NotImplementedException();
-    public List<City> AllCities => throw new NotImplementedException();
+    // The cities of every civilisation, which is how the world-level rules --
+    // wonders being unique, pollution accumulating -- see the board.
+    public List<City> AllCities => AllCivilizations?.SelectMany(civ => civ.Cities).ToList() ?? [];
     public IPlayer[] Players { get; set; }
 
     public int PollutionSkulls => throw new NotImplementedException();

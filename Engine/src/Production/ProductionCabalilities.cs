@@ -39,6 +39,24 @@ namespace RhyCiv.Engine.Production
             }
         }
 
+        /// <summary>
+        /// Takes an improvement off every civilisation's build list.
+        /// <para>
+        /// This is how a wonder stops being available once somebody has built it.
+        /// There is only ever one of each in the world, and nothing enforced that:
+        /// two civilisations, or two cities of the same civilisation, could each
+        /// raise the Pyramids and each get the benefit.
+        /// </para>
+        /// </summary>
+        public static void WithdrawImprovement(int improvementType)
+        {
+            foreach (var available in _availableProducts)
+            {
+                available.RemoveAll(order =>
+                    order is BuildingProductionOrder building && building.Improvement.Type == improvementType);
+            }
+        }
+
         public static bool ProductionValid(City city)
         {
             return _availableProducts[city.OwnerId].Contains(city.ItemInProduction) && city.ItemInProduction.IsValidBuild(city);

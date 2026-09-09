@@ -95,6 +95,22 @@ public class MockPlayer : IPlayer
         PollutedSquares.Add(square);
     }
 
+    public List<(City City, Improvement Wonder)> WondersBegun { get; } = [];
+    public List<(City City, Improvement Wonder)> WondersNearlyComplete { get; } = [];
+    public List<(City City, Improvement Wonder)> WondersCompleted { get; } = [];
+    public List<(City City, Improvement Wonder)> WondersLost { get; } = [];
+    public List<(City City, Improvement Wonder)> WondersCaptured { get; } = [];
+
+    public void WonderBegun(City city, Improvement wonder) => WondersBegun.Add((city, wonder));
+
+    public void WonderNearlyComplete(City city, Improvement wonder) => WondersNearlyComplete.Add((city, wonder));
+
+    public void WonderCompleted(City city, Improvement wonder) => WondersCompleted.Add((city, wonder));
+
+    public void WonderLost(City ourCity, Improvement wonder, City builtIn) => WondersLost.Add((ourCity, wonder));
+
+    public void WonderCaptured(City city, Improvement wonder) => WondersCaptured.Add((city, wonder));
+
     public void GlobalWarming(int squaresChanged)
     {
         WarmedSquares += squaresChanged;

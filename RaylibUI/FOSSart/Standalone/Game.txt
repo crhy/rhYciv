@@ -531,7 +531,7 @@ Enemy forces have struck your ally. The treaty now asks a plain question: was th
 @title=A Rival Nears Completion
 @width=360
 @button=Ok
-Travelers report that {otherCiv} is nearing completion of {wonder}. The race is no longer theoretical; the final stones are being set.
+Travelers report that the %STRING0 are nearing completion of %STRING1 in %STRING2. The race is no longer theoretical; the final stones are being set.
 
 @ALREADYAIRLIFT
 @title=Airlift Capacity Used
@@ -747,7 +747,7 @@ This terrain cannot support that improvement. The land has its own logic; choose
 @title=A Wonder Changes Hands
 @width=360
 @button=Ok
-With the capture of {city}, {wonder} now stands within your realm. You did not raise it, but history has placed its guardianship in your hands.
+With the capture of %STRING0, %STRING1 now stands within your realm. You did not raise it, but history has placed its guardianship in your hands.
 
 @CARACONFIRM
 @title=Establish This Trade Route?
@@ -966,11 +966,17 @@ News has reached the capital: allied defenses at %STRING0 have broken. The enemy
 @button=Ok
 Knowledge has crossed a threshold. %STRING0 is no longer speculation; it is now part of the working inheritance of your civilization.
 
+@WONDERCOMPLETED
+@title=A Wonder Is Completed
+@width=380
+@button=Ok
+Word travels faster than any caravan: %STRING0 stands finished in %STRING1, a city of the %STRING2. What one civilization builds, the rest must live alongside.
+
 @COMPLETE0
 @title=Construction Complete
 @width=360
 @button=Ok
-The final crews step back. {city} has completed {item}, and its benefits now belong to the city and the civilization beyond it.
+The final crews step back. %STRING0 has completed %STRING1, and its benefits now belong to the city and the civilization beyond it.
 
 @COMPONENT
 @title=Spaceship Component
@@ -1312,7 +1318,7 @@ This chronicle comes from an older version. It may be converted, but some detail
 @title=The Wonder Is Lost
 @width=360
 @button=Ok
-Another civilization has completed {wonder} first. The plans in {city} are now relics of a race that has ended.
+The %STRING0 have completed %STRING1 first, in %STRING2. The plans laid in %STRING3 are now relics of a race that has ended.
 
 @LOWMEMORY
 @title=Resources Running Low
@@ -1762,7 +1768,7 @@ Your agent has reached %STRING0. Choose the mission carefully; information, sabo
 @title=A Wonder Is Begun
 @width=360
 @button=Ok
-Scaffolds rise in {city} for {wonder}. The work is greater than any ordinary building; if completed, generations will measure themselves against it.
+Scaffolds rise in %STRING0, a city of the %STRING1, for %STRING2. The work is greater than any ordinary building; if completed, generations will measure themselves against it.
 
 @STEALHARD
 @title=The Archives Are Guarded
@@ -1792,13 +1798,13 @@ These technologies are exposed to your agent. One stolen idea can alter armies, 
 @title=The Work Continues
 @width=360
 @button=Ok
-{city} still labors on {wonder}. Stone by stone, beam by beam, the impossible is becoming real.
+%STRING0 still labors on %STRING1. Stone by stone, beam by beam, the impossible is becoming real.
 
 @STILLWONDER1
 @title=A Monument Taking Shape
 @width=360
 @button=Ok
-The outline of {wonder} now dominates {city}. Citizens can see the future landmark rising above their streets.
+The outline of %STRING0 now dominates %STRING1. Citizens can see the future landmark rising above their streets.
 
 @STILLWONDER2
 @title=The Final Stage

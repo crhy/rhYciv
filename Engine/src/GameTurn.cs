@@ -140,7 +140,14 @@ namespace RhyCiv.Engine
                     }
                 }
 
+                var shieldsBefore = city.ShieldsProgress;
                 city.ShieldsProgress += shields;
+
+                // Scaffolds going up, and a rival about to win the race. Reported
+                // from here because this is the only place the work actually
+                // advances, and reported as crossings of a mark so each piece of
+                // news arrives exactly once.
+                WonderProgress.ReportProgress(game, city, shieldsBefore);
 
 
                 // RULES.txt costs are already shields: Warriors 10, Temple 40,
@@ -149,6 +156,7 @@ namespace RhyCiv.Engine
                 // city producing a handful of shields a turn never finished anything.
                 if (city.ShieldsProgress >= city.ItemInProduction.Cost)
                 {
+                    var completedWonder = WonderProgress.WonderUnderConstruction(city);
                     if (city.ItemInProduction.CompleteProduction(city, rules))
                     {
                         city.ShieldsProgress = 0;
@@ -168,6 +176,14 @@ namespace RhyCiv.Engine
                         GrantWonderCompletionAdvances(game, city, player);
 
                         player.CityProductionComplete(city);
+
+                        // A wonder is the world's business, not just its owner's:
+                        // everybody hears about it, nobody can build it again, and
+                        // whoever was racing for it has lost.
+                        if (completedWonder != null)
+                        {
+                            WonderProgress.Completed(game, city, completedWonder);
+                        }
                     }
                 }
 

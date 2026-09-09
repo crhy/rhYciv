@@ -271,6 +271,26 @@ namespace RhyCiv.Engine
         {
         }
 
+        public void WonderBegun(City city, Improvement wonder)
+        {
+        }
+
+        public void WonderNearlyComplete(City city, Improvement wonder)
+        {
+        }
+
+        public void WonderCompleted(City city, Improvement wonder)
+        {
+        }
+
+        public void WonderLost(City ourCity, Improvement wonder, City builtIn)
+        {
+        }
+
+        public void WonderCaptured(City city, Improvement wonder)
+        {
+        }
+
         public void GlobalWarming(int squaresChanged)
         {
         }

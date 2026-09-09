@@ -6,6 +6,7 @@ using RhyCiv.Engine.Diagnostics;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.Events;
 using RhyCiv.Engine.IO;
+using RhyCiv.Engine.Production;
 using RhyCiv.Engine.MapObjects;
 using Model.Controls;
 using Model.Controls.Civilopedia;
@@ -62,23 +63,51 @@ public class LocalPlayer : IPlayer
         }
     }
 
+    /// <summary>
+    /// The messages a city sends its ruler. Which of them get through is the
+    /// player's choice, made in City Report Options -- a dialog whose eleven
+    /// checkboxes were read, written and then consulted by nothing at all, so
+    /// turning a message off left it coming anyway.
+    /// </summary>
+    private Options Reports => _gameScreen.Game.Options;
+
     public void CivilDisorder(City city)
     {
+        if (!Reports.AnnounceCitiesInDisorder)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("DISORDER", city);
     }
 
     public void OrderRestored(City city)
     {
+        if (!Reports.AnnounceOrderRestored)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("RESTORED", city);
     }
 
     public void WeLoveTheKingStarted(City city)
     {
+        if (!Reports.AnnounceWeLoveKingDay)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("WELOVEKING", city);
     }
 
     public void WeLoveTheKingCanceled(City city)
     {
+        if (!Reports.AnnounceWeLoveKingDay)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("WEDONTLOVEKING", city);
     }
 
@@ -491,11 +520,30 @@ public class LocalPlayer : IPlayer
 
     public void CantProduce(City city, IProductionOrder? newItem)
     {
+        if (!Reports.ShowInvalidBuildInstructions)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("BADBUILD", city);
     }
 
+    /// <summary>
+    /// Something has come off the stocks. Civ II keeps buildings and quiet units
+    /// on separate switches -- a warship every other turn is worth hearing about,
+    /// forty settlers is not -- so which switch applies depends on what was made.
+    /// </summary>
     public void CityProductionComplete(City city)
     {
+        var announced = city.ItemInProduction is UnitProductionOrder unitOrder
+            ? unitOrder.UnitDefinition.Attack > 0 || Reports.ShowNonCombatUnitsBuilt
+            : Reports.ShowCityImprovementsBuilt;
+
+        if (!announced)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("BUILT", city);
     }
 
@@ -637,12 +685,77 @@ public class LocalPlayer : IPlayer
 
     public void FoodShortage(City city)
     {
+        if (!Reports.WarnWhenFoodDangerouslyLow)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("FOODSHORTAGE", city);
     }
 
     public void CityGrowthHalted(City city)
     {
+        if (!Reports.WarnWhenCityGrowthHalted)
+        {
+            return;
+        }
+
         _gameScreen.ShowCityDialog("FURTHERGROWTH", city);
+    }
+
+    /// <summary>
+    /// Another civilisation has begun a wonder. Civ II reports the great works of
+    /// the world as they are raised, and this is the first of the three notices:
+    /// begun, nearly finished, finished.
+    /// </summary>
+    public void WonderBegun(City city, Improvement wonder)
+    {
+        if (!_gameScreen.Game.Options.ShowCityImprovementsBuilt)
+        {
+            return;
+        }
+
+        _gameScreen.ShowPopup("STARTWONDER",
+            replaceStrings: [city.Name, city.Owner.Adjective, wonder.Name]);
+    }
+
+    /// <summary>
+    /// A rival is about to finish a wonder we are building ourselves. The only
+    /// notice of the three that asks the player to do something: there is still
+    /// time to buy the last of it, or to give up and keep the shields.
+    /// </summary>
+    public void WonderNearlyComplete(City city, Improvement wonder)
+    {
+        _gameScreen.ShowPopup("ALMOSTWONDER",
+            replaceStrings: [city.Owner.Adjective, wonder.Name, city.Name]);
+    }
+
+    public void WonderCompleted(City city, Improvement wonder)
+    {
+        if (!_gameScreen.Game.Options.ShowCityImprovementsBuilt)
+        {
+            return;
+        }
+
+        _gameScreen.ShowPopup("WONDERCOMPLETED",
+            replaceStrings: [wonder.Name, city.Name, city.Owner.Adjective]);
+    }
+
+    /// <summary>
+    /// The race is lost. There is only one of each wonder in the world, so the
+    /// city has to build something else; the shields it has already put in stay in
+    /// the box for whatever it builds instead.
+    /// </summary>
+    public void WonderLost(City ourCity, Improvement wonder, City builtIn)
+    {
+        SessionLog.Record($"lost the race for {wonder.Name} to {builtIn.Owner.TribeName}");
+        _gameScreen.ShowPopup("LOSTWONDER",
+            replaceStrings: [builtIn.Owner.Adjective, wonder.Name, builtIn.Name, ourCity.Name]);
+    }
+
+    public void WonderCaptured(City city, Improvement wonder)
+    {
+        _gameScreen.ShowPopup("CAPTUREWONDER", replaceStrings: [city.Name, wonder.Name]);
     }
 
     /// <summary>
@@ -657,6 +770,12 @@ public class LocalPlayer : IPlayer
     public void CityPolluted(City city, Tile square)
     {
         SessionLog.Record($"pollution near {city.Name} at ({square.X}, {square.Y})");
+
+        if (!Reports.WarnWhenPollutionOccurs)
+        {
+            return;
+        }
+
         _gameScreen.SetViewAnchor(square);
         _gameScreen.ShowPopup("POLLUTION", replaceStrings: [city.Name]);
     }

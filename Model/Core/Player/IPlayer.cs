@@ -53,6 +53,37 @@ namespace Model.Core.Player
         void FoodShortage(City city);
 
         /// <summary>
+        /// Another civilisation has laid the first stones of a wonder. Told to
+        /// everybody: Civ II reports the great works of the world whether or not
+        /// you have met the people building them.
+        /// </summary>
+        void WonderBegun(City city, Improvement wonder);
+
+        /// <summary>
+        /// A rival is close to finishing a wonder this civilisation is also
+        /// building. Only the civilisations in that race are told.
+        /// </summary>
+        void WonderNearlyComplete(City city, Improvement wonder);
+
+        /// <summary>
+        /// A wonder has been completed somewhere in the world.
+        /// </summary>
+        void WonderCompleted(City city, Improvement wonder);
+
+        /// <summary>
+        /// A wonder this civilisation was building has been finished by somebody
+        /// else. There is only one of each in the world, so the work in
+        /// <paramref name="ourCity"/> is now for nothing and it must build
+        /// something else; the shields already spent stay in the box.
+        /// </summary>
+        void WonderLost(City ourCity, Improvement wonder, City builtIn);
+
+        /// <summary>
+        /// A wonder has come into this civilisation's hands with a captured city.
+        /// </summary>
+        void WonderCaptured(City city, Improvement wonder);
+
+        /// <summary>
         /// A square inside the city's working radius has been fouled by its
         /// industry. It stays fouled, and keeps costing the city what it used to
         /// produce, until a settler or engineer is sent to clean it.
