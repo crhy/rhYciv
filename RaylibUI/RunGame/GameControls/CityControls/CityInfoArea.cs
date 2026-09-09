@@ -10,6 +10,7 @@ using RaylibUI.BasicTypes.Controls;
 using RaylibUtils;
 using System.Numerics;
 using RhyCiv.Engine.IO;
+using RhyCiv.Engine.UnitActions;
 using Model.Core.Cities;
 using Model.Core.Mapping;
 
@@ -84,9 +85,18 @@ public class CityInfoArea : BaseControl
         for (var i = 0; i < tradeRoutes.Length; i++)
         {
             var route = tradeRoutes[i];
+            if (route.Destination < 0 || route.Destination >= _game.AllCities.Count)
+            {
+                continue;
+            }
+
             var tradeCity = _game.AllCities[route.Destination];
             var box = new Rectangle(demandsProp.Box.X, demandsProp.Box.Y + 15 + 13 * i, demandsProp.Box.Width, demandsProp.Box.Height);
-            _tradeLabels[i] = new CityLabel(controller, new CityLabelProperties($"{tradeCity.Name} {route.Commodity.Name} +xx", 
+            // What the route is actually worth, rather than the "+xx" this line
+            // carried while nothing could create a route to put a number in it.
+            var worth = CaravanActions.RouteValue(_city, tradeCity);
+            _tradeLabels[i] = new CityLabel(controller, new CityLabelProperties(
+                $"{tradeCity.Name} {route.Commodity.Name} +{worth}", 
                 box, demandsProp.Color, demandsProp.ColorShadow, HorizontalAlignment.Left, new Vector2(1, 1)));
             Controls.Add(_tradeLabels[i]);
         }

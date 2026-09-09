@@ -178,6 +178,14 @@ namespace Model.Core.Player
         void CityCaptured(City city);
 
         /// <summary>
+        /// A Caravan has reached a city it can do business with. What it does there
+        /// -- open a trade route, put its cargo into a wonder, or go on to a better
+        /// market -- is the player's choice, so the engine hands it over rather than
+        /// deciding.
+        /// </summary>
+        void CaravanArrived(Unit caravan, City city);
+
+        /// <summary>
         /// A Diplomat has reached somebody else's unit or city and could act on it.
         /// The engine cannot decide what to do -- buying costs gold the player may
         /// want to keep -- so it hands the decision over.

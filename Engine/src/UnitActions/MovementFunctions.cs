@@ -330,6 +330,16 @@ namespace RhyCiv.Engine.UnitActions
                 return false;
             }
 
+            // Nor is a Caravan reaching a foreign market a failed attack. It is the
+            // long journey paying off, and it was being refused for having no
+            // attack strength.
+            if (CaravanActions.IsCaravan(unit) && tileTo.CityHere is { } market &&
+                market.Owner != unit.Owner)
+            {
+                game.Players[unit.Owner.Id].CaravanArrived(unit, market);
+                return false;
+            }
+
             if (unit.AttackBase == 0)
             {
                 game.Players[unit.Owner.Id].MoveBlocked(unit, BlockedReason.ZeroAttackStrength);
@@ -814,6 +824,15 @@ namespace RhyCiv.Engine.UnitActions
                     mapUpdates.Add(tileTo);
                 }
                 
+                if (tileTo.CityHere is { } ownCity && ownCity.Owner.Id == unit.Owner.Id &&
+                    CaravanActions.IsCaravan(unit))
+                {
+                    // A Caravan that has reached a city of its own civilisation can
+                    // put its cargo into a wonder, or open a route to the city it
+                    // set out from. It used to arrive and stand there.
+                    game.Players[unit.Owner.Id].CaravanArrived(unit, ownCity);
+                }
+
                 if(tileTo.CityHere != null && tileTo.CityHere.Owner.Id != unit.Owner.Id)
                 {
                     var loser = tileTo.CityHere.Owner;

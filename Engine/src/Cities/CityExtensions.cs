@@ -47,6 +47,11 @@ namespace RhyCiv.Engine
                 totalTrade += tileTrade;
             });
 
+            // A trade route brings its city trade every turn for as long as it
+            // stands. The routes were drawn on the map and listed in the city window
+            // and earned nothing whatever.
+            totalTrade += UnitActions.CaravanActions.TradeFromRoutes(game, city);
+
             // Factory, Mfg. Plant and the power plants raise shield production by
             // a percentage rather than a flat amount; Hoover Dam grants every city
             // of its owner the Hydro Plant bonus (see WonderFunctions).

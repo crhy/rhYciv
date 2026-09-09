@@ -421,9 +421,10 @@ A new treasure has been added to the seat of power, not merely as decoration but
 
 @ADDTOWONDER
 @title=Caravan Aid to a Wonder
-@width=360
+@width=380
 @button=Ok
-The caravan's cargo can be folded into the vast work on %STRING0. Warehouses empty, crews unload, and the great project leaps forward.
+^%NUMBER0 shields into %STRING0
+The caravan's cargo has been folded into the vast work in %STRING1. Warehouses empty, crews unload, and the great project leaps forward.
 
 @ADMIRECITY
 @title=Foreign Admiration
@@ -751,9 +752,27 @@ With the capture of %STRING0, %STRING1 now stands within your realm. You did not
 
 @CARACONFIRM
 @title=Establish This Trade Route?
+@width=380
+@button=Ok
+@button=Cancel
+^A route between %STRING0 and %STRING1
+^is worth %NUMBER0 trade a turn to each of them,
+^and the goods themselves fetch %NUMBER1 gold.
+Once opened, this route will tie the fortunes of two cities together. Confirm the exchange and let merchants turn distance into wealth.
+
+@TRADEDELIVERED
+@title=The Goods Are Sold
+@width=380
+@button=Ok
+^%NUMBER0 gold to the treasury
+^%NUMBER1 towards the current research
+The caravan from %STRING0 is unloaded in %STRING1. What it carried is sold, and what its drivers learned on the road goes to your scholars.
+
+@NOTRADEHERE
+@title=No Business Here
 @width=360
 @button=Ok
-Once opened, this route will tie the fortunes of two cities together. Confirm the exchange and let merchants turn distance into wealth.
+%STRING0
 
 @CARAVANBUILT
 @title=A Caravan Is Ready
@@ -769,9 +788,11 @@ The caravan has returned to familiar markets. Useful exchange is possible, but t
 
 @CARAVANMENU
 @title=Caravan Orders
-@width=360
-@button=Ok
-The caravan stands ready. Establish trade, help a Wonder, or continue onward in search of a richer destination.
+@width=380
+@button=Establish Trade Route
+@button=Help Build Wonder
+@button=Keep Moving
+The caravan has reached %STRING0. Establish trade, help with the great work, or continue onward in search of a richer destination.
 
 @CARAVANOTHER
 @title=A Foreign Market

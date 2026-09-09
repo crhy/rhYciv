@@ -111,6 +111,10 @@ public class MockPlayer : IPlayer
 
     public void WonderCaptured(City city, Improvement wonder) => WondersCaptured.Add((city, wonder));
 
+    public List<(Unit Caravan, City City)> CaravansArrived { get; } = [];
+
+    public void CaravanArrived(Unit caravan, City city) => CaravansArrived.Add((caravan, city));
+
     public void GlobalWarming(int squaresChanged)
     {
         WarmedSquares += squaresChanged;

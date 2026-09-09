@@ -820,6 +820,27 @@ namespace RhyCiv.Engine
         {
         }
 
+        /// <summary>
+        /// A computer civilisation's caravan has arrived somewhere useful. It puts
+        /// its cargo into a wonder if the city is building one -- that is what
+        /// caravans are for, and it is how the computer players ever finish a great
+        /// work -- and otherwise sells the goods and opens a route.
+        /// </summary>
+        public void CaravanArrived(Unit caravan, City city)
+        {
+            if (CaravanActions.CanHelpBuildWonder(caravan, city))
+            {
+                CaravanActions.HelpBuildWonder(game, caravan, city);
+                return;
+            }
+
+            var home = CaravanActions.HomeCity(caravan);
+            if (home != null && home != city)
+            {
+                CaravanActions.EstablishTradeRoute(game, caravan, city);
+            }
+        }
+
         private UnitAction? TileToAction(Tile tile, Unit unit)
         {
             if (tile == unit.CurrentLocation)

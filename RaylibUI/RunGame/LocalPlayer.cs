@@ -704,6 +704,108 @@ public class LocalPlayer : IPlayer
     }
 
     /// <summary>
+    /// A Caravan has reached a city it can do business with.
+    /// <para>
+    /// The whole apparatus of trade was in place and idle: cities are given
+    /// commodities to supply and demand, the city window has a line for trade
+    /// routes, the map draws them as golden threads, and the save format carries
+    /// them. Nothing could ever create one, and a Caravan reaching somebody else's
+    /// city was refused as a failed attack.
+    /// </para>
+    /// </summary>
+    public void CaravanArrived(Unit caravan, City city)
+    {
+        var home = CaravanActions.HomeCity(caravan);
+        var wonder = CaravanActions.CanHelpBuildWonder(caravan, city)
+            ? CaravanActions.WonderInProgress(city)
+            : null;
+
+        var buttons = new List<string>();
+        if (home != null && home != city)
+        {
+            buttons.Add(TradeRouteButton);
+        }
+
+        if (wonder != null)
+        {
+            buttons.Add(WonderButton);
+        }
+
+        buttons.Add(KeepMovingButton);
+
+        if (buttons.Count == 1)
+        {
+            // Nothing to be done here: its own home city, and no great work under
+            // way. Say so rather than opening a menu with one way out of it.
+            _gameScreen.ShowPopup("NOTRADEHERE",
+                replaceStrings: [$"There is no business for the caravan in {city.Name}."]);
+            return;
+        }
+
+        _gameScreen.ShowPopup("CARAVANMENU", (button, _, _, _) =>
+        {
+            if (button == WonderButton)
+            {
+                HelpBuildWonder(caravan, city);
+            }
+            else if (button == TradeRouteButton)
+            {
+                OfferTradeRoute(caravan, home!, city);
+            }
+        }, replaceStrings: [city.Name], buttons: buttons);
+    }
+
+    private const string TradeRouteButton = "Establish Trade Route";
+    private const string WonderButton = "Help Build Wonder";
+    private const string KeepMovingButton = "Keep Moving";
+
+    private void HelpBuildWonder(Unit caravan, City city)
+    {
+        var wonder = CaravanActions.WonderInProgress(city);
+        var shields = CaravanActions.HelpBuildWonder(_gameScreen.Game, caravan, city);
+        if (shields <= 0 || wonder == null)
+        {
+            return;
+        }
+
+        SessionLog.Record($"caravan added {shields} shields to {wonder.Name} in {city.Name}");
+        _gameScreen.ShowPopup("ADDTOWONDER",
+            replaceStrings: [wonder.Name, city.Name],
+            replaceNumbers: [shields]);
+    }
+
+    /// <summary>
+    /// What the route would be worth, before the caravan is spent on it. Civ II
+    /// asks the same question, and the answer is the whole basis for deciding
+    /// whether to trade here or push on to a richer city.
+    /// </summary>
+    private void OfferTradeRoute(Unit caravan, City home, City destination)
+    {
+        var refusal = CaravanActions.RouteRefusal(home, destination);
+        var value = CaravanActions.RouteValue(home, destination);
+        var bonus = CaravanActions.DeliveryBonus(caravan, home, destination);
+
+        _gameScreen.ShowPopup("CARACONFIRM", (button, _, _, _) =>
+        {
+            if (button != Labels.Ok)
+            {
+                return;
+            }
+
+            var delivery = CaravanActions.EstablishTradeRoute(_gameScreen.Game, caravan, destination);
+            SessionLog.Record($"caravan from {home.Name} traded with {destination.Name} " +
+                              $"for {delivery.Gold} gold");
+
+            _gameScreen.StatusPanel.Update();
+            _gameScreen.ShowPopup("TRADEDELIVERED",
+                replaceStrings: [home.Name, destination.Name],
+                replaceNumbers: [delivery.Gold, delivery.Science]);
+        },
+        replaceStrings: [home.Name, destination.Name],
+        replaceNumbers: [refusal == null ? value : 0, bonus]);
+    }
+
+    /// <summary>
     /// Another civilisation has begun a wonder. Civ II reports the great works of
     /// the world as they are raised, and this is the first of the three notices:
     /// begun, nearly finished, finished.
