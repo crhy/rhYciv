@@ -23,7 +23,16 @@ public class DifficultyHandler : BaseDialogHandler
         var config = Initialization.ConfigObject;
 
         if (config.IsScenario)
+        {
             Dialog.Options.SelectedId = config.DifficultyLevel;
+        }
+        else if (Settings.NewGameChoice(Title) is { } remembered &&
+                 Dialog.Options is { Texts.Count: > 0 } options)
+        {
+            // Whatever was played last time. A scenario says what it wants and is
+            // left alone.
+            options.SelectedId = Math.Clamp(remembered, 0, options.Texts.Count - 1);
+        }
 
         return base.Show(activeInterface);
     }
@@ -41,6 +50,10 @@ public class DifficultyHandler : BaseDialogHandler
         }
 
         config.DifficultyLevel = result.SelectedIndex;
+        if (!config.IsScenario)
+        {
+            Settings.RememberNewGameChoice(Title, result.SelectedIndex);
+        }
 
         return config.IsScenario ?
             civDialogHandlers[SelectGender.Title].Show(civ2Interface) :

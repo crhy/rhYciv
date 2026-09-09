@@ -22,7 +22,15 @@ namespace RhyCiv.Engine
         /// <summary>Pre-defork name of <see cref="DataFolderName"/>.</summary>
         private const string LegacyDataFolderName = "AxxCiv";
 
-        private static string ApplicationDataFolder => Path.Combine(GetLocalAppDataFolder(), DataFolderName);
+        /// <summary>
+        /// Where the player's settings live. Overridable so the tests can exercise
+        /// saving without writing into the player's own configuration; nothing else
+        /// reassigns it.
+        /// </summary>
+        internal static Func<string> DataFolder { get; set; } =
+            () => Path.Combine(GetLocalAppDataFolder(), DataFolderName);
+
+        private static string ApplicationDataFolder => DataFolder();
 
         private static string LegacyApplicationDataFolder =>
             Path.Combine(GetLocalAppDataFolder(), LegacyDataFolderName);
@@ -170,6 +178,19 @@ namespace RhyCiv.Engine
                 }
             }
 
+            if (root.TryGetProperty(nameof(RememberedChoices), out var choicesElement) &&
+                choicesElement.ValueKind == JsonValueKind.Object)
+            {
+                RememberedChoices.Clear();
+                foreach (var choice in choicesElement.EnumerateObject())
+                {
+                    if (choice.Value.TryGetInt32(out var value) && value >= 0)
+                    {
+                        RememberedChoices[choice.Name] = value;
+                    }
+                }
+            }
+
             if (root.TryGetProperty(nameof(SearchPaths), out var searchPathsElement))
             {
                 var searchPaths = BuiltInSearchPaths.Concat(searchPathsElement.EnumerateArray()
@@ -261,13 +282,54 @@ namespace RhyCiv.Engine
         private static bool HasStandaloneData => BuiltInSearchPaths.Any(path =>
             FileUtilities.GetFile(path, RulesFile) != null && FileUtilities.GetFile(path, "game.txt") != null);
 
+        /// <summary>
+        /// The answer given last time each of the new-game questions was asked,
+        /// keyed by the dialog's name.
+        /// <para>
+        /// Starting a game asks a dozen questions and every one of them opened on
+        /// its default, so a player who always wants the same thing -- raging hordes
+        /// every game, say -- had to say so every game. The answers are remembered
+        /// between sessions and the dialogs open on them.
+        /// </para>
+        /// </summary>
+        private static readonly Dictionary<string, int> RememberedChoices = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The remembered answer to a new-game question, if there is one.</summary>
+        public static int? NewGameChoice(string dialogName) =>
+            RememberedChoices.TryGetValue(dialogName, out var choice) ? choice : null;
+
+        /// <summary>
+        /// Records an answer to a new-game question and writes it out. Saving here
+        /// rather than at the end of the flow means a run of questions abandoned
+        /// half way still remembers what was answered before it was.
+        /// </summary>
+        public static void RememberNewGameChoice(string dialogName, int choice)
+        {
+            if (string.IsNullOrWhiteSpace(dialogName) || choice < 0)
+            {
+                return;
+            }
+
+            if (RememberedChoices.TryGetValue(dialogName, out var existing) && existing == choice)
+            {
+                return;
+            }
+
+            RememberedChoices[dialogName] = choice;
+            Save();
+        }
+
         public static void Save()
         {
             if (!Directory.Exists(ApplicationDataFolder))
             {
                 Directory.CreateDirectory(ApplicationDataFolder);
             }
-            using var writer = new Utf8JsonWriter(File.OpenWrite(SettingsFilePath));
+            // File.Create, not File.OpenWrite: OpenWrite does not truncate, so
+            // writing a shorter settings file than the one already there left the
+            // tail of the old one behind and the result would not parse.
+            using var stream = File.Create(SettingsFilePath);
+            using var writer = new Utf8JsonWriter(stream);
             writer.WriteStartObject();
             writer.WriteString(nameof(GameDataPath),GameDataPath);
             writer.WriteStartArray(nameof(SearchPaths));
@@ -280,6 +342,12 @@ namespace RhyCiv.Engine
             writer.WriteNumber(nameof(Brightness), Brightness);
             writer.WriteNumber(nameof(Saturation), Saturation);
             writer.WriteNumber(nameof(Gamma), Gamma);
+            writer.WriteStartObject(nameof(RememberedChoices));
+            foreach (var choice in RememberedChoices)
+            {
+                writer.WriteNumber(choice.Key, choice.Value);
+            }
+            writer.WriteEndObject();
             writer.WriteEndObject();
             writer.Flush();
         }
