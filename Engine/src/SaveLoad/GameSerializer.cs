@@ -212,6 +212,7 @@ public class GameSerializer
             WhoBuiltIt = civilizations[cityData.Builder],
             FoodInStorage = cityData.FoodStorage,
             ShieldsProgress = cityData.SheildsProgress,
+            TechnologyStolen = cityData.TechnologyStolen ?? false,
             NoOfSpecialistsx4 = specialistQuarterCount,
             SpecialistTypes = cityData.SpecialistTypes ?? [],
             Name = cityData.Name,

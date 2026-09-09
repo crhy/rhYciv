@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RhyCiv.Engine.Advances;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.MapObjects;
 using Model.Constants;
 using Model.Core;
+using Model.Core.Advances;
 using Model.Core.Cities;
 using Model.Core.Mapping;
 using Model.Core.Units;
@@ -120,27 +122,78 @@ namespace RhyCiv.Engine.UnitActions
                 return false;
             }
 
+            SpendAgent(game, agent);
+            return true;
+        }
+
+        /// <summary>
+        /// What a job costs the agent that did it: a Diplomat its life, a Spy a
+        /// move. Spending a whole move point rather than the single step the walk in
+        /// would have cost is what stops a Spy working through a line of cities in
+        /// one turn.
+        /// </summary>
+        private static void SpendAgent(IGame game, Unit agent)
+        {
             if (IsSpy(agent))
             {
-                // A move, not the unit. Spending a whole move point rather than the
-                // single step the walk in would have cost is what stops a Spy
-                // reading a line of cities in one turn.
                 agent.MovePointsLost += game.Rules.Cosmic.MovementMultiplier;
                 if (agent.MovePoints < 0)
                 {
                     agent.MovePointsLost = agent.MaxMovePoints;
                 }
-            }
-            else
-            {
-                agent.Dead = true;
-                game.Players[agent.Owner.Id].UnitLost(agent, null);
+
+                return;
             }
 
+            agent.Dead = true;
+            game.Players[agent.Owner.Id].UnitLost(agent, null);
+        }
+
+        /// <summary>
+        /// Advances this city's owner knows and the agent's civilisation does not.
+        /// </summary>
+        public static List<Advance> StealableAdvances(IGame game, Unit agent, City city) =>
+            IsDiplomat(agent) && city.Owner != agent.Owner
+                ? AdvanceFunctions.CalculateResearchTheft(game, agent.Owner, city.Owner)
+                : new List<Advance>();
+
+        /// <summary>Whether this city still has an advance left to be taken from it.</summary>
+        public static bool CanStealFrom(City city) => !city.TechnologyStolen;
+
+        /// <summary>
+        /// Takes an advance out of somebody else's city.
+        /// <para>
+        /// The agent is spent on the same terms as a report: a Diplomat does not
+        /// come home, a Spy does, having used a move. A city can only be robbed
+        /// once, as in Civ II -- otherwise a rival capital is an endless supply of
+        /// technology to anybody willing to keep building Diplomats.
+        /// </para>
+        /// </summary>
+        /// <returns>Whether the advance was taken.</returns>
+        public static bool StealTechnology(IGame game, Unit agent, City city, int advanceIndex)
+        {
+            if (!IsDiplomat(agent) || city.Owner == agent.Owner || !CanStealFrom(city) ||
+                !AdvanceFunctions.HasTech(city.Owner, advanceIndex) ||
+                AdvanceFunctions.HasTech(agent.Owner, advanceIndex))
+            {
+                return false;
+            }
+
+            game.GiveAdvance(advanceIndex, agent.Owner);
+
+            // GiveAdvance ignores an advance the civilisation is barred from, so a
+            // theft that could not land must not cost the agent.
+            if (!AdvanceFunctions.HasTech(agent.Owner, advanceIndex))
+            {
+                return false;
+            }
+
+            city.TechnologyStolen = true;
+            SpendAgent(game, agent);
             return true;
         }
 
-        /// <summary>Whether a city can be bought out from under its owner.</summary>        /// <summary>Whether a city can be bought out from under its owner.</summary>
+        /// <summary>Whether a city can be bought out from under its owner.</summary>
         public static bool CanIncite(City city) =>
             !city.ImprovementExists(Effects.Capital);
 

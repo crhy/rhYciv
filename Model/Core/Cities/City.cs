@@ -87,6 +87,16 @@ namespace Model.Core.Cities
         public int TotalProduction { get; set; }
         public int Production { get; set; }
         public int ShieldsProgress { get; set; }
+
+        /// <summary>
+        /// Whether somebody has already taken an advance out of this city.
+        /// <para>
+        /// Civ II allows one theft per city and no more, however many agents are
+        /// sent afterwards. Without that a rival capital is an endless supply of
+        /// technology to anybody willing to keep building Diplomats.
+        /// </para>
+        /// </summary>
+        public bool TechnologyStolen { get; set; }
         public ProductionQueue ConstructionQueue { get; set; } = new();
 
         

@@ -913,6 +913,11 @@ public class LocalPlayer : IPlayer
         {
             choices.Add(($"Investigate {city.Name}", () => OfferToInvestigate(diplomat, city)));
 
+            if (DiplomatActions.StealableAdvances(_gameScreen.Game, diplomat, city).Count > 0)
+            {
+                choices.Add(($"Steal a secret from {city.Name}", () => OfferToSteal(diplomat, city)));
+            }
+
             // Offered even where it cannot be done, so the refusal can say why:
             // a capital cannot be bought, and that is worth learning once.
             choices.Add(($"Incite a revolt in {city.Name}", () => OfferToIncite(diplomat, city)));
@@ -992,6 +997,59 @@ public class LocalPlayer : IPlayer
                 Investigate(agent, city);
             }
         }, replaceStrings: [city.Name]);
+    }
+
+    /// <summary>
+    /// Taking an advance out of somebody else's city. A city can only be robbed
+    /// once, so the refusal has to be able to say that plainly; a Diplomat is spent
+    /// on it and a Spy is not, as with a report.
+    /// </summary>
+    private void OfferToSteal(Unit agent, City city)
+    {
+        if (!DiplomatActions.CanStealFrom(city))
+        {
+            _gameScreen.ShowPopup("ALREADYSTOLEN", replaceStrings: [city.Name]);
+            return;
+        }
+
+        if (DiplomatActions.IsSpy(agent))
+        {
+            Steal(agent, city);
+            return;
+        }
+
+        _gameScreen.ShowPopup("STEALTECH", handleButtonClick: (button, _, _, _) =>
+        {
+            if (button == Labels.Ok)
+            {
+                Steal(agent, city);
+            }
+        }, replaceStrings: [city.Name]);
+    }
+
+    private void Steal(Unit agent, City city)
+    {
+        var available = DiplomatActions.StealableAdvances(_gameScreen.Game, agent, city);
+        if (available.Count == 0)
+        {
+            return;
+        }
+
+        // Which secret is not the agent's to choose: he takes what he can reach.
+        var taken = _gameScreen.Game.Random.ChooseFrom(available);
+        if (!DiplomatActions.StealTechnology(_gameScreen.Game, agent, city, taken.Index))
+        {
+            return;
+        }
+
+        SessionLog.Record($"stole {taken.Name} from {city.Name}");
+        _gameScreen.ForceRedraw();
+        _gameScreen.ShowPopup("STOLENTECH", replaceStrings: [taken.Name, city.Name]);
+
+        if (!agent.AwaitingOrders)
+        {
+            _gameScreen.Game.ChooseNextUnit();
+        }
     }
 
     private void Investigate(Unit agent, City city)

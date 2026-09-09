@@ -13,7 +13,28 @@ namespace RhyCiv.Engine.Advances
 {
     public static class AdvanceFunctions
     {
-        private static AdvanceResearch[] _researched;
+        private static AdvanceResearch[] _researched = [];
+
+        /// <summary>
+        /// Who discovered what first, one entry per advance in the rules.
+        /// <para>
+        /// This is static and was only ever filled in by <see cref="SetupTech"/>, so
+        /// it kept whatever the last game to start had put there. Starting a second
+        /// game on a ruleset with a different number of advances left it the wrong
+        /// length, and the next advance anybody researched read off the end of it.
+        /// It is resized here instead, which also means an advance can be granted
+        /// before a game has been fully set up.
+        /// </para>
+        /// </summary>
+        private static AdvanceResearch[] Researched(IGame game)
+        {
+            if (_researched.Length != game.Rules.Advances.Length)
+            {
+                _researched = game.Rules.Advances.Select(_ => new AdvanceResearch()).ToArray();
+            }
+
+            return _researched;
+        }
 
         private static int _mapSizeAdjustment;
         
@@ -88,7 +109,7 @@ namespace RhyCiv.Engine.Advances
 
         public static void GiveAdvance(this IGame game, int advanceIndex, Civilization civilization)
         {
-            var research = _researched[advanceIndex];
+            var research = Researched(game)[advanceIndex];
             if (HasTech(civilization, advanceIndex)) return;
             if (GetAdvanceGroupAccess(civilization, game.Rules.Advances[advanceIndex]) == AdvanceGroupAccess.Prohibited) return;
 

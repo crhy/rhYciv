@@ -874,6 +874,25 @@ There is nobody here whose loyalty is for sale. A lone commander in the open can
 @button=Cancel
 Your Diplomat can bring back a full account of %STRING0 -- what it is building, what it has built, and what is standing in it. He will not come back with it.
 
+@STEALTECH
+@title=Steal From %STRING0
+@width=300
+@button=Ok
+@button=Cancel
+Your Diplomat can carry one of their secrets out of %STRING0. He will not carry it far enough to come home.
+
+@STOLENTECH
+@title=%STRING0 Is Ours
+@width=300
+@button=Ok
+Your agent has taken the secret of %STRING0 out of %STRING1. Word of the theft will spread, and nothing further will be learned there.
+
+@ALREADYSTOLEN
+@title=Nothing Left To Take
+@width=300
+@button=Ok
+%STRING0 has been robbed once already and its secrets are guarded now. Another city will have to be found.
+
 @INVESTIGATEREPORT
 @title=Report From %STRING0
 @width=300

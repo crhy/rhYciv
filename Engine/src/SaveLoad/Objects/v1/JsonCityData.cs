@@ -32,6 +32,7 @@ public class JsonCityData
         ProductionOrder = Array.IndexOf(productionOrders, city.ItemInProduction);
         FoodStorage = city.FoodInStorage;
         SheildsProgress = city.ShieldsProgress;
+        TechnologyStolen = city.TechnologyStolen ? true : null;
         NoOfSpecialistsx4 = city.NoOfSpecialistsx4;
         SpecialistTypes = city.SpecialistTypes.Clamp();
         CommoditySupplied = city.CommoditySupplied?.Select(c=>c.Id).ToArray();
@@ -56,6 +57,12 @@ public class JsonCityData
     public int ProductionOrder { get; set; }
     public int FoodStorage { get; set; }
     public int SheildsProgress { get; set; }
+
+    /// <summary>
+    /// Whether an advance has already been taken out of this city. Nullable so a
+    /// save written before technology theft existed loads as never robbed.
+    /// </summary>
+    public bool? TechnologyStolen { get; set; }
     public int NoOfSpecialistsx4 { get; set; }
     public int[]? SpecialistTypes { get; set; }
     

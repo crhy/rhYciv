@@ -14,8 +14,12 @@ internal class MockGame : IGame
     // Seeded so any engine code that reaches for randomness stays deterministic
     // across test runs instead of throwing.
     public FastRandom Random { get; } = new(42);
-    public Civilization GetPlayerCiv => throw new NotImplementedException();
-    public IDictionary<int, TerrainImprovement> TerrainImprovements => throw new NotImplementedException();
+    public Civilization GetPlayerCiv => AllCivilizations.First(c => c.PlayerType == PlayerType.Local);
+
+    // Empty rather than throwing: granting an advance walks these looking for
+    // improvements the advance unlocks, and most tests have none.
+    public IDictionary<int, TerrainImprovement> TerrainImprovements { get; set; } =
+        new Dictionary<int, TerrainImprovement>();
     public IImprovementEncoder ImprovementEncoder { get; }
     public Rules Rules { get; set; }
     public Civilization GetActiveCiv => throw new NotImplementedException();
@@ -25,7 +29,7 @@ internal class MockGame : IGame
     public IScriptEngine Script => throw new NotImplementedException();
     public IList<Map> Maps { get; init; }
 
-    public IHistory History => throw new NotImplementedException();
+    public IHistory History { get; set; } = new Moq.Mock<IHistory>().Object;
     public Dictionary<string, List<string>?> CityNames => throw new NotImplementedException();
     public Dictionary<Civilization, int> CitiesBuiltSoFar { get; }
 
