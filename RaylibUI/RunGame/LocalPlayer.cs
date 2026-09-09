@@ -880,9 +880,15 @@ public class LocalPlayer : IPlayer
         //TODO: Show popup
     }
 
+    /// <summary>
+    /// A city of ours has been taken. Also unimplemented, so losing a city said
+    /// nothing whatever -- it left your flag on the map and the city simply stopped
+    /// being yours. It is the same news as a capture, seen from the other end.
+    /// </summary>
     public void CityLost(City city)
     {
-        //TODO: Show info ? is game over?
+        SessionLog.Record($"lost {city.Name} (size {city.Size})");
+        _gameScreen.ShowPopup("CITYLOST", replaceStrings: [city.Name]);
     }
 
     /// <summary>
@@ -999,8 +1005,21 @@ public class LocalPlayer : IPlayer
            replaceStrings: [city.Name, city.Owner.TribeName]);
     }
 
+    /// <summary>
+    /// A city has changed hands and is now ours.
+    /// <para>
+    /// Nothing was said and nothing was shown: the city simply appeared under your
+    /// flag on the map, and whether you had taken it or it had merely revolted was
+    /// left for you to work out. Civ II names the city and then puts you straight
+    /// into it, because the first thing anybody does with a captured city is decide
+    /// what it builds and whether its buildings survived.
+    /// </para>
+    /// </summary>
     public void CityCaptured(City city)
     {
-       //TODO: Show popup?? what does the game do here? 
+        SessionLog.Record($"captured {city.Name} (size {city.Size})");
+        _gameScreen.ShowPopup("CITYCAPTURE",
+            handleButtonClick: (_, _, _, _) => _gameScreen.ShowCityWindow(city),
+            replaceStrings: [city.Name]);
     }
 }

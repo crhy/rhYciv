@@ -158,7 +158,15 @@ public class ListboxControlGroup : ControlGroup
 
     public override void Draw(bool pulse)
     {
-        //Graphics.DrawRectangleLinesEx(Bounds, 1f, Color.Magenta);
+        // The visibility check belongs here, not only in base.Draw. A row scrolled
+        // out of the top of the list still has bounds, and painting its selection
+        // band before asking whether it is on screen put a grey rectangle out over
+        // the map that slid about as the list was scrolled.
+        if (!Visible)
+        {
+            return;
+        }
+
         if (IsSelected)
         {
             Graphics.DrawRectangleRec(Bounds, _looks.SelectedTextBackgroundColor);

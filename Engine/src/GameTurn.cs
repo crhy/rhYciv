@@ -75,6 +75,13 @@ namespace RhyCiv.Engine
                         {
                             city.GrowCity(game);
                             city.ResetFoodStorage(foodRows);
+
+                            // The size is drawn on the map beside the city's name,
+                            // and the interface only learns a tile has changed when
+                            // it is told. Shrinking says so; growing did not, so a
+                            // city that had grown went on showing its old size until
+                            // something unrelated happened to redraw that square.
+                            game.UpdateTiles([city.Location]);
                         }
                         else
                         {
@@ -156,6 +163,14 @@ namespace RhyCiv.Engine
                         var government = rules.Governments[city.Owner.Government];
                         city.SetUnitSupport(government);
                         city.CalculateOutput(city.Owner.Government, game);
+
+                        // Something has appeared on the square, and building a
+                        // settler has taken a citizen off the city as well, so the
+                        // map's idea of this tile is out of date either way. Without
+                        // this a city that made a settler kept its old size beside
+                        // its name until the next time the square happened to be
+                        // redrawn.
+                        game.UpdateTiles([city.Location]);
 
                         GrantWonderCompletionAdvances(game, city, player);
 

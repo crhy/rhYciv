@@ -429,8 +429,13 @@ namespace RhyCiv.Engine.UnitActions
             var oddsTotal = attackFactor + defenseFactor;
             var probAttackerWins = oddsTotal <= 0 ? 0.5 : (double)attackFactor / oddsTotal;
 
-            // Battle -> Loop through combat rounds until a unit loses its HP
-            var random = new Random();
+            // Battle -> Loop through combat rounds until a unit loses its HP.
+            //
+            // The game's own generator, not a fresh System.Random. Everything else
+            // in the engine draws from the seeded one, so combat was the single part
+            // of a game that could not be replayed from its seed -- which is exactly
+            // the part players report and nobody can reproduce.
+            var random = game.Random;
             var combatRoundsAttackerWins = new List<bool>();  // Register combat outcomes
             var attackerHitpoints = new List<int>();  // Register attacker hitpoints in each round
             var defenderHitpoints = new List<int>();  // Register defender hitpoints in each round

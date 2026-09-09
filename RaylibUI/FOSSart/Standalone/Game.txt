@@ -835,6 +835,12 @@ The gates of %STRING0 are open and its standards have been torn down. Your troop
 @button=Ok
 After smoke, shouting, and shattered gates, %STRING0 wakes beneath a new banner. Its people now wait to learn what your victory will mean.
 
+@CITYLOST
+@title=%STRING0 Is Lost
+@width=360
+@button=Ok
+The defenses of %STRING0 have broken and its gates are held by another power. What was built there is theirs now, and what it was building will not be finished.
+
 @CITYLOSEALLY
 @title=An Ally Loses %STRING0
 @width=360
