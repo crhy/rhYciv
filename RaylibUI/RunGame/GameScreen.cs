@@ -596,6 +596,15 @@ public class GameScreen : BaseScreen
             return true;
         }
 
+        // Nothing to show, and the caller's handler will never run. This is a
+        // packaging fault rather than a game state -- the code asked for a dialog by
+        // a name the game's text does not define -- and it has hidden whole features
+        // more than once: the Diplomat shipped for two releases doing nothing at all
+        // because every dialog it asked for was missing. Say so rather than
+        // returning quietly.
+        SessionLog.Record($"MISSING DIALOG: {dialogName} is not in the game's text");
+        Console.Error.WriteLine(
+            $"rhYciv: dialog '{dialogName}' is not defined in the ruleset's text; nothing was shown.");
         return false;
     }
 

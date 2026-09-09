@@ -42,6 +42,7 @@ public static class CommandIds
     public const string ParadropOrder = "UNIT_ORDER_PARADROP";
     public const string FortifyOrder = "UNIT_ORDER_FORTIFY";
     public const string DisbandOrder = "UNIT_ORDER_DISBAND";
+    public const string SetHomeCityOrder = "UNIT_ORDER_SET_HOME_CITY";
     public const string BuildImprovementOrderBase = "UNIT_ORDER_BUILD_IMPROVEMENT";
     public const string BuildImprovementOrderNormal = BuildImprovementOrderBase + "_NORMAL";
     public const string BuildImprovementOrderForeground = BuildImprovementOrderBase + "_FRONT";

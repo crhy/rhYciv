@@ -10,7 +10,7 @@ using Model.Input;
 namespace RaylibUI.RunGame.Commands.Orders;
 
 [UsedImplicitly]
-public class SetHomeCityOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcut(Key.H), "UNIT_ORDER_SET_HOME_CITY")
+public class SetHomeCityOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcut(Key.H), CommandIds.SetHomeCityOrder)
 {
     public override bool Update()
     {

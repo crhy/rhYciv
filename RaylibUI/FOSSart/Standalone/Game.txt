@@ -855,6 +855,19 @@ The anarchy is over. Your people are waiting to be told how they will be governe
 @button=Cancel
 Your scholars have set out the workings of %STRING0. Adopting it means a revolution, and the anarchy that comes with one. Shall it be done?
 
+@CHANGEPRODUCTION
+@title=Change Production
+@width=300
+@button=Ok
+@button=Cancel
+Switching to a different kind of work will cost %NUMBER0 of the %NUMBER1 shields already gathered. Change anyway?
+
+@FAILEDTOLOADGAME
+@title=Could Not Load %STRING0
+@width=300
+@button=Ok
+That saved game could not be read: %STRING1. It may have been written by an older version, or the file may be damaged.
+
 @BRIBEUNIT
 @title=Bribery
 @width=300
