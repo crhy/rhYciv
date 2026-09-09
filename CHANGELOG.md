@@ -53,6 +53,36 @@ The interface, from a full pass over the 0.1.5 report (#115).
   overlapping when there are too many to fit, rather than collapsing to a single
   row.
 
+### Government
+
+- **A civilisation can change how it is governed** (#85). REVOLUTION has been in the
+  Kingdom menu since the menus were written with nothing behind it, so it was drawn
+  and clicking it did nothing: a civilisation was handed Despotism at the start and
+  stayed under it for the whole game however far it researched. A revolution now
+  costs two turns of Anarchy, after which its people ask what they are to become.
+  Researching an advance that opens a government offers the revolution there and
+  then, which is what was actually reported. Adopting one brings every city's
+  rates, unit support, corruption and waste into line with it and trims a rate the
+  new government does not allow. Computer civilisations revolt too.
+
+### Diplomats and Spies
+
+- **None of the Diplomat's work was reaching the player.** Every dialog it asks for
+  by name — DIPLOMATACTION, BRIBEUNIT, INCITEREVOLT, NODIPLOMATGOLD, CANNOTBRIBE,
+  CANNOTINCITE — was missing from the game's text, so the popup was looked up, not
+  found, and nothing shown. Bribing a unit and inciting a city shipped in 0.1.4 and
+  have never once appeared on screen (#92).
+- **Investigate City** (#20). An agent walked into somebody else's city brings back
+  a full account of it: what it is building, what it has built, and what is standing
+  in it. The city window opens in a view-only mode where Buy, Change and Rename are
+  absent rather than present and inert, the citizens cannot be moved and the
+  garrison cannot be ordered.
+- **Steal Technology** (#20). An advance its owner knows and you do not, chosen at
+  random. A city can only be robbed once, however many agents follow; it is
+  remembered in saved games.
+- Throughout: **a Diplomat does not come home from any of it, a Spy does**, having
+  spent a move. That difference is the whole argument for researching the Spy.
+
 ### Rules
 
 - **A starving city disbands a settler it supports before it loses a citizen**, as
@@ -66,9 +96,21 @@ The interface, from a full pass over the 0.1.5 report (#115).
 
 ### Drawing
 
+- **City names and population numbers on the map are readable** (#38). They were
+  22px and 18px on a floor of 16, which is small at 1080p; they are 28 and 23 on a
+  floor of 20.
 - **A list row scrolled out of view no longer paints its selection band over the
   map.** Rows painted it before the base draw, and the base draw is where the
   visibility check lives.
+- **Left and right step between cities alphabetically** rather than in the order
+  they were founded (#87).
+
+### Fixed on the way
+
+- The table recording who discovered each advance first is static and was only ever
+  filled in when a game started, so it kept whatever the last game had put there.
+  Starting a second game on a ruleset with a different number of advances left it
+  the wrong length and the next advance anybody researched read off the end of it.
 
 ## [0.1.5] — 2026-09-09
 

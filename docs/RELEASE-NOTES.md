@@ -1,19 +1,18 @@
-**The game answers the keyboard and the mouse again.**
+**The interface, and a government you can change.**
 
-The main thing reported against 0.1.4 in issue #114 was that the interface felt
-unresponsive: Enter had to be pressed several times before a turn would end, and
-selecting a unit or clicking a city often did nothing. There were two separate
-causes, and both are fixed. Everything else here was found while measuring them.
+Everything here came out of the 0.1.5 report in issue #115, or was found while
+working through it. Two of them turned out to be features that had shipped and
+never once run.
 
 ## Install
 
 | Platform | Download |
 |---|---|
-| **Windows** (x64) | `rhYciv-0.1.5-win-x64.zip` — unzip, run `RaylibUI.exe` |
-| **macOS** (Apple silicon) | `rhYciv-0.1.5-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
-| **macOS** (Intel) | `rhYciv-0.1.5-osx-x64.zip` — same |
-| **Linux** (x64) | `rhYciv-0.1.5-linux-x64.tar.gz` — extract, run `./RaylibUI` |
-| **Linux** (Flatpak) | `rhYciv-0.1.5-x86_64.flatpak` |
+| **Windows** (x64) | `rhYciv-0.1.6-win-x64.zip` — unzip, run `RaylibUI.exe` |
+| **macOS** (Apple silicon) | `rhYciv-0.1.6-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
+| **macOS** (Intel) | `rhYciv-0.1.6-osx-x64.zip` — same |
+| **Linux** (x64) | `rhYciv-0.1.6-linux-x64.tar.gz` — extract, run `./RaylibUI` |
+| **Linux** (Flatpak) | `rhYciv-0.1.6-x86_64.flatpak` |
 
 Nothing else is needed. No commercial Civilization II installation, no runtime to install — each download carries its own .NET runtime and the complete art set.
 
@@ -32,43 +31,61 @@ xattr -dr com.apple.quarantine /Applications/rhYciv.app
 **Linux Flatpak**:
 
 ```
-flatpak install --user ./rhYciv-0.1.5-x86_64.flatpak
+flatpak install --user ./rhYciv-0.1.6-x86_64.flatpak
 flatpak run io.github.crhy.rhYciv
 ```
 
-## Pressing Enter over and over
+## You can change how you are governed
 
-**One press of End Turn plays one turn, not one civilisation.**
+REVOLUTION has been in the Kingdom menu since the menus were written with **nothing behind it** — drawn, and doing nothing when clicked. A civilisation was handed Despotism when the game began and stayed under it for the rest of the game however far it researched: Monarchy, The Republic, Communism and Democracy could all be discovered and none of them could be adopted, which takes the whole middle of Civ II off the board.
 
-Starting a civilisation's turn handed control back and waited. That is right for you and wrong for everybody else: a computer civilisation is not interactive, so nothing ever came back to ask it for its next unit. Each rival moved a single unit and then stopped, holding the turn. One press of End Turn advanced the world by one civilisation rather than one turn — so with eight rivals on the board you had to press Enter eight times, into a game that appeared to be ignoring you, before you could move again.
+A revolution now costs two turns of Anarchy, and when those run out your people ask what they are to become. Researching an advance that opens a government offers the revolution there and then rather than leaving you to notice. Adopting one brings every city's rates, unit support, corruption and waste into line with it, and trims a rate the new government does not allow rather than letting an illegal one quietly stay in force. Computer civilisations revolt too — one left under Despotism all game is not playing the same game as you.
 
-Two things followed from the same fault, and are fixed with it. Rival civilisations only ever moved their **first** unit, all game; they now move their whole armies. And none of their end-of-turn orders ever ran, so a computer unit told to fortify never became fortified and their settlers never finished a road or an irrigation ditch they had started.
+## Diplomats and Spies do something at last
 
-**A keypress is no longer lost because a frame ran long.**
+The Diplomat work that shipped in 0.1.4 **had never once run**. Every dialog it asks for by name was missing from the game's text, so the popup was looked up, not found, and nothing was shown: walking a Diplomat onto a lone enemy unit or an enemy city put up no offer whatever, and the unit stood there having achieved exactly what it achieved before the feature was written.
 
-Keys were read by asking about every key on the keyboard once a frame. A key pressed and let go between two frames is already back up by the time it is asked about, so on any frame that ran long the press simply never happened. That is the other half of having to press Enter several times, and it is why a quick click sometimes did nothing. Keys now come from the window's own queue of what was actually pressed, which cannot lose one however briefly it was held.
+With that fixed, bribing a unit and inciting a city work. Two more are new:
 
-## Speed
+**Investigate City** brings back a full account of somebody else's city — what it is building, what it has built, and, the reason anybody does this before an attack, what is standing in it. The city opens in a view-only window: Buy, Change and Rename are not there at all rather than present and inert, its citizens cannot be moved about, and its garrison cannot be given orders.
 
-**Redrawing the map is about ten times faster.** A screenful of map is a thousand tiles or more, and the whole picture is composed again whenever the view moves or anything on it changes. Every tile was handed to raylib's general-purpose image drawing, which resamples the tile to the size it is drawn at and then throws the answer away — once per tile, every redraw. Measured on a revealed map: seventeen to forty milliseconds before, two to three now.
+**Steal Technology** carries out one of its owner's secrets — an advance they know and you do not. **A city can only be robbed once**, however many agents follow; otherwise a rival capital is an endless supply of technology to anybody willing to keep building Diplomats.
 
-That mattered for more than smoothness. A hundred-millisecond frame is long enough to swallow the click that follows it, which is why clicking a city sometimes had to be done twice.
+Throughout, the Civ II cost: **a Diplomat does not come home from any of it, and a Spy does**, having spent a move. That difference is the whole argument for researching the Spy.
 
-**A redraw happens when it is asked for.** The static view of the map ticks once every two seconds, and a requested redraw waited for that tick — so ground coming into view, a city founded, a unit lost, or the grid being switched on could sit unseen for two seconds. A move being played out is still allowed to finish.
+## Dialogs
 
-**The side panel keeps answering the mouse.** Almost everything in it is built again whenever the active unit changes, and the screen went on delivering the mouse to the controls that had just been replaced, so clicks in the panel did nothing until the pointer was moved away and back.
+**Every message is narrower and taller.** They were set to 62% of the window, about a hundred and forty characters to a line at 1080p, which is hard to read and left each message as one long band across the middle of the screen. They are set to roughly the measure a book is set to now and grow downwards into a paragraph. A dialog is also never narrower than a line it is not allowed to break, so a long web address no longer runs out through the side of the frame.
 
-**A rival's turn cannot queue up minutes of watching.** Every move you can see is composed into a short animation the moment it happens. Now that rivals play a whole turn at once, a turn spent in sight of a dozen units would have built and then played a dozen of them; past a limit the move is drawn rather than animated.
+**Messages wait their turn.** They were released the moment the one before closed, without looking at what that message had opened — so answering "zoom to city" on a disorder report put the city window up and the next report straight on top of it, covering the city you had just asked to look at. A queued message is now released only when nothing is in the way: no window open, nothing still being played out on the map. A dialog you asked for yourself is not held back.
 
-## Research
+Links to the site, Discord and Telegram are in the About dialog.
 
-**Choose Your Research has a Goal button.** Name an advance to work towards — anything you do not already have, however far off — and the chooser will list only the research that leads there: the goal's outstanding prerequisites, and the goal itself once everything it needs is known. When nothing you can begin now brings the goal any nearer, it says so plainly rather than showing you an empty list. The goal is kept in saved games and retires itself when you reach it.
+## Lists
 
-**The chooser no longer asks the same question twice.** The guard against a second chooser stacking behind the first was being cancelled every turn by the backstop meant to protect it: the engine asks for research from the start of the turn's bookkeeping, which runs before you are told the turn has begun, so the flag was cleared on the same turn it was set. It now lasts until the question has actually been answered.
+**The Go To dialog can be left.** It offers Ok and Cancel, and anything that was not Ok was taken as a request to swap between your own cities and everybody's — so Cancel reopened the dialog with the other list instead of closing it, and the only way out was to send the unit somewhere. The toggle has a button of its own now.
 
-## For bug reports
+**Find City finds the city.** Its Ok was an empty branch with the one line that would have done the work commented out, so the command did nothing at all.
 
-`RHYCIV_FRAME_LOG=<seconds>` makes the game report how many frames it is drawing and how long the worst one took. A game that stops answering the keyboard is nearly always a game whose frames have grown long enough to swallow a keypress, and that is very hard to judge by eye.
+**Typing a letter jumps to the next entry under it**, at any list in the game — press R again for the next city under R. Row text is larger, and the research chooser's buttons read Goal, Info, Ok.
+
+## The city
+
+**Every square on the resource map can be clicked.** The click worked out which square you meant from scratch — its own division of the position, its own corrections for the diagonal edges of a diamond, and an adjustment its author left a comment saying he did not understand — while drawing the same map used none of that. Squares the two disagreed about could not be selected at all.
+
+**Taking a city names it and opens it**, and losing one says so; both were empty methods. **The size beside a city's name keeps up with what it builds** — building a settler takes a citizen and nothing told the map. **An expensive item's shields fill the production box** in rows, closing up and overlapping when there are too many to fit, rather than collapsing to a single row.
+
+## Rules
+
+**A starving city disbands a settler it supports before it loses a citizen**, as Civ II does. The rest of the food box was checked against the original and matches.
+
+**A sleeping unit wakes when something hostile steps alongside it.** It used to sleep through anything, so a stack left to hold a pass could be walked round, or attacked, without ever being offered to you. Fortified units are deliberately left alone.
+
+**Combat draws from the game's seeded generator**, so a battle can be replayed from a saved game. It used its own random source, which made it the one part of a game that could not be reproduced from a report.
+
+## Also
+
+City names and population numbers on the map are readable — 28px and 23px rather than 22 and 18. Left and right step between cities alphabetically. A list row scrolled out of view no longer paints its selection band out over the map.
 
 ## Known limitations
 
