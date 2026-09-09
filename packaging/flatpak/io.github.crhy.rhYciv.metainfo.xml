@@ -34,6 +34,15 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.1.6" date="2026-09-09">
+      <description>
+        <p>The interface, from a full pass over the 0.1.5 report.</p>
+        <p>Every message the game shows is narrower and taller — they were set to nearly two thirds of the screen, about a hundred and forty characters to a line, and are now set to roughly the measure of a book. Messages also wait their turn: one comes up at a time, nothing arrives over the top of a battle still being played out, and zooming to a city on a disorder report no longer gets the next report dropped on top of the city window.</p>
+        <p>The Go To dialog can be left again — Cancel was being read as the show-all-cities toggle and reopened the dialog instead of closing it. Find City now takes the map to the city; its Ok did nothing at all. Typing a letter at any list jumps to the next entry under it, and city names in lists are bigger.</p>
+        <p>Squares on a city's resource map can all be clicked: the click worked out which square you meant with completely different arithmetic from the one that drew it, and squares they disagreed about could not be selected. Taking a city names it and opens it, losing one says so, a city's size beside its name keeps up with what it builds, and a sleeping unit wakes when something hostile steps alongside. An expensive item's production shields fill the box in rows rather than collapsing to a single line.</p>
+        <p>Combat draws from the game's own seeded generator now, so a battle can be replayed from a saved game's seed. A starving city disbands a settler it supports before it loses a citizen, as Civ II does.</p>
+      </description>
+    </release>
     <release version="0.1.5" date="2026-09-09">
       <description>
         <p>The game answers the keyboard and the mouse again.</p>

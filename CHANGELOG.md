@@ -5,6 +5,71 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [0.1.6] — 2026-09-09
+
+The interface, from a full pass over the 0.1.5 report (#115).
+
+### Dialogs
+
+- **Every message is narrower and taller.** They were set to 62% of the window,
+  about a hundred and forty characters to a line at 1080p, which is hard to read
+  and left each message as one long band across the middle of the screen. They are
+  now set to roughly the measure a book is set to and grow downwards into a
+  paragraph. A dialog is also never narrower than a line it is not allowed to
+  break, so a long web address no longer runs out through the side of the frame.
+- **Messages wait their turn.** They were released the moment the one before
+  closed, without looking at what that message had opened: answering "zoom to
+  city" on a disorder report put the city window up and the next report straight on
+  top of it. A queued message is now released only when nothing is in the way — no
+  window open, nothing still being played out on the map. A dialog the player asked
+  for themselves is not held back.
+- **Links to the site, Discord and Telegram are in the About dialog** (#107).
+
+### Lists
+
+- **The Go To dialog can be left.** It offers Ok and Cancel, and anything that was
+  not Ok was taken as a request to swap between your own cities and everybody's, so
+  Cancel reopened the dialog with the other list instead of closing it. The toggle
+  has a button of its own now.
+- **Find City finds the city.** Its Ok was an empty branch with the one line that
+  would have done the work commented out, so the command did nothing at all.
+- **Typing a letter jumps to the next entry under it**, at any list in the game.
+  Press it again for the next one. Row text is larger (#97).
+- **The research chooser reads Goal, Info, Ok.**
+
+### The city
+
+- **Every square on the resource map can be clicked.** The click worked out which
+  square was meant from scratch — its own division, its own corrections for the
+  diagonal edges of a diamond, and an adjustment its author recorded as not
+  understanding — while drawing the same map used none of it. Squares the two
+  disagreed about could not be selected at all.
+- **Taking a city names it and opens it**, and losing one says so. Both were empty
+  methods that did nothing.
+- **The size beside a city's name keeps up with what it builds.** Building a settler
+  takes a citizen, and nothing told the map, so the old number stayed until
+  something unrelated redrew the square.
+- **An expensive item's shields fill the production box** in rows, closing up and
+  overlapping when there are too many to fit, rather than collapsing to a single
+  row.
+
+### Rules
+
+- **A starving city disbands a settler it supports before it loses a citizen**, as
+  Civ II does. The rest of the food box was checked against the original and
+  matches; it is pinned with tests now.
+- **A sleeping unit wakes when something hostile steps alongside it.** It used to
+  sleep through anything. Fortified units are deliberately left alone.
+- **Combat draws from the game's seeded generator**, so a battle can be replayed
+  from a save. It used its own `System.Random`, which made it the one part of a
+  game that could not be reproduced from a report.
+
+### Drawing
+
+- **A list row scrolled out of view no longer paints its selection band over the
+  map.** Rows painted it before the base draw, and the base draw is where the
+  visibility check lives.
+
 ## [0.1.5] — 2026-09-09
 
 Responsiveness: the turn comes back to the player, and the map keeps up.
