@@ -42,6 +42,10 @@ namespace RhyCiv.Engine
                 Power.CalculatePowerRatings(this);
             }
 
+            // Once a year, on the world's behalf rather than any civilisation's:
+            // what has been left on the map belongs to everybody by now.
+            PollutionFunctions.ResolveGlobalWarming(this);
+
             _activeCivId = -1;
         }
 

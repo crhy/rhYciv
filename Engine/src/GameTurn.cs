@@ -203,6 +203,8 @@ namespace RhyCiv.Engine
                 }
             }
 
+            PollutionFunctions.ResolveCityPollution(game, activeCiv, player);
+
             ResolveResearch(game, player);
         }
 

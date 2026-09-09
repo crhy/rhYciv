@@ -341,6 +341,8 @@ public class CompatAlternateInterface(IMain main) : ClassicInterface(main)
                     Key.P, commandId: GraphicOptions),
                 new("&City Report Options|Ctrl+E", new Shortcut(Key.E, ctrl: true),
                     Key.C, commandId: CityReportOptions),
+                new("Ad&vanced Settings|Ctrl+A", new Shortcut(Key.A, ctrl: true),
+                    Key.V, commandId: AdvancedSettings),
                 new("M&ultiplayer Options|Ctrl+Y", new Shortcut(Key.Y, ctrl: true),
                     Key.U, omitIfNoCommand: true),
                 new("-", Shortcut.None, Key.None),

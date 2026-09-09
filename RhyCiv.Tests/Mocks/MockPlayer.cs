@@ -86,6 +86,20 @@ public class MockPlayer : IPlayer
     {
     }
 
+    public List<Tile> PollutedSquares { get; } = [];
+
+    public int WarmedSquares { get; private set; }
+
+    public void CityPolluted(City city, Tile square)
+    {
+        PollutedSquares.Add(square);
+    }
+
+    public void GlobalWarming(int squaresChanged)
+    {
+        WarmedSquares += squaresChanged;
+    }
+
     public void CivilizationDestroyed()
     {
     }

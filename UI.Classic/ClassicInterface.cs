@@ -225,8 +225,16 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
             // A rule under the last entry has nothing beneath it to separate.
             separatorRows.Remove(entries.Count);
 
+            // A menu whose every entry turned out to be unimplemented is not put on
+            // the bar: an empty dropdown is worse than no dropdown.
+            if (entries.Count == 0)
+            {
+                continue;
+            }
+
             var menuContent = new DropdownMenuContents
             {
+                Key = menu.Key,
                 Commands = entries,
                 SeparatorRows = separatorRows.ToArray(),
                 Title = loaded.Count > 0 ? loaded[0].MenuText : menu.Defaults[0].MenuText,

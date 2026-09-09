@@ -38,7 +38,8 @@ public class GameScreen : BaseScreen
     private readonly MapControl _mapControl;
     private readonly StatusPanel _statusPanel;
     private readonly LocalPlayer _player;
-    private readonly GameMenu _menu;
+    private GameMenu _menu;
+    private readonly IList<IGameCommand> _commands;
     private bool _ToTPanelLayout, _minimapGlobe, _showGrid;
 
     public IGameMode ActiveMode
@@ -171,8 +172,8 @@ public class GameScreen : BaseScreen
         _ToTPanelLayout = false;
 
         var commands = SetupCommands(game);
-        var menuElements = main.ActiveInterface.ConfigureGameCommands(commands);
-        _menu = new GameMenu(this, menuElements);
+        _commands = commands;
+        _menu = new GameMenu(this, BuildMenus());
         _menu.GetPreferredWidth();
 
         if (Game.GetActiveCiv == Game.GetPlayerCiv)
@@ -490,6 +491,45 @@ public class GameScreen : BaseScreen
     public void ForceRedraw()
     {
         _mapControl.ForceRedraw = true;
+    }
+
+    /// <summary>
+    /// The menus for the bar, less the ones the player has not asked for. The cheat
+    /// and editor menus are development tools and are off unless they have been
+    /// turned on in the advanced settings.
+    /// </summary>
+    private IList<DropdownMenuContents> BuildMenus()
+    {
+        return Main.ActiveInterface.ConfigureGameCommands(_commands)
+            .Where(menu => menu.Key switch
+            {
+                "CHEAT" => Settings.CheatMenuEnabled,
+                "EDITOR" or "MAP" => Settings.EditorMenuEnabled,
+                _ => true
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Puts the menu bar back together, for when a setting has changed which menus
+    /// belong on it. The commands themselves are the ones already in play, so
+    /// anything holding one -- a keyboard shortcut, a unit's order -- keeps working
+    /// across the rebuild.
+    /// </summary>
+    public void RebuildMenus()
+    {
+        var replacement = new GameMenu(this, BuildMenus());
+        replacement.GetPreferredWidth();
+
+        var position = Controls.IndexOf(_menu);
+        if (position < 0)
+        {
+            return;
+        }
+
+        Controls[position] = replacement;
+        _menu = replacement;
+        Resize(Width, Height);
     }
 
     private IList<IGameCommand> SetupCommands(IGame game)

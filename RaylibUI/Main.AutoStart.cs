@@ -310,6 +310,14 @@ namespace RaylibUI
                 }
 
                 Console.WriteLine($"test-city:   units {civ.Units.Count(u => !u.Dead)}");
+
+                // What the world looks like, not just this civilisation: whether
+                // anybody is improving their land, and how much pollution is
+                // building up, are only visible from here.
+                var squares = game.Maps.SelectMany(m => m.Tile.Cast<Model.Core.Mapping.Tile>())
+                    .Where(t => t != null).ToList();
+                Console.WriteLine($"test-city:   world: {squares.Count(t => t.Improvements.Count > 0)} improved, " +
+                                  $"{RhyCiv.Engine.PollutionFunctions.PollutedSquares(game).Count} polluted");
             }
         }
 

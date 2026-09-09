@@ -53,6 +53,20 @@ namespace Model.Core.Player
         void FoodShortage(City city);
 
         /// <summary>
+        /// A square inside the city's working radius has been fouled by its
+        /// industry. It stays fouled, and keeps costing the city what it used to
+        /// produce, until a settler or engineer is sent to clean it.
+        /// </summary>
+        void CityPolluted(City city, Tile square);
+
+        /// <summary>
+        /// Enough pollution has been left on the map for the climate to shift, and
+        /// terrain has changed as a result. Every civilisation is told, whether or
+        /// not the smoke was theirs.
+        /// </summary>
+        void GlobalWarming(int squaresChanged);
+
+        /// <summary>
         /// The city has a full food box but cannot grow without an Aqueduct or
         /// Sewer System.
         /// </summary>
@@ -126,7 +140,8 @@ namespace Model.Core.Player
         /// <summary>
         /// Notifies the player that they have captured a city.
         ///  Ownership will already have been transferred.
-        ///   Called after CityLost and SelectTechFromConquest
+        ///   Called after CityLost and before SelectTechFromConquest, so that the
+        ///   capture is announced before whatever was taken along with it.
         /// </summary>
         /// <param name="city">The city that has been captured.</param>
         void CityCaptured(City city);

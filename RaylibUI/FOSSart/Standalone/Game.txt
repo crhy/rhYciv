@@ -342,6 +342,16 @@ Instant advice
 Tutorial help
 Move units with the keyboard
 Enter closest city screen
+@ADVANCEDSETTINGS
+@title=Advanced Settings
+@width=380
+@checkbox
+@button=Ok
+@button=Cancel
+@options
+Global warming
+Cheat menu
+Editor menu
 @MESSAGEOPTIONS
 @title=City Report Options
 @width=380

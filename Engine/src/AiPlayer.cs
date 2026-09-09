@@ -9,6 +9,7 @@ using RhyCiv.Engine.Production;
 using RhyCiv.Engine.Scripting;
 using RhyCiv.Engine.Scripting.ScriptObjects;
 using RhyCiv.Engine.Scripting.UnitActions;
+using RhyCiv.Engine.Terrains;
 using RhyCiv.Engine.UnitActions;
 using RhyCiv.Engine.Units;
 using Model.Constants;
@@ -266,6 +267,14 @@ namespace RhyCiv.Engine
         {
         }
 
+        public void CityPolluted(City city, Tile square)
+        {
+        }
+
+        public void GlobalWarming(int squaresChanged)
+        {
+        }
+
         public void CivilizationDestroyed()
         {
         }
@@ -396,8 +405,39 @@ namespace RhyCiv.Engine
             return attackTile == null ? null : TileToAction(attackTile, unit);
         }
 
+        /// <summary>
+        /// How many cities a civilisation founds before its settlers stop looking
+        /// for more land and start working the land it has. Civ II's computer
+        /// players expand first and improve afterwards; below this they are still
+        /// expanding.
+        /// </summary>
+        private const int CitiesBeforeWorkingTheLand = 4;
+
         private UnitAction? SettlerAction(Unit unit, Tile currentTile)
         {
+            // Pollution is cleaned wherever it is found, however early it is: it
+            // halves what the square yields and it is what warms the world.
+            var cleanUp = ImprovementWorkHere(unit, currentTile, cleanOnly: true);
+            if (cleanUp != null)
+            {
+                return cleanUp;
+            }
+
+            if (unit.Owner.Cities.Count >= CitiesBeforeWorkingTheLand)
+            {
+                var work = ImprovementWorkHere(unit, currentTile, cleanOnly: false);
+                if (work != null)
+                {
+                    return work;
+                }
+
+                var towardWork = MoveTowardWork(unit, currentTile);
+                if (towardWork != null)
+                {
+                    return towardWork;
+                }
+            }
+
             if (CanFoundUsefulCity(unit, currentTile) && ShouldFoundCityNow(unit, currentTile))
             {
                 return new BuildCityAction(unit, game);
@@ -420,6 +460,98 @@ namespace RhyCiv.Engine
             }
 
             return ExploreAction(unit, currentTile, avoidEnemies: true);
+        }
+
+        /// <summary>
+        /// Sets the unit to work on the square it stands on, if there is anything
+        /// there worth doing. Pollution first, then whatever the terrain will take.
+        /// </summary>
+        private UnitAction? ImprovementWorkHere(Unit unit, Tile tile, bool cleanOnly)
+        {
+            if (tile.CityHere != null || unit.Building != 0)
+            {
+                return null;
+            }
+
+            var improvement = WorkFor(unit, tile, cleanOnly);
+            return improvement == null ? null : new BuildImprovementAction(unit, improvement, game);
+        }
+
+        /// <summary>
+        /// What a worker would do to this square, or nothing if it is finished.
+        /// <para>
+        /// The order is Civ II's own sense of priorities: clear the pollution, then
+        /// irrigate, mine and road. An improvement in an exclusive group that the
+        /// square already carries something from is skipped -- mining a square that
+        /// is already irrigated replaces the irrigation, and a worker that did that
+        /// would spend the rest of the game undoing itself.
+        /// </para>
+        /// </summary>
+        private TerrainImprovement? WorkFor(Unit unit, Tile tile, bool cleanOnly)
+        {
+            int[] wanted = cleanOnly
+                ? [ImprovementTypes.Pollution]
+                : [ImprovementTypes.Pollution, ImprovementTypes.Irrigation, ImprovementTypes.Mining,
+                   ImprovementTypes.Road];
+
+            foreach (var id in wanted)
+            {
+                if (!game.TerrainImprovements.TryGetValue(id, out var improvement))
+                {
+                    continue;
+                }
+
+                if (!improvement.Negative && improvement.ExclusiveGroup > 0 &&
+                    tile.Improvements.Any(existing => existing.Group == improvement.ExclusiveGroup &&
+                                                      existing.Improvement != improvement.Id))
+                {
+                    continue;
+                }
+
+                if (TerrainImprovementFunctions.CanImprovementBeBuiltHere(tile, improvement, unit.Owner).Enabled)
+                {
+                    return improvement;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// A step towards the nearest square of the civilisation's own land that
+        /// wants work. Without this a worker only ever improves squares it happens
+        /// to be standing on, which for a wandering settler is next to none of them.
+        /// </summary>
+        private UnitAction? MoveTowardWork(Unit unit, Tile currentTile)
+        {
+            var target = unit.Owner.Cities
+                .Where(city => city.Location != null)
+                .SelectMany(city => city.Location.CityRadius())
+                .Where(tile => tile != null && tile != currentTile && tile.CityHere == null &&
+                               tile.Type != TerrainType.Ocean && !tile.Terrain.Impassable &&
+                               IsSafeForNonCombatUnit(unit, tile) &&
+                               !tile.UnitsHere.Any(other => other.Owner == unit.Owner && other.Building != 0) &&
+                               WorkFor(unit, tile, cleanOnly: false) != null)
+                .OrderBy(tile => Utilities.DistanceTo(currentTile, tile))
+                .FirstOrDefault();
+
+            if (target == null)
+            {
+                return null;
+            }
+
+            var step = MovementFunctions.GetPossibleMoves(currentTile, unit)
+                .Where(tile => IsSafeForNonCombatUnit(unit, tile))
+                .Where(tile => tile.Type != TerrainType.Ocean && !tile.Terrain.Impassable)
+                .OrderBy(tile => Utilities.DistanceTo(tile, target))
+                .FirstOrDefault();
+
+            if (step == null || Utilities.DistanceTo(step, target) >= Utilities.DistanceTo(currentTile, target))
+            {
+                return null;
+            }
+
+            return new MoveAction(unit, step, game);
         }
 
         private bool ShouldFoundCityNow(Unit unit, Tile tile)

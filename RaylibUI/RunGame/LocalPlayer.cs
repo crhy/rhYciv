@@ -645,6 +645,33 @@ public class LocalPlayer : IPlayer
         _gameScreen.ShowCityDialog("FURTHERGROWTH", city);
     }
 
+    /// <summary>
+    /// Industry has fouled a square the city works.
+    /// <para>
+    /// Told once per square rather than once per turn: pollution appears one square
+    /// at a time and each one is a settler's worth of work to undo, so each is worth
+    /// hearing about. The view is brought to the square so the player can see which
+    /// one it is.
+    /// </para>
+    /// </summary>
+    public void CityPolluted(City city, Tile square)
+    {
+        SessionLog.Record($"pollution near {city.Name} at ({square.X}, {square.Y})");
+        _gameScreen.SetViewAnchor(square);
+        _gameScreen.ShowPopup("POLLUTION", replaceStrings: [city.Name]);
+    }
+
+    /// <summary>
+    /// The climate has shifted. There is nothing to be done about it now -- the
+    /// terrain has already changed -- so this is a warning to clean up what is left.
+    /// </summary>
+    public void GlobalWarming(int squaresChanged)
+    {
+        SessionLog.Record($"global warming changed {squaresChanged} squares");
+        _gameScreen.ShowPopup("GLOBALWARMING");
+        _gameScreen.ForceRedraw();
+    }
+
     public void CivilizationDestroyed()
     {
         _gameScreen.ShowPopup("CIVDESTROYED");

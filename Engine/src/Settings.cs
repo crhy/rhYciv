@@ -116,6 +116,44 @@ namespace RhyCiv.Engine
         public static float Saturation { get; private set; } = 1f;
         public static float Gamma { get; private set; } = 1f;
 
+        /// <summary>
+        /// Settings that change the game rather than the way it looks, and that are
+        /// off until somebody asks for them.
+        /// <para>
+        /// Global warming is a rule the player opts into: pollution accumulating
+        /// into a changed climate is faithful to Civ II but it is not something to
+        /// have happen to somebody who did not ask for it. The cheat and editor
+        /// menus are development tools, and a menu bar with them on it is not the
+        /// one the game is meant to be played with.
+        /// </para>
+        /// </summary>
+        public static bool GlobalWarmingEnabled { get; private set; }
+
+        /// <inheritdoc cref="GlobalWarmingEnabled"/>
+        public static bool CheatMenuEnabled { get; private set; }
+
+        /// <inheritdoc cref="GlobalWarmingEnabled"/>
+        public static bool EditorMenuEnabled { get; private set; }
+
+        /// <summary>
+        /// Records the advanced settings and writes them out. They persist between
+        /// sessions: somebody who has turned the cheat menu on is not asked again
+        /// next time they start the game.
+        /// </summary>
+        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu)
+        {
+            if (GlobalWarmingEnabled == globalWarming && CheatMenuEnabled == cheatMenu &&
+                EditorMenuEnabled == editorMenu)
+            {
+                return;
+            }
+
+            GlobalWarmingEnabled = globalWarming;
+            CheatMenuEnabled = cheatMenu;
+            EditorMenuEnabled = editorMenu;
+            Save();
+        }
+
         public static bool LoadConfigSettings()
         {
             MigrateLegacyDataFolder();
@@ -219,7 +257,15 @@ namespace RhyCiv.Engine
             Brightness = ReadCorrection(root, nameof(Brightness), 1f, 0.5f, 1.5f);
             Saturation = ReadCorrection(root, nameof(Saturation), 1f, 0f, 2f);
             Gamma = ReadCorrection(root, nameof(Gamma), 1f, 0.5f, 2f);
+            GlobalWarmingEnabled = ReadFlag(root, nameof(GlobalWarmingEnabled));
+            CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
+            EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
         }
+
+        /// <summary>An advanced setting, absent from the file until it is turned on.</summary>
+        private static bool ReadFlag(JsonElement root, string property) =>
+            root.TryGetProperty(property, out var element) &&
+            element.ValueKind == JsonValueKind.True;
 
         private static float ReadCorrection(JsonElement root, string property, float fallback, float minimum, float maximum) =>
             root.TryGetProperty(property, out var element) && element.TryGetSingle(out var value)
@@ -342,6 +388,9 @@ namespace RhyCiv.Engine
             writer.WriteNumber(nameof(Brightness), Brightness);
             writer.WriteNumber(nameof(Saturation), Saturation);
             writer.WriteNumber(nameof(Gamma), Gamma);
+            writer.WriteBoolean(nameof(GlobalWarmingEnabled), GlobalWarmingEnabled);
+            writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
+            writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
             writer.WriteStartObject(nameof(RememberedChoices));
             foreach (var choice in RememberedChoices)
             {
