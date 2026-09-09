@@ -1,3 +1,4 @@
+using Model.Core.Cities;
 using RhyCiv.Engine;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.MapObjects;
@@ -42,110 +43,63 @@ public class CityTileMap : BaseControl
         _organizationLevel = cityWindow.City.GetOrganizationLevel(game.Rules);
     }
 
+    /// <summary>
+    /// Where the resource map puts each square, in the coordinates of the picture it
+    /// composes. The picture is four tiles across and the city sits at its centre,
+    /// so a square's position follows directly from how far it is from the city.
+    /// <para>
+    /// Drawing and clicking have to agree about this, and used not to: the click
+    /// worked the square out again from scratch with its own division, its own
+    /// diagonal-edge corrections and an adjustment its author recorded as not
+    /// understanding. Squares it disagreed with could not be clicked at all.
+    /// </para>
+    /// </summary>
+    private static Vector2 TilePosition(Tile tile, City city, MapDimensions dim, int xCentre, int yCentre) =>
+        new(xCentre + (tile.X - city.Location.X) * dim.HalfWidth,
+            yCentre + (tile.Y - city.Location.Y) * dim.HalfHeight);
+
+    private static (int XCentre, int YCentre) MapCentre(MapDimensions dim) =>
+        (dim.TileWidth * 4 / 2 - dim.HalfWidth, dim.TileHeight * 4 / 2 - dim.HalfHeight);
+
+    /// <summary>
+    /// The square under a point in the picture, or null. A map square is a diamond,
+    /// so a point is inside it when its distance from the centre, measured as a
+    /// share of the half-width and half-height, adds up to no more than one.
+    /// </summary>
+    private static Tile? TileAt(Vector2 point, City city, MapDimensions dim, int xCentre, int yCentre)
+    {
+        Tile? best = null;
+        var bestDistance = double.MaxValue;
+
+        foreach (var tile in city.Location.CityRadius())
+        {
+            var position = TilePosition(tile, city, dim, xCentre, yCentre);
+            var offsetX = Math.Abs(point.X - (position.X + dim.HalfWidth));
+            var offsetY = Math.Abs(point.Y - (position.Y + dim.HalfHeight));
+            var distance = offsetX / (double)dim.HalfWidth + offsetY / (double)dim.HalfHeight;
+            if (distance <= 1.0 && distance < bestDistance)
+            {
+                best = tile;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
+    }
+
     private void OnClick(object? sender, MouseEventArgs e)
     {
-        var originalClickPos = GetRelativeMousePosition();
-        var removeOffset = originalClickPos - _offset;
-        var restoreScale = removeOffset / _scaleFactor;
-        
         var city = _cityWindow.City;
         var gameScreen = _cityWindow.CurrentGameScreen;
 
-        var tileCache = gameScreen.TileCache;
+        var clickInPicture = (GetRelativeMousePosition() - _offset) / _scaleFactor;
+        var dim = gameScreen.TileCache.GetDimensions(city.Location.Map, gameScreen.Zoom);
+        var (xCentre, yCentre) = MapCentre(dim);
 
-        Map map = city.Location.Map;
-        var dim = tileCache.GetDimensions(map, _cityWindow.CurrentGameScreen.Zoom);
-
-        var zeroY = city.Location.Y - 3;
-        var (ydim, yrem )= Math.DivRem((int)restoreScale.Y, dim.HalfHeight);
-        var y = zeroY + ydim;
-        
-        var odd = y % 2 == city.Location.Odd;
-
-        if (odd)
+        if (TileAt(clickInPicture, city, dim, xCentre, yCentre) is not { } tile)
         {
-            restoreScale.X -= dim.HalfWidth;
+            return;
         }
-
-
-        var zeroX = city.Location.XIndex - 1;
-
-        var (xdim, xrem )= Math.DivRem((int)restoreScale.X, dim.TileWidth);
-        var x = zeroX + xdim;
-        
-        if (x < 0)
-        {
-            if (city.Location.Map.Flat)
-            {
-                x = 0;
-            }
-            else
-            {
-                x += dim.TotalWidth;
-            }
-        }
-        else if (x > dim.TotalWidth)
-        {
-            if (city.Location.Map.Flat)
-            {
-                x = dim.TotalWidth - 1;
-            }
-            else
-            {
-                x -= dim.TotalWidth;
-            }
-        }
-
-        if (xrem < dim.HalfWidth && y > 0)
-        {
-            if (yrem *  dim.HalfWidth + xrem *  dim.HalfHeight < dim.DiagonalCut)
-            {
-                y -= 1;
-                if (!odd)
-                {
-                    x -= 1;
-                    if (x < 0)
-                    {
-                        x = city.Location.Map.Flat ? 0 : city.Location.Map.Tile.GetLength(0) - 1;
-                    }
-                }
-            }
-        }
-        else if (xrem > dim.HalfWidth)
-        {
-            if ((dim.TileWidth - xrem) *  dim.HalfHeight + yrem *  dim.HalfWidth < dim.DiagonalCut)
-            {
-                y -= 1;
-                if (odd)
-                {
-                    x += 1;
-                    if (x == city.Location.Map.Tile.GetLength(0))
-                    {
-                        if (city.Location.Map.Flat)
-                        {
-                            x -= 1;
-                        }
-                        else
-                        {
-                            x = 0;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (city.Location.Odd == 0 && y % 2 == 1)
-        {
-            //I don't know why this adjustment is needed, there's probably a bug earlier in the function
-            x -= 1;
-        }
-
-        //If we don't have a valid tile return 
-        if (0 > y || y >= city.Location.Map.Tile.GetLength(1)) return;
-        
-        var tile = city.Location.Map.Tile[x, y];
-        // if the tile is outside the city radius do nothing
-        if (!city.Location.CityRadius().Contains(tile)) return;
 
         // if there are foreign units here can't use this square
         if (tile.UnitsHere.Any(u => u.Owner != city.Owner))
@@ -243,8 +197,7 @@ public class CityTileMap : BaseControl
         var dim = tileCache.GetDimensions(map, gameScreen.Zoom);
         var width = dim.TileWidth * 4;
         var height = dim.TileHeight * 4;
-        var xcentre = width / 2 - dim.HalfWidth;
-        var ycentre = height / 2 - dim.HalfHeight;
+        var (xcentre, ycentre) = MapCentre(dim);
         var image = Image.GenColor(width, height, new Color(0, 0, 0, 0));
 
         var elements = new List<IViewElement>();
@@ -256,8 +209,9 @@ public class CityTileMap : BaseControl
             if (tile.IsVisible(activeCiv.Id))
             {
                 var tileImage = tileCache.GetTileDetails(tile, city.Owner.Id);
-                var locationX = xcentre + (tile.X - city.Location.X) * dim.HalfWidth;
-                var locationY = ycentre + (tile.Y - city.Location.Y) * dim.HalfHeight;
+                var position = TilePosition(tile, city, dim, xcentre, ycentre);
+                var locationX = (int)position.X;
+                var locationY = (int)position.Y;
                 var dstRec = new Rectangle(locationX,
                     locationY, dim.TileWidth, dim.TileHeight);
                 

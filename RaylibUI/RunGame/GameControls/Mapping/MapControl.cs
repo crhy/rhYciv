@@ -8,6 +8,7 @@ using Raylib_CSharp.Transformations;
 using Raylib_CSharp.Textures;
 using RaylibUI.BasicTypes.Controls;
 using RaylibUI.RunGame.GameControls.Mapping.Views;
+using RaylibUI.RunGame.GameModes;
 using Model;
 using Model.Core;
 using Model.Core.Mapping;
@@ -589,7 +590,12 @@ public class MapControl : BaseControl
 
     private void DrawPathPreview(Vector2 paddedLocation)
     {
-        if (!IsShiftDown() || GetTileAtMousePosition() is not { } destination)
+        // Shift shows a route on demand; a Go To press that has been held long
+        // enough shows the route it is about to take, so the player can see where
+        // the unit will go before letting go of the button.
+        var armed = _gameScreen.ActiveMode == _gameScreen.Moving &&
+                    _gameScreen.Moving is MovingPieces { GotoArmed: true };
+        if ((!IsShiftDown() && !armed) || GetTileAtMousePosition() is not { } destination)
         {
             return;
         }

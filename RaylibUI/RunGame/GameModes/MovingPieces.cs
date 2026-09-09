@@ -55,6 +55,19 @@ public class MovingPieces : IGameMode
 
     private Dictionary<Shortcut, Action<IGame>> Actions { get; }
 
+    /// <summary>
+    /// Whether the left button has been held on the map long enough that letting go
+    /// will send the unit to that square rather than move it one step.
+    /// <para>
+    /// The map draws the route while this is true. Without it the only sign that the
+    /// press had armed was the cursor changing shape, which says something is about
+    /// to happen but not what or where.
+    /// </para>
+    /// </summary>
+    public bool GotoArmed =>
+        _downTime.HasValue && DateTime.Now - _downTime.Value > _holdTime &&
+        !(Input.IsKeyDown(KeyboardKey.LeftControl) || Input.IsKeyDown(KeyboardKey.RightControl));
+
     public IGameView GetDefaultView(GameScreen gameScreen, IGameView? currentView, int viewHeight, int viewWidth,
         bool forceRedraw)
     {
