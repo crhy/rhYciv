@@ -147,6 +147,12 @@ public class BuildCity(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
             city.Location.UpdatePlayer(_player.Civilization.Id);
             GameScreen.ForceRedraw();
 
+            // The first city is the moment to say what a city window is for.
+            if (_player.Civilization.Cities.Count == 1)
+            {
+                Tutorial.Offer(GameScreen, Tutorial.FirstCity);
+            }
+
             GameScreen.ShowPopup("FOUNDED", handleButtonClick: (dialogButton, _, _, _) =>
                 {
                     if (dialogButton == Labels.Ok)

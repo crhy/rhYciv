@@ -141,7 +141,7 @@ namespace RhyCiv.Engine
                 }
 
                 var shieldsBefore = city.ShieldsProgress;
-                city.ShieldsProgress += shields;
+                city.ShieldsProgress += DifficultyRules.ShieldsBanked(game, city, shields);
 
                 // Scaffolds going up, and a rival about to win the race. Reported
                 // from here because this is the only place the work actually
@@ -154,7 +154,7 @@ namespace RhyCiv.Engine
                 // Cure for Cancer 600, exactly as Civ II charges. Multiplying by the
                 // shield box's row count made everything ten times its price, so a
                 // city producing a handful of shields a turn never finished anything.
-                if (city.ShieldsProgress >= city.ItemInProduction.Cost)
+                if (city.ShieldsProgress >= DifficultyRules.ProductionCost(game, city, city.ItemInProduction.Cost))
                 {
                     var completedWonder = WonderProgress.WonderUnderConstruction(city);
                     if (city.ItemInProduction.CompleteProduction(city, rules))

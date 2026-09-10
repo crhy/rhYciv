@@ -10,6 +10,10 @@ namespace Model.Core
         }
         public Options(GameInitializationConfig config)
         {
+            // Civ II offers its advice on the levels people learn the game on. A
+            // player who has chosen King or above has said they know how it works.
+            TutorialHelp = config.DifficultyLevel <= 2;
+
             SimplifiedCombat = config.SimplifiedCombat;
             Bloodlust = config.Bloodlust;
             DontRestartIfEliminated = config.DontRestartEliminatedPlayers;

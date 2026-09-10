@@ -460,7 +460,11 @@ namespace RhyCiv.Engine.UnitActions
             }
 
             // Calculate odds of attacker winning combat (a round of battle)
-            var attackFactor = attacker.AttackFactor(defender);
+            // The barbarians hit as hard as the difficulty says they do: a quarter
+            // strength on Chieftain, half as hard again on Deity. This is most of
+            // what makes the early game on the high levels frightening.
+            var attackFactor = DifficultyRules.AttackStrength(game, attacker.Owner,
+                attacker.AttackFactor(defender));
             if (attacker.MovePoints < game.Rules.Cosmic.MovementMultiplier)
             {
                 //if attacker has less than one move point left attack at reduced strength
@@ -1144,7 +1148,7 @@ namespace RhyCiv.Engine.UnitActions
             var created = 0;
             foreach (var spawnTile in spawnTiles)
             {
-                var barbarian = CreateBarbarianUnit(barbarianCiv, barbarianUnitDefinition, spawnTile, veteran: game.DifficultyLevel >= 3);
+                var barbarian = CreateBarbarianUnit(barbarianCiv, barbarianUnitDefinition, spawnTile, veteran: DifficultyRules.BarbariansAreVeterans(game));
                 barbarian.MovePointsLost = barbarian.MaxMovePoints;
                 spawnTile.SetVisible(triggeringUnit.Owner.Id);
                 created++;

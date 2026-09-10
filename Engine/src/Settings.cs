@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -257,6 +258,20 @@ namespace RhyCiv.Engine
             Brightness = ReadCorrection(root, nameof(Brightness), 1f, 0.5f, 1.5f);
             Saturation = ReadCorrection(root, nameof(Saturation), 1f, 0f, 2f);
             Gamma = ReadCorrection(root, nameof(Gamma), 1f, 0.5f, 2f);
+            SeenTutorials.Clear();
+            if (root.TryGetProperty(nameof(SeenTutorials), out var tutorials) &&
+                tutorials.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var tutorial in tutorials.EnumerateArray())
+                {
+                    var key = tutorial.GetString();
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        SeenTutorials.Add(key);
+                    }
+                }
+            }
+
             GlobalWarmingEnabled = ReadFlag(root, nameof(GlobalWarmingEnabled));
             CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
             EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
@@ -365,6 +380,41 @@ namespace RhyCiv.Engine
             Save();
         }
 
+        /// <summary>
+        /// Tutorial advice the player has already been given.
+        /// <para>
+        /// Remembered between games as well as within one: somebody who has been
+        /// told how the number pad works does not need telling again the next time
+        /// they start a game, and being told twice is how a tutorial turns into a
+        /// nuisance.
+        /// </para>
+        /// </summary>
+        private static readonly HashSet<string> SeenTutorials = new(StringComparer.OrdinalIgnoreCase);
+
+        public static bool HasSeenTutorial(string key) => SeenTutorials.Contains(key);
+
+        public static void MarkTutorialSeen(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key) || !SeenTutorials.Add(key))
+            {
+                return;
+            }
+
+            Save();
+        }
+
+        /// <summary>Puts the tutorial back, for somebody who wants it again.</summary>
+        public static void ForgetTutorials()
+        {
+            if (SeenTutorials.Count == 0)
+            {
+                return;
+            }
+
+            SeenTutorials.Clear();
+            Save();
+        }
+
         public static void Save()
         {
             if (!Directory.Exists(ApplicationDataFolder))
@@ -391,6 +441,12 @@ namespace RhyCiv.Engine
             writer.WriteBoolean(nameof(GlobalWarmingEnabled), GlobalWarmingEnabled);
             writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
             writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
+            writer.WriteStartArray(nameof(SeenTutorials));
+            foreach (var tutorial in SeenTutorials)
+            {
+                writer.WriteStringValue(tutorial);
+            }
+            writer.WriteEndArray();
             writer.WriteStartObject(nameof(RememberedChoices));
             foreach (var choice in RememberedChoices)
             {

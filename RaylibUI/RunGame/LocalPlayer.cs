@@ -12,6 +12,7 @@ using RhyCiv.Engine.MapObjects;
 using Model.Controls;
 using Model.Controls.Civilopedia;
 using Model.Core;
+using Model.Constants;
 using Model.Core.Advances;
 using Model.Core.Cities;
 using Model.Core.GoodyHuts.Outcomes;
@@ -145,6 +146,10 @@ public class LocalPlayer : IPlayer
         {
             return;
         }
+
+        // The advice comes first: it is about the question that is being asked, and
+        // dialogs queue, so it is read before the chooser rather than after it.
+        Tutorial.Offer(_gameScreen, Tutorial.Research);
 
         // Only wait for an answer if there is going to be one. A ruleset whose text
         // has no RESEARCH dialog shows nothing, and setting the flag then would lock
@@ -1094,6 +1099,14 @@ public class LocalPlayer : IPlayer
         }
 
         _gameScreen.ActiveMode = _gameScreen.Moving;
+
+        // The first unit the player is ever handed is the moment to say how a unit
+        // is moved, and a Settlers unit is the moment to say what it is for.
+        if (!Tutorial.Offer(_gameScreen, Tutorial.Movement) &&
+            _activeUnit is { AiRole: AiRoleType.Settle } && Civilization.Cities.Count == 0)
+        {
+            Tutorial.Offer(_gameScreen, Tutorial.FoundCity);
+        }
     }
 
     public void UnitLost(Unit unit, Unit? killedBy)

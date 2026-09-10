@@ -352,6 +352,7 @@ Enter closest city screen
 Global warming
 Cheat menu
 Editor menu
+Show the tutorial advice again
 @MESSAGEOPTIONS
 @title=City Report Options
 @width=380
@@ -697,10 +698,12 @@ Coin, promises, and self-interest prove stronger than loyalty. The unit lowers i
 Your engineers have learned to carry roads across rivers without surrendering momentum. Waterways that once divided the map can now become arteries of trade and war.
 
 @BUILDCITY
-@title=Found a City
-@width=360
+@title=Founding Your First City
+@width=420
 @button=Ok
-Here roads may meet, homes may rise, and generations may gather behind walls of their own making. Shall this place become a city?
+^Press B with a Settlers unit selected to found a city.
+^Grassland beside a river or the sea makes the best start.
+Here roads may meet, homes may rise, and generations may gather behind walls of their own making.
 
 @CANCELALLIANCE
 @title=End the Alliance
@@ -1172,16 +1175,37 @@ The gifts are substantial, and the gesture will be remembered. Diplomacy often b
 The offer is small, almost ceremonial. Accept it for what it is, or make clear that your civilization expects more serious terms.
 
 @FIRSTMOVE
-@title=The World Awaits
-@width=360
+@title=Moving Your Units
+@width=420
 @button=Ok
+^The number pad moves the flashing unit one square:
+^  7 8 9      up-left, up, up-right
+^  4   6      left and right
+^  1 2 3      down-left, down, down-right
+^The arrow keys move it as well.
+^Click a square and hold to send it there over several turns.
+^Space skips the unit's turn. Enter ends yours.
 The map is empty of your story. Move, explore, and choose carefully where the first roots of your civilization will take hold.
 
 @FIRSTPRODUCT
-@title=The First Labor
-@width=360
+@title=Your First City
+@width=420
 @button=Ok
+^Click the city on the map to open it.
+^The panel on the right of the city window sets what it builds;
+^the map inside it shows which squares its people are working.
+^Warriors first to keep order, then Settlers to found the next city.
 Your people are ready to build. Choose what this young settlement needs most, and the whole city will bend its effort toward that purpose.
+
+@TUTORIALRESEARCH
+@title=Choosing Your Research
+@width=420
+@button=Ok
+^Advances are chosen once and then researched turn by turn.
+^Tax and science rates are set from the Kingdom menu (Shift+T).
+^A technology goal, set in the research chooser, will suggest what to
+^take next towards something further off.
+What your scholars learn decides what your cities may build and how your people may be governed.
 
 @FIRSTUNIT1
 @title=Your First Company
