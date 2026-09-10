@@ -34,6 +34,18 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.1.7" date="2026-09-09">
+      <description>
+        <p>Whole features that shipped and had never once run.</p>
+        <p>You can talk to the other civilisations. Contact, cease-fires, peace, alliances, embassies, reputation and attitude were all carried in every saved game and read by nothing, so civilisations met by walking into each other and fought until one of them was gone. The Foreign Ministry (Ctrl+D) opens a parley with anyone you have met: cease-fire, peace, alliance, a declaration of war, a gift of gold or of an advance. Computer civilisations answer on their own terms and come asking for a cease-fire when they are losing, and a Diplomat can at last establish an embassy. Treaties bind them the way Civ II's do — which is to say not reliably: nobody moves against you while they think well of you, and below that they turn on the weak, on anyone whose economy has eclipsed theirs, and on anyone whose own word is worthless. Breaking a treaty costs two black marks that every civilisation who has met you remembers.</p>
+        <p>Caravans trade. Cities were given commodities to supply and demand, the city window had a line for trade routes that read a literal "+xx", the map drew the routes in gold, and nothing in the game could create one — a caravan reaching a foreign city was refused as a failed attack. A caravan now offers what Civ II offers: open a route, put its cargo into a wonder, or go on to a richer market. Routes earn their cities trade every turn.</p>
+        <p>Wonders are unique. Nothing stopped two civilisations, or two cities of one civilisation, from each raising the Pyramids. A finished wonder is withdrawn from every build list in the world, whoever was racing for it is told, and Civ II's three notices — begun, a rival nearly finished, finished — all arrive. The Wonders of the World report (F7) used to open a window of blank rows.</p>
+        <p>Pollution happens. A city works out how much it makes, the improvement exists, settlers can clear it and the messages were written, and nothing ever put a square of it on the map. Global warming follows if it is left, and is off by default in the new Advanced Settings, along with the cheat and editor menus.</p>
+        <p>Forty-five menu entries were drawn with no command behind them. Build Mines, Build Fortress, Build Airbase, Clear Pollution, Move Pieces, View Pieces, Center View and Activate Unit all work now, and what is genuinely unimplemented is no longer advertised.</p>
+        <p>The difficulty levels differ. Computer civilisations pay 160% of the listed price on Chieftain down to 80% on Deity, barbarians hit at a quarter strength on Chieftain and half as hard again on Deity, and there is a tutorial on the levels people learn on — starting with how the number pad moves a unit.</p>
+        <p>Computer civilisations also research now. Without a Lua script to choose for them they researched nothing at all, for the whole game.</p>
+      </description>
+    </release>
     <release version="0.1.6" date="2026-09-09">
       <description>
         <p>The interface, from a full pass over the 0.1.5 report.</p>
