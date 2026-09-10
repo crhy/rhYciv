@@ -94,8 +94,13 @@ public class SaveRoundTripTests : IDisposable
         var path = Path.Combine(_directory, "legacy.sav");
         Write(game, ruleset, path);
 
-        var legacy = File.ReadAllText(path).Replace(
-            "\"ExtendedData\": {\n          \"horde\": \"1\"\n        }",
+        // Matched without assuming how the platform ends its lines. Written against
+        // "\n", this rewrite silently did nothing on Windows -- the file kept the
+        // current format, the test proved nothing, and the assertion below failed
+        // on Windows CI only.
+        var legacy = System.Text.RegularExpressions.Regex.Replace(
+            File.ReadAllText(path),
+            "\"ExtendedData\":\\s*\\{\\s*\"horde\":\\s*\"1\"\\s*\\}",
             "\"ExtendedData\": [{ \"Key\": \"horde\", \"Value\": \"1\" }]");
         File.WriteAllText(path, legacy);
         Assert.DoesNotContain("\"ExtendedData\": {", File.ReadAllText(path));
