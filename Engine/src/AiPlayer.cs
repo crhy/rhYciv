@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RhyCiv.Engine.Advances;
+using RhyCiv.Engine.Ai;
+using RhyCiv.Engine.Diplomacy;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.Events;
 using RhyCiv.Engine.MapObjects;
@@ -80,7 +82,33 @@ namespace RhyCiv.Engine
                     int index and >= 0 when index < researchPossibilities.Count => researchPossibilities[index].Index,
                     _ => game.Random.ChooseFrom(researchPossibilities).Index
                 };
+                return;
             }
+
+            // No script answered, and until now that was the end of it: nothing was
+            // chosen, so a computer civilisation researched precisely nothing for
+            // the whole game and stood still in the bronze age while the player went
+            // to the moon.
+            Civilization.ReseachingAdvance = ChooseResearch(researchPossibilities).Index;
+        }
+
+        /// <summary>
+        /// What to research next. A civilisation with something particular in mind
+        /// takes that; otherwise it follows the ruleset's own opinion of what is
+        /// worth having, which is what the AI value in RULES.txt is for.
+        /// </summary>
+        private Advance ChooseResearch(List<Advance> researchPossibilities)
+        {
+            var preferred = AiPersonality.PreferredResearch(game, Civilization, researchPossibilities);
+            if (preferred != null)
+            {
+                return preferred;
+            }
+
+            return researchPossibilities
+                .OrderByDescending(advance => advance.AIvalue)
+                .ThenBy(advance => advance.Index)
+                .First();
         }
 
         public void CantProduce(City city, IProductionOrder? newItem)
@@ -173,6 +201,23 @@ namespace RhyCiv.Engine
             var buildings = orders.OfType<BuildingProductionOrder>()
                 .Where(b => !b.Improvement.IsWonder)
                 .ToList();
+
+            // Some civilisations have a priority that outranks bread and defence.
+            if (AiPersonality.WantsAnotherWarhead(Civilization))
+            {
+                var warhead = units.FirstOrDefault(u => AiPersonality.IsNuclearMissile(u.UnitDefinition));
+                if (warhead != null)
+                {
+                    return warhead;
+                }
+
+                var manhattan = orders.OfType<BuildingProductionOrder>()
+                    .FirstOrDefault(b => b.Improvement.Type == (int)ImprovementType.ManhattanProj);
+                if (manhattan != null)
+                {
+                    return manhattan;
+                }
+            }
 
             var garrison = city.Location.UnitsHere
                 .Count(u => !u.Dead && u.Owner == Civilization && u.DefenseBase > 0);
@@ -310,6 +355,11 @@ namespace RhyCiv.Engine
         public void TurnStart(int turnNumber)
         {
             WaitingList.Clear();
+
+            // Whether a treaty holds is weighed afresh each turn, not each time a
+            // unit looks at a square.
+            _treatyBreaches.Clear();
+            SueForPeace();
             Ai.Call(AiEvent.TurnStart, new LuaTable { { "Turn", turnNumber } });
         }
 
@@ -698,7 +748,7 @@ namespace RhyCiv.Engine
             return best;
         }
 
-        private static bool IsSafeForNonCombatUnit(Unit unit, Tile tile)
+        private bool IsSafeForNonCombatUnit(Unit unit, Tile tile)
         {
             if (tile.UnitsHere.Any(other => other.Owner != unit.Owner))
             {
@@ -719,15 +769,59 @@ namespace RhyCiv.Engine
                    tile.CityHere?.Owner != unit.Owner;
         }
 
-        private static bool IsEnemyTile(Unit unit, Tile tile)
+        /// <summary>
+        /// Somewhere this unit would attack. A treaty means what it says: a
+        /// computer civilisation at cease-fire, peace or alliance with somebody
+        /// does not walk into their units of its own accord, which is the whole
+        /// point of agreeing to one.
+        /// </summary>
+        /// <summary>
+        /// Somewhere this unit would attack.
+        /// <para>
+        /// A treaty is a reason not to, and not a guarantee: Civ II's computer
+        /// players break their word when the balance of power invites it, which is
+        /// the behaviour every player of the original remembers. What holds them
+        /// back is thinking well of you, not the piece of paper.
+        /// </para>
+        /// </summary>
+        private bool IsEnemyTile(Unit unit, Tile tile)
         {
-            if (tile.CityHere != null && tile.CityHere.Owner != unit.Owner)
+            if (tile.CityHere is { } city && city.Owner != unit.Owner)
+            {
+                return WouldFight(unit.Owner, city.Owner);
+            }
+
+            return tile.UnitsHere.Any(other => !other.Dead && other.Owner != unit.Owner &&
+                                               other.InShip == null &&
+                                               WouldFight(unit.Owner, other.Owner));
+        }
+
+        /// <summary>
+        /// Whether these two would come to blows, deciding once per turn per rival
+        /// so that a unit does not get a fresh roll for every square it looks at.
+        /// </summary>
+        private bool WouldFight(Civilization ours, Civilization theirs)
+        {
+            if (!DiplomacyFunctions.UnderTreaty(ours, theirs))
             {
                 return true;
             }
 
-            return tile.UnitsHere.Any(other => !other.Dead && other.Owner != unit.Owner && other.InShip == null);
+            if (_treatyBreaches.TryGetValue(theirs.Id, out var decided))
+            {
+                return decided;
+            }
+
+            var breach = DiplomacyFunctions.WouldBreakTreaty(game, ours, theirs);
+            _treatyBreaches[theirs.Id] = breach;
+            return breach;
         }
+
+        /// <summary>
+        /// Whose treaty this civilisation has decided to disregard this turn.
+        /// Cleared at the start of each of its turns.
+        /// </summary>
+        private readonly Dictionary<int, bool> _treatyBreaches = new();
 
         private void CallUnitsLost(LuaTable units, Unit? by)
         {
@@ -818,6 +912,107 @@ namespace RhyCiv.Engine
         /// </summary>
         public void DiplomatArrived(Unit diplomat, Tile target)
         {
+        }
+
+        /// <summary>
+        /// A computer civilisation has met somebody. It forms an opinion of them --
+        /// neutral to begin with -- and otherwise carries on; it is the player who
+        /// gets a herald at the door.
+        /// </summary>
+        /// <summary>
+        /// How often a civilisation that wants a war over asks for it, as one turn
+        /// in this many. Asking every turn would be pestering; never asking leaves
+        /// the player as the only one who can ever end a war.
+        /// </summary>
+        private const int PeaceOfferInterval = 8;
+
+        /// <summary>
+        /// Puts a cease-fire to anybody this civilisation is at war with and would
+        /// rather not be. Without this a war could only ever be ended by the player
+        /// offering, which is not how Civ II behaves: a computer civilisation that
+        /// is losing comes asking.
+        /// </summary>
+        private void SueForPeace()
+        {
+            if (game.Random.Next(PeaceOfferInterval) != 0)
+            {
+                return;
+            }
+
+            foreach (var other in game.AllCivilizations)
+            {
+                if (other == Civilization || !other.Alive || other.PlayerType == PlayerType.Barbarians ||
+                    !DiplomacyFunctions.AtWar(Civilization, other))
+                {
+                    continue;
+                }
+
+                if (!DiplomacyFunctions.WouldAccept(game, other, Civilization,
+                        DiplomacyFunctions.Proposal.CeaseFire))
+                {
+                    continue;
+                }
+
+                game.Players[other.Id].ProposalReceived(Civilization,
+                    new DiplomaticProposal { Kind = DiplomacyProposals.CeaseFire });
+                return;
+            }
+        }
+
+        public void NuclearStrike(Tile target, Civilization attacker)
+        {
+            DiplomacyFunctions.AdjustAttitude(Civilization, attacker, -25);
+        }
+
+        public void WarDeclared(Civilization aggressor)
+        {
+            DiplomacyFunctions.AdjustAttitude(Civilization, aggressor, -20);
+        }
+
+        public void ContactMade(Civilization other)
+        {
+            DiplomacyFunctions.AdjustAttitude(Civilization, other, 0);
+        }
+
+        /// <summary>
+        /// Something has been put to a computer civilisation. Whether it agrees
+        /// depends on what it thinks of the proposer and how the war is going;
+        /// gifts are always welcome and are remembered fondly.
+        /// </summary>
+        public void ProposalReceived(Civilization from, DiplomaticProposal proposal)
+        {
+            switch (proposal.Kind)
+            {
+                case DiplomacyProposals.CeaseFire:
+                    Answer(from, DiplomacyFunctions.Proposal.CeaseFire,
+                        () => DiplomacyFunctions.AgreeCeaseFire(Civilization, from));
+                    break;
+                case DiplomacyProposals.Peace:
+                    Answer(from, DiplomacyFunctions.Proposal.Peace,
+                        () => DiplomacyFunctions.AgreePeace(Civilization, from));
+                    break;
+                case DiplomacyProposals.Alliance:
+                    Answer(from, DiplomacyFunctions.Proposal.Alliance,
+                        () => DiplomacyFunctions.FormAlliance(Civilization, from));
+                    break;
+                case DiplomacyProposals.GiveGold:
+                    // A gift is worth roughly what it costs the giver, and is
+                    // remembered for longer than it is spent.
+                    DiplomacyFunctions.AdjustAttitude(Civilization, from,
+                        Math.Clamp(proposal.Gold / 25, 1, 20));
+                    break;
+                case DiplomacyProposals.GiveTechnology:
+                    DiplomacyFunctions.AdjustAttitude(Civilization, from, 15);
+                    break;
+            }
+        }
+
+        private void Answer(Civilization from, DiplomacyFunctions.Proposal proposal, Action accept)
+        {
+            if (DiplomacyFunctions.WouldAccept(game, from, Civilization, proposal))
+            {
+                accept();
+            }
         }
 
         /// <summary>

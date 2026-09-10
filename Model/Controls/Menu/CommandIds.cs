@@ -12,6 +12,7 @@ public static class CommandIds
 
     public const string ChangeTaxRate = "CHANGE_TAX_RATE";
     public const string Revolution = "REVOLUTION";
+    public const string Diplomacy = "DIPLOMACY";
     public const string FindCity = "FIND_CITY";
 
     public const string WorldWonders = "WORLD_WONDERS";

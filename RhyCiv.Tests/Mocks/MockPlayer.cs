@@ -115,6 +115,22 @@ public class MockPlayer : IPlayer
 
     public void CaravanArrived(Unit caravan, City city) => CaravansArrived.Add((caravan, city));
 
+    public List<Civilization> Met { get; } = [];
+    public List<(Civilization From, DiplomaticProposal Proposal)> Proposals { get; } = [];
+
+    public void ContactMade(Civilization other) => Met.Add(other);
+
+    public List<Civilization> WarsDeclaredOnUs { get; } = [];
+
+    public void WarDeclared(Civilization aggressor) => WarsDeclaredOnUs.Add(aggressor);
+
+    public List<(Tile Target, Civilization Attacker)> NuclearStrikes { get; } = [];
+
+    public void NuclearStrike(Tile target, Civilization attacker) => NuclearStrikes.Add((target, attacker));
+
+    public virtual void ProposalReceived(Civilization from, DiplomaticProposal proposal) =>
+        Proposals.Add((from, proposal));
+
     public void GlobalWarming(int squaresChanged)
     {
         WarmedSquares += squaresChanged;

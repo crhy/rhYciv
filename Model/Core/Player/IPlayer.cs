@@ -178,6 +178,31 @@ namespace Model.Core.Player
         void CityCaptured(City city);
 
         /// <summary>
+        /// This civilisation has met another for the first time. Both sides are
+        /// told, and only ever once.
+        /// </summary>
+        void ContactMade(Civilization other);
+
+        /// <summary>
+        /// A nuclear weapon has gone off somewhere this civilisation can see.
+        /// </summary>
+        void NuclearStrike(Tile target, Civilization attacker);
+
+        /// <summary>
+        /// Another civilisation has declared war, or begun one by attacking. If
+        /// there was a treaty between them, they have just broken it.
+        /// </summary>
+        void WarDeclared(Civilization aggressor);
+
+        /// <summary>
+        /// Another civilisation has put something to this one -- a cease-fire, a
+        /// treaty, an alliance, a gift -- and is waiting for an answer. The answer
+        /// is given by calling back into <c>DiplomacyFunctions</c>; a player that
+        /// simply ignores it has refused.
+        /// </summary>
+        void ProposalReceived(Civilization from, DiplomaticProposal proposal);
+
+        /// <summary>
         /// A Caravan has reached a city it can do business with. What it does there
         /// -- open a trade route, put its cargo into a wonder, or go on to a better
         /// market -- is the player's choice, so the engine hands it over rather than

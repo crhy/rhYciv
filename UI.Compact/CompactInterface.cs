@@ -262,6 +262,7 @@ public class CompactInterface(IMain main) : ClassicInterface(main)
                 new("&Tax Rate|Shift+T", new Shortcut(Key.T, shift: true), Key.T, commandId: ChangeTaxRate),
                 new("Find &City|Shift+C", new Shortcut(Key.C, shift: true), Key.C, commandId: FindCity),
                 new("-", Shortcut.None, Key.None),
+                new("&Diplomacy|Ctrl+D", new Shortcut(Key.D, ctrl: true), Key.D, commandId: Diplomacy),
                 new("&REVOLUTION|Shift+R", new Shortcut(Key.R, shift: true), Key.R, commandId: Revolution)
             },
         },

@@ -46,6 +46,9 @@ namespace RhyCiv.Engine
             // what has been left on the map belongs to everybody by now.
             PollutionFunctions.ResolveGlobalWarming(this);
 
+            // And time doing what it does to the memory of a broken treaty.
+            Diplomacy.DiplomacyFunctions.FadeReputations(this);
+
             _activeCivId = -1;
         }
 

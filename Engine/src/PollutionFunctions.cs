@@ -184,6 +184,22 @@ public static class PollutionFunctions
         return candidates.Count == 0 ? null : candidates[game.Random.Next(candidates.Count)];
     }
 
+    /// <summary>
+    /// Fouls a square from outside a city's industry -- fallout, in practice.
+    /// Cities are not poisoned by it: what a nuclear strike does to a city is
+    /// measured in citizens, not in terrain.
+    /// </summary>
+    public static void Poison(IGame game, Tile tile)
+    {
+        if (tile.CityHere != null || tile.Type == TerrainType.Ocean || tile.Terrain.Impassable ||
+            tile.Improvements.Any(i => i.Improvement == ImprovementTypes.Pollution))
+        {
+            return;
+        }
+
+        Foul(game, tile);
+    }
+
     private static void Foul(IGame game, Tile tile)
     {
         var pollution = game.TerrainImprovements[ImprovementTypes.Pollution];

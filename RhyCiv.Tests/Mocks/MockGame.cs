@@ -50,14 +50,20 @@ internal class MockGame : IGame
 
     public double MaxDistance => throw new NotImplementedException();
 
+    /// <summary>The difficulty, which reputation and corruption both read.</summary>
+    public int Difficulty { get; set; } = 1;
+
     public int DifficultyLevel
     {
-        get => throw new NotImplementedException();
-        set => throw new NotImplementedException();
+        get => Difficulty;
+        set => Difficulty = value;
     }
 
     public IGameDate Date => throw new NotImplementedException();
-    public int TurnNumber => throw new NotImplementedException();
+    /// <summary>The turn, for the rules that only happen on certain ones.</summary>
+    public int Turn { get; set; }
+
+    public int TurnNumber => Turn;
     // The cities of every civilisation, which is how the world-level rules --
     // wonders being unique, pollution accumulating -- see the board.
     public List<City> AllCities => AllCivilizations?.SelectMany(civ => civ.Cities).ToList() ?? [];

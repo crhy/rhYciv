@@ -357,6 +357,19 @@ namespace RhyCiv.Engine.UnitActions
             }
 
 
+            // Attacking is how a war starts, declared or not. Walking into somebody
+            // you have a treaty with tears it up, with everything that follows from
+            // that: their vendetta, and two black marks against your name that every
+            // civilisation who has met you will hold against you for a long time.
+            var target = tileTo.CityHere?.Owner ??
+                         tileTo.UnitsHere.FirstOrDefault(other => !other.Dead && other.Owner != unit.Owner)?.Owner;
+            if (target != null && target != unit.Owner &&
+                !Diplomacy.DiplomacyFunctions.AtWar(unit.Owner, target))
+            {
+                Diplomacy.DiplomacyFunctions.DeclareWar(game, unit.Owner, target);
+                game.Players[target.Id].WarDeclared(unit.Owner);
+            }
+
             if (tileTo.CityHere != null)
             {
                 // Empty enemy cities are captured by moving into them.  The barbarian AI can
@@ -409,7 +422,14 @@ namespace RhyCiv.Engine.UnitActions
         }
 
         private static void Attack(IGame game, Unit attacker, Tile tile)
-        {           
+        {
+            // A nuclear missile does not fight; it arrives.
+            if (Ai.AiPersonality.IsNuclearMissile(attacker.TypeDefinition))
+            {
+                NuclearStrike(game, attacker, tile);
+                return;
+            }
+
 
             // Primary defender is the enemy unit with the largest defense factor.  An
             // undefended city can be reached here when an AI routine calls AttackAtTile
@@ -823,6 +843,8 @@ namespace RhyCiv.Engine.UnitActions
                 {
                     mapUpdates.Add(tileTo);
                 }
+
+                MeetTheNeighbours(game, unit, tileTo);
                 
                 if (tileTo.CityHere is { } ownCity && ownCity.Owner.Id == unit.Owner.Id &&
                     CaravanActions.IsCaravan(unit))
@@ -907,6 +929,96 @@ namespace RhyCiv.Engine.UnitActions
                 if (mapUpdates.Count > 0)
                 {
                     game.UpdateTiles(mapUpdates);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A nuclear strike, which is not combat and has no result to roll for.
+        /// <para>
+        /// Civ II's rules: everything standing on the target square dies, whichever
+        /// side it belongs to, a city there loses half its people, and the ground
+        /// around it is left poisoned. The missile is spent. Everyone who can see
+        /// it happen is told, because a mushroom cloud is not a private matter.
+        /// </para>
+        /// </summary>
+        private static void NuclearStrike(IGame game, Unit missile, Tile target)
+        {
+            var casualties = target.UnitsHere.Where(unit => !unit.Dead).ToList();
+            foreach (var owner in casualties.Select(unit => unit.Owner).Distinct().ToList())
+            {
+                var lost = casualties.Where(unit => unit.Owner == owner).ToList();
+                lost.ForEach(unit => unit.Dead = true);
+                game.Players[owner.Id].UnitsLost(lost, missile);
+            }
+
+            var city = target.CityHere;
+            if (city != null)
+            {
+                for (var half = city.Size / 2; half > 0 && city.Size > 1; half--)
+                {
+                    city.ShrinkCity(game);
+                }
+
+                game.Players[city.Owner.Id].CityDecrease(city);
+            }
+
+            // Fallout. The squares around the blast are left as polluted as any
+            // century of industry could manage.
+            var poisoned = new List<Tile> { target };
+            poisoned.AddRange(target.Neighbours());
+            foreach (var square in poisoned)
+            {
+                PollutionFunctions.Poison(game, square);
+            }
+
+            game.UpdateTiles(poisoned);
+
+            missile.Dead = true;
+            missile.Owner.Units.Remove(missile);
+            game.Players[missile.Owner.Id].UnitLost(missile, null);
+
+            foreach (var civ in game.AllCivilizations.Where(c => c.Alive))
+            {
+                if (target.IsVisible(civ.Id))
+                {
+                    game.Players[civ.Id].NuclearStrike(target, missile.Owner);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Anybody the unit can now see, and who can see it, has met this
+        /// civilisation.
+        /// <para>
+        /// Civilisations used to walk into each other with nothing happening at
+        /// all: no herald, no record that they had met, and so nothing that could
+        /// later be talked about. Contact is what everything else in diplomacy
+        /// rests on.
+        /// </para>
+        /// </summary>
+        private static void MeetTheNeighbours(IGame game, Unit unit, Tile tileTo)
+        {
+            if (unit.Owner.PlayerType == PlayerType.Barbarians)
+            {
+                // The barbarians are nobody's neighbours. They are not a
+                // civilisation you can talk to, and meeting them is not an event.
+                return;
+            }
+
+            foreach (var neighbour in tileTo.Neighbours().Append(tileTo))
+            {
+                var strangers = neighbour.UnitsHere
+                    .Where(other => !other.Dead)
+                    .Select(other => other.Owner)
+                    .Append(neighbour.CityHere?.Owner)
+                    .OfType<Civilization>()
+                    .Where(civ => civ != unit.Owner && civ.PlayerType != PlayerType.Barbarians)
+                    .Distinct();
+
+                foreach (var stranger in strangers)
+                {
+                    Diplomacy.DiplomacyFunctions.MakeContact(game, unit.Owner, stranger);
                 }
             }
         }

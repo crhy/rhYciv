@@ -1059,6 +1059,45 @@ Citizens are no longer content to be subjects of distant decisions. They demand 
 @button=Ok
 When the moment came, the promised help did not. The treaty remains on paper, but trust has taken a wound.
 
+@CHOOSECIV
+@title=Foreign Ministry
+@width=380
+@button=Ok
+@button=Cancel
+Which of the civilizations you have met would you speak with?
+
+@GIVETECH
+@title=A Gift of Knowledge
+@width=420
+@button=Ok
+@button=Cancel
+Knowledge given away is not knowledge lost, but it does even the ground. Which advance shall be handed to the %STRING0?
+
+@BREAKTREATY
+@title=Break the Treaty?
+@width=380
+@button=Ok
+@button=Cancel
+There is a treaty with the %STRING0. To attack now is to end it by your own hand: the military gain may be immediate, but every civilization that has met you will remember that your signature is a light thing.
+
+@WARDECLARED
+@title=War
+@width=380
+@button=Ok
+There is war between your people and the %STRING0. Envoys are recalled, treaties are ash, and the frontier is now a front.
+
+@THEYDECLAREWAR
+@title=War Is Declared Upon You
+@width=380
+@button=Ok
+The %STRING0 have declared war. Their armies are already moving; whatever was agreed between you no longer holds.
+
+@GIFTSENT
+@title=The Gift Is Sent
+@width=380
+@button=Ok
+The %STRING0 accept what was sent and will remember it. Goodwill is not a treaty, but treaties are easier to reach with those who have it.
+
 @DIPLOMACY
 @title=Diplomacy
 @width=360
@@ -1067,9 +1106,10 @@ Across the table sits another civilization with fears, ambitions, pride, and mem
 
 @DIPLOMACYMENU
 @title=What Will You Discuss?
-@width=360
+@width=420
 @button=Ok
-Choose the matter to place before %STRING1: peace, alliance, exchange, tribute, threats, or farewell.
+^%STRING1
+Choose the matter to place before the %STRING0.
 
 @EMISSARYFORCE
 @title=An Audience Is Demanded
@@ -1217,9 +1257,9 @@ They agree to halt the fighting. Troops remain where they stand, but commanders 
 
 @GREETINGS
 @title=An Envoy Arrives
-@width=360
+@width=380
 @button=Ok
-The banners of %STRING1 appear at the edge of your court. Their envoy requests an audience; what follows may shape decades.
+The banners of %STRING0 appear at the edge of your court. Their envoy requests an audience; what follows may shape decades. From now on there is somebody to talk to, and somebody who can be wronged.
 
 @HELICPTR
 @title=Helicopter Operations
@@ -1367,9 +1407,10 @@ The hired blades have decided that loyalty is worth less than survival or better
 
 @MONEYGIFT
 @title=A Gift of Gold
-@width=360
+@width=380
 @button=Ok
-{otherLeader} offers {gold} gold. Coin is never merely coin between nations; it may be gratitude, leverage, apology, or bait.
+@button=Cancel
+Coin is never merely coin between nations; it may be gratitude, leverage, apology, or bait. How much shall be sent to the %STRING0?
 
 @MOVECAPITAL
 @title=A New Seat of Power
@@ -1409,8 +1450,9 @@ Humanity has learned how to release energies once confined to stars and deep ear
 
 @NUKEXPLO
 @title=Nuclear Detonation
-@width=360
+@width=380
 @button=Ok
+^The %STRING0 have used a nuclear weapon.
 For an instant the horizon becomes brighter than day. Buildings vanish, fires race outward, and the political world changes before the smoke has even risen.
 
 @ODDTERRAIN

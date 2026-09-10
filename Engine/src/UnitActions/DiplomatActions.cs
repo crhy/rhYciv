@@ -127,6 +127,28 @@ namespace RhyCiv.Engine.UnitActions
         }
 
         /// <summary>
+        /// Opens a permanent mission in somebody else's city.
+        /// <para>
+        /// The first thing Civ II's Diplomat is for, and the one thing this one
+        /// could not do. An embassy is what turns a rival from a name on the map
+        /// into a civilisation whose treasury, research and treaties can be seen --
+        /// and it is the ordinary way to open relations without a war.
+        /// </para>
+        /// </summary>
+        public static bool EstablishEmbassy(IGame game, Unit agent, City city)
+        {
+            if (!IsDiplomat(agent) || city.Owner == agent.Owner ||
+                Diplomacy.DiplomacyFunctions.HasEmbassyWith(agent.Owner, city.Owner))
+            {
+                return false;
+            }
+
+            Diplomacy.DiplomacyFunctions.EstablishEmbassy(agent.Owner, city.Owner);
+            SpendAgent(game, agent);
+            return true;
+        }
+
+        /// <summary>
         /// What a job costs the agent that did it: a Diplomat its life, a Spy a
         /// move. Spending a whole move point rather than the single step the walk in
         /// would have cost is what stops a Spy working through a line of cities in

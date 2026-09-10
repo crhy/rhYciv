@@ -3,6 +3,7 @@ using RhyCiv.Engine.UnitActions;
 using RhyCiv.Engine.SaveLoad;
 using RhyCiv.Engine.Advances;
 using RhyCiv.Engine.Diagnostics;
+using RhyCiv.Engine.Diplomacy;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.Events;
 using RhyCiv.Engine.IO;
@@ -704,6 +705,86 @@ public class LocalPlayer : IPlayer
     }
 
     /// <summary>
+    /// A nuclear weapon has gone off in sight of this civilisation. The view is
+    /// taken to it: this is not a thing to mention in passing.
+    /// </summary>
+    public void NuclearStrike(Tile target, Civilization attacker)
+    {
+        SessionLog.Record($"nuclear strike by the {attacker.TribeName} at ({target.X}, {target.Y})");
+        _gameScreen.SetViewAnchor(target);
+        _gameScreen.ShowPopup("NUKEXPLO", replaceStrings: [attacker.Adjective]);
+        _gameScreen.ForceRedraw();
+    }
+
+    /// <summary>
+    /// Somebody has gone to war with us. Told whether they announced it or simply
+    /// attacked, because from here it is the same war.
+    /// </summary>
+    public void WarDeclared(Civilization aggressor)
+    {
+        SessionLog.Record($"war declared by the {aggressor.TribeName}");
+        _gameScreen.ShowPopup("THEYDECLAREWAR", replaceStrings: [aggressor.Adjective]);
+    }
+
+    /// <summary>
+    /// Somebody new. Civ II opens the diplomacy screen on first contact; this
+    /// announces the meeting, and from here the Foreign Ministry has somebody in
+    /// it to talk to.
+    /// </summary>
+    public void ContactMade(Civilization other)
+    {
+        SessionLog.Record($"met the {other.TribeName}");
+        _gameScreen.ShowPopup("GREETINGS", replaceStrings: [other.TribeName]);
+    }
+
+    /// <summary>
+    /// Another civilisation has put something to us. Gifts are simply taken; a
+    /// treaty offered by a computer civilisation is put to the player, and doing
+    /// nothing about it is a refusal.
+    /// </summary>
+    public void ProposalReceived(Civilization from, DiplomaticProposal proposal)
+    {
+        switch (proposal.Kind)
+        {
+            case DiplomacyProposals.GiveGold:
+            case DiplomacyProposals.GiveTechnology:
+                DiplomacyFunctions.AdjustAttitude(Civilization, from, 10);
+                _gameScreen.StatusPanel.Update();
+                return;
+        }
+
+        var dialog = proposal.Kind switch
+        {
+            DiplomacyProposals.CeaseFire => "PROPOSECEASE",
+            DiplomacyProposals.Peace => "PROPOSEPEACE",
+            _ => "PROPOSEALLIANCE"
+        };
+
+        _gameScreen.ShowPopup(dialog, (button, _, _, _) =>
+        {
+            if (button != Labels.Ok)
+            {
+                return;
+            }
+
+            switch (proposal.Kind)
+            {
+                case DiplomacyProposals.CeaseFire:
+                    DiplomacyFunctions.AgreeCeaseFire(Civilization, from);
+                    break;
+                case DiplomacyProposals.Peace:
+                    DiplomacyFunctions.AgreePeace(Civilization, from);
+                    break;
+                default:
+                    DiplomacyFunctions.FormAlliance(Civilization, from);
+                    break;
+            }
+
+            _gameScreen.StatusPanel.Update();
+        }, replaceStrings: [from.Adjective], buttons: [Labels.Ok, Labels.Cancel]);
+    }
+
+    /// <summary>
     /// A Caravan has reached a city it can do business with.
     /// <para>
     /// The whole apparatus of trade was in place and idle: cities are given
@@ -1246,6 +1327,13 @@ public class LocalPlayer : IPlayer
         var choices = new List<(string Label, Action Take)>();
         if (city != null)
         {
+            if (!DiplomacyFunctions.HasEmbassyWith(Civilization, city.Owner) &&
+                !DiplomatActions.IsSpy(diplomat))
+            {
+                choices.Add(($"Establish an embassy in {city.Name}",
+                    () => EstablishEmbassy(diplomat, city)));
+            }
+
             choices.Add(($"Investigate {city.Name}", () => OfferToInvestigate(diplomat, city)));
 
             if (DiplomatActions.StealableAdvances(_gameScreen.Game, diplomat, city).Count > 0)
@@ -1311,6 +1399,27 @@ public class LocalPlayer : IPlayer
             }
         });
         _gameScreen.ShowDialog(dialog, stack: true);
+    }
+
+    /// <summary>
+    /// Opening a permanent mission. It costs the Diplomat, which is what Civ II
+    /// charges, and it is the ordinary way to open relations with a civilisation
+    /// without walking an army into them.
+    /// </summary>
+    private void EstablishEmbassy(Unit agent, City city)
+    {
+        _gameScreen.ShowPopup("ENEMYEMBASSY", handleButtonClick: (button, _, _, _) =>
+        {
+            if (button != Labels.Ok ||
+                !DiplomatActions.EstablishEmbassy(_gameScreen.Game, agent, city))
+            {
+                return;
+            }
+
+            SessionLog.Record($"embassy established with the {city.Owner.TribeName}");
+            _gameScreen.ShowPopup("AMBASSADORS");
+            _gameScreen.ForceRedraw();
+        }, buttons: [Labels.Ok, Labels.Cancel]);
     }
 
     /// <summary>
