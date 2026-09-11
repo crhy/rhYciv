@@ -80,12 +80,14 @@ public class JsonCivData
     /// goal. Nullable so that a save written before goals existed loads as having
     /// none rather than as aiming at whichever advance happens to be index zero.
     /// </summary>
+    [System.Text.Json.Serialization.JsonConverter(typeof(ForgivingNullableConverter<int>))]
     public int? ResearchGoal { get; set; }
 
     /// <summary>
     /// Turns of Anarchy still to run, absent when the civilisation is governed.
     /// Nullable so a save written before revolutions existed loads as settled.
     /// </summary>
+    [System.Text.Json.Serialization.JsonConverter(typeof(ForgivingNullableConverter<int>))]
     public int? AnarchyTurnsRemaining { get; set; }
     public bool[]? Advances { get; set; }
     public int SciRate { get; set; }

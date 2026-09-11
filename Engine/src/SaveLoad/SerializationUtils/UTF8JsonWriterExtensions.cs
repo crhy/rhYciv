@@ -41,9 +41,34 @@ public static class Utf8JsonWriterExtensions
         foreach (var info in
                  type.GetProperties())
         {
-            var typeCode = Type.GetTypeCode(info.PropertyType);
-            var defaultValue = GetDefaultValueFor(typeCode);
+            // A nullable value type -- int?, bool? -- is a struct, so asking the
+            // framework for its type code answers Object, and the branch that
+            // handles an object wrote the boxed number as "{}": a research goal
+            // came out as ResearchGoal: {}, which the reader cannot turn back into
+            // a number. Every save written once the player had chosen a research
+            // goal, or begun a revolution, or stolen a technology, was therefore
+            // unreadable -- the save appeared to succeed and the game would not
+            // load it again. Unwrap the nullable and write the value it holds.
+            var declaredType = info.PropertyType;
+            var underlyingType = Nullable.GetUnderlyingType(declaredType);
+            var typeCode = Type.GetTypeCode(underlyingType ?? declaredType);
             var value = info.GetValue(instance);
+
+            // For a nullable, absent and default are different states the save has
+            // to keep apart: null means "no research goal", 0 means "the advance at
+            // index zero". So it is written whenever it is not null, rather than
+            // being dropped for matching the underlying type's default.
+            if (underlyingType != null)
+            {
+                if (value != null)
+                {
+                    WriteValue(info.Name, writer, typeCode, value);
+                }
+
+                continue;
+            }
+
+            var defaultValue = GetDefaultValueFor(typeCode);
             if ((defaultValue == null && value != null) || (defaultValue != null && !defaultValue.Equals(value)))
             {
                 WriteValue(info.Name, writer, typeCode, value);

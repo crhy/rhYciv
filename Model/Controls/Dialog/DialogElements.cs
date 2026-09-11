@@ -101,13 +101,18 @@ public class DialogElements
             Listbox ??= new();
             Listbox.Rows = (int)popupBox.ListboxLines;
         }
+        // Copies, never the cached definition's own lists. The dialog that gets
+        // built from this merges adjacent lines and removes the ones it has merged
+        // away, and writing that back would change the game's copy of the dialog
+        // for every later showing of it -- the same reason the buttons are copied
+        // where they are overridden.
         if (popupBox?.Text is not null)
         {
-            Text = popupBox?.Text;
+            Text = new List<string>(popupBox.Text);
         }
         if (popupBox?.LineStyles is not null)
         {
-            LineStyles = popupBox?.LineStyles;
+            LineStyles = new List<TextStyles>(popupBox.LineStyles);
         }
     }
 }

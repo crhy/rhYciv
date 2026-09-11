@@ -29,6 +29,18 @@ public static class SessionLog
 {
     private const string ActiveFileName = "session-in-progress.log";
 
+    /// <summary>
+    /// Anything the process wrote to its own output streams during the session
+    /// that crashed, kept aside by the launcher before this one overwrote it.
+    /// </summary>
+    /// <remarks>
+    /// The record below says what the game was doing; this says what the runtime
+    /// said on the way down, which is the half that names a stack overflow or a
+    /// driver abort. Only the packaged launcher captures it, so it is folded in
+    /// when it is there and passed over silently when it is not.
+    /// </remarks>
+    private const string PreviousOutputFileName = "session-output.previous.log";
+
     /// <summary>Lines kept in memory for the crash report; the file keeps them all.</summary>
     private const int RecentLines = 40;
 
@@ -183,9 +195,41 @@ public static class SessionLog
             .AppendLine()
             .ToString();
 
-        File.WriteAllText(report, header + contents);
+        File.WriteAllText(report, header + contents + PreviousOutput());
         File.Delete(ActivePath);
         Console.Error.WriteLine($"rhYciv: previous session did not exit cleanly; wrote {report}");
         return report;
+    }
+
+    /// <summary>
+    /// The crashed session's own output, if the launcher kept it, as a section to
+    /// append to the report.
+    /// </summary>
+    private static string PreviousOutput()
+    {
+        try
+        {
+            var path = Path.Combine(LogFolder(), PreviousOutputFileName);
+            if (!File.Exists(path))
+            {
+                return string.Empty;
+            }
+
+            var output = File.ReadAllText(path);
+            return string.IsNullOrWhiteSpace(output)
+                ? string.Empty
+                : new StringBuilder()
+                    .AppendLine()
+                    .AppendLine("What the game and the runtime printed:")
+                    .AppendLine()
+                    .Append(output)
+                    .ToString();
+        }
+        catch
+        {
+            // The record above is worth having on its own; a report must not fail
+            // to be written because this could not be read.
+            return string.Empty;
+        }
     }
 }

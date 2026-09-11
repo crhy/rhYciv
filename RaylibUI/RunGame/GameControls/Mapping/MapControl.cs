@@ -358,12 +358,16 @@ public class MapControl : BaseControl
     }
 
     // City name and population size on the map. The number is deliberately close to
-    // the name rather than two thirds of it, and both grow with zoom until the cap.
-    // Raised from 22 and 18, which were still being reported as too small to read at
-    // 1080p: a city's name is the label the eye goes to most often on the map.
+    // the name rather than two thirds of it. Sized to be read at 1080p rather than
+    // to match the tiles: a label is an annotation, not part of the scene, and one
+    // that keeps pace with the zoom ends up wider than the city it names -- at a
+    // close zoom "Carthago" was drawn three times the width of Carthage.
+    //
+    // So they grow only over the first few steps of zoom, where the tiles are small
+    // enough that a fixed label would crowd them, and hold from there.
     private const int CityNameFontBase = 28;
     private const int CitySizeFontBase = 23;
-    private const int MapLabelZoomCap = 16;
+    private const int MapLabelZoomCap = 2;
 
     private Rectangle _currentBounds;
 

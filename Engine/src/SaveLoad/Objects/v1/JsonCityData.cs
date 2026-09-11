@@ -62,6 +62,7 @@ public class JsonCityData
     /// Whether an advance has already been taken out of this city. Nullable so a
     /// save written before technology theft existed loads as never robbed.
     /// </summary>
+    [System.Text.Json.Serialization.JsonConverter(typeof(ForgivingNullableConverter<bool>))]
     public bool? TechnologyStolen { get; set; }
     public int NoOfSpecialistsx4 { get; set; }
     public int[]? SpecialistTypes { get; set; }

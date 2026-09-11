@@ -124,8 +124,24 @@ public class CivDialog : DynamicSizingDialog
         var maxTextWidth = 0;
         if (dialog.Text?.Count > 0)
         {
-            var texts = dialog.Text;
-            var styles = dialog.LineStyles;
+            // Lists of this dialog's own, because the grouping below merges lines
+            // and removes the ones it merged away. Callers hand this in as whatever
+            // they had -- a cached definition's list, or a fixed-size array from a
+            // script -- and neither is safe to write to: one changes the game's copy
+            // of the dialog for every later showing of it, the other throws.
+            var texts = new List<string>(dialog.Text);
+
+            // A style for every line, whatever the caller supplied. A dialog built
+            // in code can set its text and leave the styles out, and the grouping
+            // below indexed them without looking: the "could not load that save"
+            // message took the game down on the way to telling the player their
+            // save was unreadable, which is the worst possible moment for a second
+            // fault. Left is what an unstyled line has always been rendered as.
+            var styles = new List<TextStyles>(dialog.LineStyles ?? []);
+            while (styles.Count < texts.Count)
+            {
+                styles.Add(TextStyles.Left);
+            }
 
             // Group left-aligned texts
             int i = 0;

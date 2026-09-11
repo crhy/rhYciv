@@ -150,6 +150,25 @@ public abstract class BaseControl : IControl
                 Click?.Invoke(this, new MouseEventArgs { Button = _clickButton});
             }   
         }
+        // Whether a click can begin here is decided every frame, not once on the
+        // way in. It used to be settled by OnMouseEnter alone, and entering with a
+        // button already down -- which is what happens on the very click that
+        // brings the window back to the front, or at the end of a drag begun
+        // somewhere else -- left it false with no way back: nothing re-armed it
+        // until the pointer left the control and returned. On the map, which is one
+        // control filling most of the window, that meant clicking away to another
+        // window and clicking back stopped units being selectable at all until the
+        // player happened to sweep the pointer over the menu bar and back.
+        //
+        // A click is possible again as soon as every button is up over this
+        // control. A press still in progress is left alone, so releasing a drag
+        // that started elsewhere is not mistaken for a click here.
+        if (!_clickStart && !Input.IsMouseButtonDown(MouseButton.Left) &&
+            !Input.IsMouseButtonDown(MouseButton.Right))
+        {
+            _clickPossible = true;
+        }
+
         if (_clickPossible)
         {
             _clickStart = Input.IsMouseButtonDown(MouseButton.Left);

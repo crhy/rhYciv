@@ -20,11 +20,52 @@ namespace RaylibUI
         //   RHYCIV_AUTOSTART_CIVS=N   number of rival civilisations (default: max)
         //   RHYCIV_AUTOSTART_ZOOM=N   initial map zoom, -7..32 (default: -1)
         //   RHYCIV_AUTOSTART_REVEAL=1 reveal the whole map (terrain review)
+        //   RHYCIV_AUTOSTART_LOAD=PATH open a saved game instead of generating one
         private bool TryAutoStartGame()
         {
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_AUTOSTART")))
             {
                 return false;
+            }
+
+            // A player's own save, opened without a human at the load dialog. Almost
+            // every report that is worth reproducing comes with one, and playing back
+            // to the same position by hand is usually not possible at all -- there is
+            // no way to reach turn 162 of somebody else's game.
+            var savePath = Environment.GetEnvironmentVariable("RHYCIV_AUTOSTART_LOAD");
+            if (!string.IsNullOrWhiteSpace(savePath))
+            {
+                if (!File.Exists(savePath))
+                {
+                    Console.WriteLine($"autostart: no save at '{savePath}'");
+                    return false;
+                }
+
+                Console.WriteLine($"autostart: loading {savePath}");
+                var loaded = RhyCiv.Engine.SaveLoad.LoadGame.LoadFrom(savePath, this);
+
+                // Loading ends on the "you are back in the year such and such"
+                // dialog, which a player dismisses to reach the map. Answer it here
+                // so the game comes up playing rather than waiting on a button.
+                if (loaded is Model.InterfaceActions.MenuAction menu)
+                {
+                    loaded = ActiveInterface.ProcessDialog(menu.DialogElement.Name!,
+                        new Model.Controls.DialogResult("Ok", 0));
+                }
+
+                if (loaded is not Model.InterfaceActions.StartGame loadedGame)
+                {
+                    Console.WriteLine($"autostart: loading '{savePath}' did not produce a game");
+                    return false;
+                }
+
+                var loadedMap = loadedGame.Game.Maps[0];
+                Console.WriteLine($"autostart: loaded turn {loadedGame.Game.TurnNumber}, " +
+                                  $"{loadedMap.XDim}x{loadedMap.YDim} world, " +
+                                  $"player '{loadedGame.Game.GetPlayerCiv.TribeName}' " +
+                                  $"with {loadedGame.Game.GetPlayerCiv.Cities.Count} cities");
+                StartGame(loadedGame.Game, loadedGame.ViewData);
+                return true;
             }
 
             if (ActiveInterface is not ClassicInterface civ2)
@@ -228,6 +269,25 @@ namespace RaylibUI
                 {
                     last.ShieldsProgress = sh;
                     Console.WriteLine($"test-city: shields set to {last.ShieldsProgress}/{last.ItemInProduction.Cost}");
+                }
+
+                // RHYCIV_TEST_FORTIFY=1 fortifies the garrison, which is the state
+                // the Units Present row is hardest to reach by hand and easiest to
+                // get wrong: the fortification marker is drawn beside a sprite a
+                // fraction of the size the map draws it at.
+                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_TEST_FORTIFY")))
+                {
+                    // Everything still alive is walked into the city first: founding
+                    // spends the settler, so a city on the turn it is founded has an
+                    // empty garrison and nothing to draw.
+                    foreach (var garrison in civ.Units.Where(u => !u.Dead))
+                    {
+                        garrison.X = last.Location.X;
+                        garrison.Y = last.Location.Y;
+                        garrison.CurrentLocation = last.Location;
+                        garrison.Order = (int)RhyCiv.Engine.Enums.OrderType.Fortified;
+                    }
+                    Console.WriteLine($"test-city: fortified {last.UnitsInCity.Count} units in the city");
                 }
 
                 Console.WriteLine($"test-city: units in city {last.UnitsInCity.Count} " +

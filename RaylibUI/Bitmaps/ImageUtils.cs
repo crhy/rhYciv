@@ -577,16 +577,37 @@ public static class ImageUtils
 
         if (unit.Order == (int)OrderType.Fortified)
         {
-            // Fitted to the unit's own footprint, like the unit and its shield. This
-            // was drawn at whatever size the art happens to be, and the FOSS
-            // fortification marker is a full map tile, so beside a unit scaled down
-            // into a list row -- the Units Present and Units Supported boxes -- it
-            // came out several times the size of the unit it belonged to.
             var fortifyTexture = TextureCache.GetImage(active.UnitImages.Fortify);
+
+            // On the map the emplacement belongs to the ground the unit is standing
+            // on, so it is fitted to the tile. Away from the map there is no tile:
+            // the city window's Units Present and Units Supported rows draw the
+            // small classic sprite in a cell, and fitting a full-tile marker to that
+            // cell put a fortification around the unit wider and taller than the
+            // unit itself. Off the map it is fitted to the unit as drawn instead,
+            // with enough margin to read as something the unit is standing in.
+            float fortifyScale;
+            Vector2 fortifyMaxSize;
+            if (useMapArt)
+            {
+                fortifyScale = GetUnitRenderScale(unitImage, fortifyTexture, logicalSize);
+                fortifyMaxSize = logicalSize;
+            }
+            else
+            {
+                fortifyMaxSize = new Vector2(
+                    unitTexture.Width * unitRenderScale * FortifyMarkerOfUnit,
+                    unitTexture.Height * unitRenderScale * FortifyMarkerOfUnit);
+                fortifyScale = GetUnitRenderScale(unitImage, fortifyTexture, fortifyMaxSize);
+            }
+
             viewElements.Add(new TextureElement(location: loc, texture: fortifyTexture,
                 tile: tile,
-                renderScale: GetUnitRenderScale(unitImage, fortifyTexture, logicalSize),
-                maxDrawSize: logicalSize));
+                offset: new Vector2(
+                    MathF.Max(0, (logicalSize.X - fortifyTexture.Width * fortifyScale) / 2f),
+                    MathF.Max(0, logicalSize.Y - fortifyTexture.Height * fortifyScale)),
+                renderScale: fortifyScale,
+                maxDrawSize: fortifyMaxSize));
         }
 
         return logicalSize;
@@ -820,6 +841,13 @@ public static class ImageUtils
 
         return new Vector2(unitTexture.Width, unitTexture.Height);
     }
+
+    /// <summary>
+    /// How much of the unit's drawn size a fortification marker takes up where
+    /// there is no map tile to fit it to. Slightly over one so it reads as a work
+    /// the unit is standing in rather than a box drawn on top of it.
+    /// </summary>
+    private const float FortifyMarkerOfUnit = 0.8f;
 
     private static float GetUnitRenderScale(UnitImage unitImage, Texture2D unitTexture, Vector2 logicalSize)
     {
