@@ -128,19 +128,44 @@ public class UnitExtensionsTests
     }
 
     [Fact]
-    public void DefenseFactor_CityWalls_StackWithFortification()
+    public void DefenseFactor_CityWalls_SupersedeFortification()
     {
-        // x3 for the walls and x1.5 for being dug in: Civ II applies both.
-        Assert.Equal(45, Defender(order: (int)OrderType.Fortified)
+        // Civ II's combat guide: the fortification bonus is "superceded by fortress
+        // improvement and city walls". They are not multiplied together -- x3 for
+        // the walls, and being dug in adds nothing on top of them.
+        Assert.Equal(30, Defender(order: (int)OrderType.Fortified)
             .DefenseFactor(GroundAttacker(), WalledCityTile(), 0));
     }
 
     [Fact]
-    public void DefenseFactor_Fortress_StacksWithFortification()
+    public void DefenseFactor_Fortress_SupersedesFortification()
     {
-        // Fortress x2 and fortified x1.5.
-        Assert.Equal(30, Defender(order: (int)OrderType.Fortified)
+        // x2 for the fortress, and no x1.5 on top of it.
+        Assert.Equal(20, Defender(order: (int)OrderType.Fortified)
             .DefenseFactor(GroundAttacker(), TerrainTile(), 100));
+    }
+
+    [Fact]
+    public void DefenseFactor_CityWalls_AnswerLandAttacksOnly()
+    {
+        // "City walls triple the defense value of city defenders against attacks by
+        // land units only."
+        var fromTheAir = GroundAttacker();
+        fromTheAir.TypeDefinition.Domain = UnitGas.Air;
+
+        Assert.Equal(10, Defender().DefenseFactor(fromTheAir, WalledCityTile(), 0));
+    }
+
+    [Fact]
+    public void DefenseFactor_ACityWithNoWalls_IsNoDefenceInItself()
+    {
+        // Neither the city nor its size counts for anything on its own in Civ II:
+        // what a city gives a defender is City Walls, and without them a garrison
+        // defends on the terrain it is standing on like anybody else.
+        var tile = TerrainTile();
+        tile.CityHere = new City { Owner = new Civilization { Id = 1 } };
+
+        Assert.Equal(10, Defender().DefenseFactor(GroundAttacker(), tile, 0));
     }
 
     [Fact]
@@ -167,12 +192,24 @@ public class UnitExtensionsTests
     }
 
     [Fact]
-    public void DefenseFactor_RiverAddsAQuarter()
+    public void DefenseFactor_RiverAddsHalfAStepToTheTerrain()
     {
-        // Grassland x1 and a river's +25%. The quarter used to be rounded away at
-        // the end; this asserted 12 and so was pinning the rounding rather than
-        // the rule.
-        Assert.Equal(12.5, Defender().DefenseFactor(GroundAttacker(), TerrainTile(river: true), 0));
+        // Grassland x1 and a river's half step: x1.5, not x1.25. Civ II adds the
+        // river while the terrain adjustment is worked out rather than multiplying
+        // it in afterwards -- "a hill square with a river gives a x2.5 bonus, a
+        // (2 + 0.5) multiplier". As a x1.25 the two agreed on hills by coincidence
+        // and nowhere else.
+        Assert.Equal(15, Defender().DefenseFactor(GroundAttacker(), TerrainTile(river: true), 0));
+    }
+
+    [Theory]
+    [InlineData(2, 15)]   // Grassland x1 + 0.5
+    [InlineData(4, 25)]   // Hills x2 + 0.5 -- the one a x1.25 also got right
+    [InlineData(6, 35)]   // Mountains x3 + 0.5, where a x1.25 gave 37.5
+    public void DefenseFactor_RiverIsHalfAStepWhateverTheTerrain(int terrainDefense, double expected)
+    {
+        Assert.Equal(expected,
+            Defender().DefenseFactor(GroundAttacker(), TerrainTile(terrainDefense, river: true), 0));
     }
 
     [Fact]

@@ -53,8 +53,8 @@ above has not been re-scored.
    Forest/Jungle/Swamp from ×1.5 to ×1 and erases the river defence bonus.
 3. **Per-round combat odds are not `A/(A+D)`** (C1) — the substitute curve
    over-rewards the stronger unit.
-4. **Walls and fortification do not stack** (C3) — `max()` of the two, not the
-   product Civ II uses.
+4. ~~**Walls and fortification do not stack** (C3)~~ — withdrawn 2026-09-11: they
+   do not stack in Civ II either, and the "fix" was the fault. See C3.
 5. **No production-change penalty and no rush-buy** (P1, P2) — two absent core
    loops.
 6. **All advances share AI value 4** (T3) — AI tech choice is arbitrary within
@@ -89,14 +89,38 @@ rules-value 3, so `3 / 2 = 1`. A river on grassland is `(2 + 1) / 2 = 1`.
 Civ II: value 3 is a ×1.5 terrain bonus and a river adds +25% defence. Both
 vanish here, so units in forest or on a river defend as if in the open.
 
-### C3 · ~~major~~ fixed 2026-09-04 · Fortress / Fortified / City Walls take the max, not the product
+Corrected again 2026-09-11: the river was being applied as a further ×1.25 on
+top of the terrain multiplier. Civ II adds half a step to the terrain adjustment
+before that total multiplies with anything else — "a hill square with a river
+gives a x2.5 bonus, a (2 + 0.5) multiplier" — so the two agreed on hills, by
+coincidence, and nowhere else. And the whole result was being rounded down to a
+whole number at the end, which cost Warriors their fortification bonus outright.
 
-`UnitExtensions.cs:73-111` — `bestGroundFactor = max(fortress, fortified,
-walls)`, then `df += bestGroundFactor`. A fortified unit inside City Walls gets
-the walls term only; the ×1.5 for fortification is discarded.
+### C3 · ~~major~~ withdrawn 2026-09-11 · Fortress / Fortified / City Walls do not stack, and never did
 
-Civ II: these stack multiplicatively — City Walls ×3 *and* fortified ×1.5 both
-apply. Walled cities and fortresses defend well below the reference.
+This entry was wrong, and acting on it made the game wrong. It read:
+
+> Civ II: these stack multiplicatively — City Walls ×3 *and* fortified ×1.5 both
+> apply.
+
+They do not. Civ II's combat guide states that the fortification bonus is
+"superceded by fortress improvement and city walls", and testing on the original
+reported at CivFanatics found the game takes the walls or the fortress *even
+where fortifying would have given the better number* — so it is an order of
+precedence, not the best of the three. The original `max()` was closer to right
+than what replaced it; a fortified garrison behind walls was defending at ×4.5
+where Civ II gives ×3.
+
+Corrected 2026-09-11: walls first, else a fortress, else fortified. Walls also
+answer land attacks only, which was not being checked at all.
+
+Sources: <https://civfanatics.com/civ2/strategy/combatguide/>,
+<https://forums.civfanatics.com/threads/civilization-2-defense-modifier-calculations.683500/>
+
+**There is no defence bonus for merely standing in a city, and city size does
+not affect defence.** What a city gives a defender in Civ II is City Walls.
+Checked at the same time because it is the natural next assumption, and it is
+not a rule in this game.
 
 ### C4 · ~~minor~~ fixed 2026-09-04 · Pikemen bonus is ×1.5 and misses Dragoons / Cavalry
 

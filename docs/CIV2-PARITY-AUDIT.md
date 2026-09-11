@@ -101,7 +101,11 @@ These were checked against the reference and need no work:
   on a land square has its firepower reduced to 1 while the attacker's doubles,
   and a helicopter attacked by a fighter is reduced to 1.
 - Defence multipliers for veteran (x1.5), fortified (x1.5), fortress (x2), city
-  walls (x3), SAM batteries, SDI, coastal fortress, and terrain.
+  walls (x3), SAM batteries, SDI, coastal fortress, and terrain. Walls, fortress
+  and fortified are one of the three in that order of precedence rather than a
+  product, walls answer land attacks only, and a river adds half a step to the
+  terrain adjustment rather than multiplying it. Nothing is gained by standing in
+  a city that has no walls, and city size does not affect defence.
 - Killstack, with the correct exceptions for city, fortress and airbase tiles.
 - Post-combat movement loss proportional to hit points lost, with the sea-unit
   minimum.

@@ -154,11 +154,19 @@ namespace Model.Core.Mapping
 
         /// <summary>
         /// Terrain defence multiplier. The rules value counts half-steps, so Forest,
-        /// Jungle and Swamp's 3 is x1.5 and Mountains' 6 is x3. Integer division used
-        /// to flatten every half-step to x1; a river adds a further 25% on top, which
-        /// is how Civ II applies it rather than as one more half-step.
+        /// Jungle and Swamp's 3 is x1.5 and Mountains' 6 is x3.
+        /// <para>
+        /// A river adds half a step to the terrain adjustment rather than a further
+        /// quarter on top of it. Civ II's combat guide is explicit that this is an
+        /// addition made while the terrain adjustment is worked out, before that
+        /// total multiplies with anything else: "a hill square with a river gives a
+        /// x2.5 bonus, a (2 + 0.5) multiplier". Applied as a x1.25 the two agreed on
+        /// hills, by coincidence, and disagreed everywhere else -- grassland with a
+        /// river came out at x1.25 rather than x1.5, and mountains at x3.75 rather
+        /// than x3.5.
+        /// </para>
         /// </summary>
-        public decimal Defense => EffectiveTerrain.Defense / 2m * (River ? 1.25m : 1m);
+        public decimal Defense => EffectiveTerrain.Defense / 2m + (River ? 0.5m : 0m);
 
         
         public bool Resource { get; set; }

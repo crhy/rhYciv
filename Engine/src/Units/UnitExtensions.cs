@@ -86,19 +86,20 @@ public static class UnitExtensions
         // Prepared-position bonuses (land units only)
         if (defendingUnit.Domain == UnitGas.Ground)
         {
-            // A unit is either behind city walls or in a fortress, never both, so
-            // those two take the better of the pair. Fortification is a separate
-            // bonus that Civ II multiplies on top rather than choosing between.
+            // City walls, a fortress, or being dug in: one of the three, never a
+            // combination. Civ II's combat guide puts it as the fortification bonus
+            // being "superceded by fortress improvement and city walls", and testing
+            // on the original reported at CivFanatics found the game takes the walls
+            // or the fortress even where fortifying would have given the better
+            // number -- so this is an order of precedence rather than the best of
+            // the three. They used to be multiplied together, which made a fortified
+            // garrison behind walls x4.5 where Civ II gives x3.
             var positionFactor = 1m;
 
-            // Fortress. The unit does not have to be fortified, and the bonus does
-            // not apply when the attack comes from the air.
-            if (groundDefMultiplier != 0 && attackingUnit.Domain != UnitGas.Air)
-            {
-                positionFactor = 1m + groundDefMultiplier / 100m;
-            }
-
-            if (tile.CityHere != null && !attackingUnit.NegatesCityWalls)
+            // Walls first. They answer land attacks only, and a Howitzer-style
+            // attacker ignores them.
+            if (tile.CityHere != null && !attackingUnit.NegatesCityWalls &&
+                attackingUnit.Domain == UnitGas.Ground)
             {
                 var wallEffect =
                     tile.CityHere.Improvements.Sum(i => i.Effects.GetValueOrDefault(Effects.Walled, 0));
@@ -114,17 +115,21 @@ public static class UnitExtensions
                 // on its own made City Walls a flat +2 whatever the garrison was.
                 if (wallEffect != 0)
                 {
-                    var wallFactor = 1m + wallEffect / 100m;
-                    if (wallFactor > positionFactor)
-                    {
-                        positionFactor = wallFactor;
-                    }
+                    positionFactor = 1m + wallEffect / 100m;
                 }
             }
 
-            if (defendingUnit.Order == (int)OrderType.Fortified)
+            // Then a fortress. The unit does not have to have been told to fortify,
+            // and the bonus does not apply when the attack comes from the air.
+            if (positionFactor == 1m && groundDefMultiplier != 0 && attackingUnit.Domain != UnitGas.Air)
             {
-                positionFactor *= 1.5m;
+                positionFactor = 1m + groundDefMultiplier / 100m;
+            }
+
+            // And failing both, being dug in.
+            if (positionFactor == 1m && defendingUnit.Order == (int)OrderType.Fortified)
+            {
+                positionFactor = 1.5m;
             }
 
             df *= positionFactor;
