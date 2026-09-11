@@ -117,6 +117,36 @@ second message still queued behind it — so the news arrived after you had alre
 looked at the city it was about. Everything one city has to report now arrives as
 one message with one Zoom to City to answer.
 
+## Digging in is worth something again
+
+The defence sum is worked out in fractions — fortifying is half again, a river
+half a step, forest and jungle half again — and every one of those fractions was
+thrown away at the end by rounding the result down to a whole number. The
+attacker's side of the same sum was never rounded, so the loss was all the
+defender's.
+
+On tens and hundreds that costs nothing, which is why it survived a test suite
+that covers this closely. On the numbers the game actually uses it cost the
+defender the bonus outright: **Warriors defend at 1**, so fortifying took them to
+1.5 and the rounding took them straight back to 1. Digging in did nothing
+whatever for the unit most often left holding a new city — which is the shape of
+"barbarian horsemen kill the fortified city warrior every time".
+
+Two more defence rules were checked against Civ II rather than against this
+project's own notes, because the notes were wrong:
+
+- **City Walls supersede the fortification bonus** rather than multiplying with
+  it. A fortified garrison behind walls was defending at ×4.5 where Civ II gives
+  ×3. The same goes for a fortress.
+- **City Walls answer land attacks only**, which was not being checked at all.
+- **A river adds half a step to the terrain adjustment** rather than multiplying
+  it by a further quarter. As a ×1.25 the two agreed on hills, by coincidence,
+  and nowhere else.
+
+And for the record, since it is the natural next assumption: there is **no**
+defence bonus in Civ II for merely standing in a city, and city size does not
+affect defence. What a city gives a defender is City Walls.
+
 ## Barbarians who were not in a village
 
 Every barbarian in the game came out of a goody hut: a unit walked into a village
