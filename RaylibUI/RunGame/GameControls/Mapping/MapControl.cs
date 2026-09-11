@@ -229,9 +229,17 @@ public class MapControl : BaseControl
         }
     }
 
-    private Tile? GetTileAtMousePosition()
+    private Tile? GetTileAtMousePosition() => TileAtScreenPosition(GetRelativeMousePosition());
+
+    /// <summary>
+    /// The square under a point of the view, given in the view's own coordinates
+    /// -- inside the padding rather than outside it.
+    /// </summary>
+    internal Tile? TileAtViewPosition(Vector2 inView) =>
+        TileAtScreenPosition(inView + new Vector2(_padding.Left, _padding.Top));
+
+    private Tile? TileAtScreenPosition(Vector2 clickPosition)
     {
-        var clickPosition = GetRelativeMousePosition();
         if (clickPosition.X < _padding.Left + _padding.Right || clickPosition.X > _viewWidth + _padding.Left + _padding.Right || clickPosition.Y < _padding.Top || clickPosition.Y > _padding.Top + _viewHeight)
         {
             return null;
@@ -491,6 +499,12 @@ public class MapControl : BaseControl
     /// </summary>
     public bool IsPlayingBack => _animationQueue.Count > 0 || !_currentView.IsDefault;
 
+    /// <summary>
+    /// Where the next view must put the map so the point under the pointer stays
+    /// under the pointer, or null when the next view is free to place itself.
+    /// </summary>
+    private Vector2? _zoomOffsets;
+
     public override bool OnMouseWheel(float amount)
     {
         if (!IsControlDown())
@@ -498,39 +512,64 @@ public class MapControl : BaseControl
             return false;
         }
 
-        var nextZoom = Math.Clamp(_gameScreen.Zoom + (amount > 0 ? 1 : -1),
-            GameScreen.MinimumZoom, GameScreen.MaximumZoom);
+        // Zoom about the pointer: work out which point of the map is under the
+        // cursor now, and where that same point will be once the tiles are their
+        // new size, and ask the next view to put the map exactly there.
+        //
+        // Anchoring on the square under the cursor and letting the view centre it
+        // was not the same thing and looked worse: the square jumped to the middle
+        // of the screen on the first step of the wheel, and everything else on the
+        // map swung around it.
+        ZoomAbout(GetRelativeMousePosition() - new Vector2(_padding.Left, _padding.Top),
+            _gameScreen.Zoom + (amount > 0 ? 1 : -1));
+        return true;
+    }
+
+    /// <summary>
+    /// Changes the zoom while holding one point of the view still.
+    /// </summary>
+    /// <param name="pointer">
+    /// Where to hold the map still, in the view's own coordinates. A point outside
+    /// the view is taken to mean the middle of it, which is what a wheel event that
+    /// arrives with the pointer over the menu bar should do.
+    /// </param>
+    /// <param name="nextZoom">The zoom level to change to.</param>
+    /// <remarks>
+    /// Separate from the wheel handler so it can be driven without a mouse. A zoom
+    /// fault is about what changes between one step and the next, which cannot be
+    /// seen in a single frame and cannot be produced by starting the game at a
+    /// fixed zoom -- and synthetic wheel events do not reach the window.
+    /// </remarks>
+    internal void ZoomAbout(Vector2 pointer, int nextZoom)
+    {
+        nextZoom = Math.Clamp(nextZoom, GameScreen.MinimumZoom, GameScreen.MaximumZoom);
         if (nextZoom == _gameScreen.Zoom)
         {
-            return true;
+            return;
         }
 
-        // Zoom towards whatever the pointer is over, so the square under the cursor
-        // is still under the cursor afterwards.
-        //
-        // Without this the view stays centred on the active unit, and the square
-        // being zoomed towards slides away from the pointer -- worse the further
-        // from the unit it is, which is why zooming in looked like the map was
-        // jumping from side to side. Anchoring also settles the view: every step
-        // is measured from the same square rather than from the offsets of the
-        // step before.
-        //
-        // Zooming back out lets the anchor go, so the view returns to following
-        // the unit whose turn it is rather than staying where the pointer last was.
-        if (amount > 0)
+        var map = _gameScreen.CurrentMap;
+        var currentDimensions = _gameScreen.TileCache.GetDimensions(map, _gameScreen.Zoom);
+        var nextDimensions = _gameScreen.TileCache.GetDimensions(map, nextZoom);
+
+        if (pointer.X < 0 || pointer.Y < 0 || pointer.X > _viewWidth || pointer.Y > _viewHeight)
         {
-            if (GetTileAtMousePosition() is { } under)
-            {
-                _gameScreen.SetViewAnchor(under);
-            }
+            pointer = new Vector2(_viewWidth / 2f, _viewHeight / 2f);
         }
-        else if (nextZoom <= 0)
-        {
-            _gameScreen.SetViewAnchor(null);
-        }
+
+        var onTheMap = pointer + _currentView.Offsets;
+        var afterZoom = new Vector2(
+            onTheMap.X * nextDimensions.HalfWidth / Math.Max(1f, currentDimensions.HalfWidth),
+            onTheMap.Y * nextDimensions.HalfHeight / Math.Max(1f, currentDimensions.HalfHeight));
+        _zoomOffsets = afterZoom - pointer;
+
+        // And stop the view chasing the active unit while the player is looking
+        // somewhere else. Zooming back out past normal lets it go again.
+        _gameScreen.SetViewAnchor(nextZoom > 0
+            ? TileAtViewPosition(pointer) ?? _gameScreen.ViewAnchor
+            : null);
 
         _gameScreen.TriggerMapEvent(new MapEventArgs(MapEventType.ZoomChange) { Zoom = nextZoom });
-        return true;
     }
 
     public override void OnMouseMove(Vector2 moveAmount)
@@ -747,6 +786,14 @@ public class MapControl : BaseControl
             // image at the previous zoom while the units and cities drawn over it
             // scaled to the new one. Hand the request on to the next view instead.
             nextView = _animationQueue.Dequeue();
+        }
+        else if (_zoomOffsets is { } zoomed)
+        {
+            // A zoom about the pointer, which says exactly where the map goes.
+            _zoomOffsets = null;
+            _ = ForceRedraw;
+            nextView = new StaticView(_gameScreen, _currentView, _viewHeight, _viewWidth,
+                forceRedraw: true, _gameScreen.ViewAnchor, zoomed);
         }
         else
         {

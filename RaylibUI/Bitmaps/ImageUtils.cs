@@ -963,19 +963,37 @@ public static class ImageUtils
         return TextureCache.GetImage(imageSource, activeInterface, owner);
     }
 
+    /// <summary>
+    /// How much bigger one step of zoom draws the map.
+    /// </summary>
+    /// <remarks>
+    /// A constant proportion, so a step of the wheel does the same thing wherever
+    /// you happen to be. The scale used to be linear in (8 + zoom) / 8, which made
+    /// the steps wildly uneven: from the furthest out, one step *doubled* the
+    /// scale, while up close one step changed it by two and a half per cent. That
+    /// is a factor of nearly forty between the biggest step and the smallest, and
+    /// it is what "the zoom is all over the place" describes -- zoomed out it
+    /// leaps, zoomed in the wheel appears to do nothing.
+    ///
+    /// At 1.09 a step is nine per cent and eight of them double the scale. The
+    /// reachable range is kept roughly as it was, about an eighth up to five
+    /// times, by moving the ends of the zoom range to suit (see GameScreen).
+    /// </remarks>
+    private const double ZoomStep = 1.09;
+
     public static int ZoomScale(this int i, int zoom)
     {
-        return (int)((8.0 + zoom) / 8.0 * i);
+        return (int)(ZoomScale(zoom) * i);
     }
 
     public static int ZoomScale(this float i, int zoom)
     {
-        return (int)((8.0 + zoom) / 8.0 * i);
+        return (int)(ZoomScale(zoom) * i);
     }
 
     public static float ZoomScale(int zoom)
     {
-        return (float)((8.0 + zoom) / 8.0);
+        return (float)Math.Pow(ZoomStep, zoom);
     }
 
     public static Rectangle ZoomScale(this Rectangle rect, int zoom)

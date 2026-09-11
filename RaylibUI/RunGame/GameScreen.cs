@@ -26,10 +26,10 @@ namespace RaylibUI.RunGame;
 
 public class GameScreen : BaseScreen
 {
-    public const int MinimumZoom = -7;
+    public const int MinimumZoom = -24;
     // Terrain is now composed at a scale that follows the zoom, so the map can go
     // well past the old 3x ceiling without being upscaled from a fixed grid.
-    public const int MaximumZoom = 32;
+    public const int MaximumZoom = 19;
     public Main Main { get; }
     public IGame Game { get; }
     public Sound Soundman { get; }
@@ -57,7 +57,7 @@ public class GameScreen : BaseScreen
     public int MinimapHeight => _minimapGlobe ? MiniMapGlobeHeight : Math.Max(100, CurrentMap.YDim) + 38 + 11;
     public int MinimapWidth => _minimapGlobe ? MiniMapGlobeWidth : MiniMapNormalWidth;
 
-    public int Zoom     // -7 (min) ... 16 (max), 0=std.
+    public int Zoom     // -24 (min) ... 19 (max), 0 = tiles at their authored size.
     {
         get => _zoom;
         set

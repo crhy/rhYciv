@@ -213,13 +213,21 @@ namespace RaylibUI
 
             const string sweep = "ZOOM_SWEEP";
 
+            // The point the sweep holds still, in the map view's own coordinates.
+            var ZoomSweepPointer = new System.Numerics.Vector2(
+                int.TryParse(Environment.GetEnvironmentVariable("RHYCIV_TEST_ZOOM_X"), out var sweepX) ? sweepX : 300,
+                int.TryParse(Environment.GetEnvironmentVariable("RHYCIV_TEST_ZOOM_Y"), out var sweepY) ? sweepY : 250);
+
             // From the far end, so the sweep crosses the point where the whole map
             // stops fitting across the screen -- which is where the view used to
             // jump sideways.
+            var from = int.TryParse(Environment.GetEnvironmentVariable("RHYCIV_TEST_ZOOM_FROM"), out var start0)
+                ? start0
+                : RunGame.GameScreen.MinimumZoom;
             if (_activeScreen is RunGame.GameScreen start)
             {
                 start.TriggerMapEvent(new RhyCiv.Engine.Events.MapEventArgs(
-                    RhyCiv.Engine.Enums.MapEventType.ZoomChange) { Zoom = RunGame.GameScreen.MinimumZoom });
+                    RhyCiv.Engine.Enums.MapEventType.ZoomChange) { Zoom = from });
             }
 
             void Step()
@@ -235,9 +243,18 @@ namespace RaylibUI
                     return;
                 }
 
-                Console.WriteLine($"zoom-sweep: {next}");
-                screen.TriggerMapEvent(new RhyCiv.Engine.Events.MapEventArgs(
-                    RhyCiv.Engine.Enums.MapEventType.ZoomChange) { Zoom = next });
+                // Through the same path the wheel uses, about a fixed point well
+                // away from the middle: a zoom that holds the pointer still and one
+                // that recentres look identical in the middle of the view and
+                // nowhere else.
+                var before = screen.MapControl.TileAtViewPosition(ZoomSweepPointer);
+                screen.MapControl.ZoomAbout(ZoomSweepPointer, next);
+                var after = screen.MapControl.TileAtViewPosition(ZoomSweepPointer);
+                Console.WriteLine($"zoom-sweep: {next} under-pointer " +
+                                  $"{(before == null ? "-" : $"{before.X},{before.Y}")} -> " +
+                                  $"{(after == null ? "-" : $"{after.X},{after.Y}")}" +
+                                  (before != null && after != null && (before.X != after.X || before.Y != after.Y)
+                                      ? "  MOVED" : ""));
                 Schedule(sweep, TimeSpan.FromSeconds(2), Step);
             }
 

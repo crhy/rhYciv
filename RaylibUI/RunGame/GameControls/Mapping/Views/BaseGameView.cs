@@ -67,7 +67,13 @@ public abstract class BaseGameView : IGameView
     public int Interval { get; }
     public IList<Tile> ActionTiles => _actionTiles;
 
-    protected BaseGameView(GameScreen gameScreen, Tile location, IGameView? previousView, int viewHeight, int viewWidth, bool isDefault, int interval, IList<Tile> actionTiles, bool forceRedraw)
+    /// <summary>
+    /// Whether this view was handed the exact offsets to draw at, rather than
+    /// working them out from a square it has to keep on screen.
+    /// </summary>
+    private readonly bool _offsetsWereGiven;
+
+    protected BaseGameView(GameScreen gameScreen, Tile location, IGameView? previousView, int viewHeight, int viewWidth, bool isDefault, int interval, IList<Tile> actionTiles, bool forceRedraw, Vector2? offsets = null)
     {
         IsDefault = isDefault;
         Interval = interval;
@@ -86,8 +92,21 @@ public abstract class BaseGameView : IGameView
         
         var cities = activeInterface.CityImages;
         var civilizationId = _gameScreen.VisibleCivId;
+
+        // Offsets worked out by the caller and handed straight in. Zooming towards
+        // the pointer needs the map put at an exact position -- the one that leaves
+        // the square under the cursor under the cursor -- and every other way into
+        // this class works the position out from a square it wants centred, which
+        // is a different thing and visibly jumps.
+        if (offsets is { } given)
+        {
+            _offsetsWereGiven = true;
+            _xShift = previousView?.Xshift ?? 0;
+            _offsets = ClampOffsets(given, map, Dimensions, viewWidth, viewHeight);
+        }
+
         // Force redraw should be checked last as IsSameArea will set offsets 
-        if (previousView != null && IsInSameArea(previousView, location, Dimensions, forceRedraw) && !forceRedraw)
+        if (!_offsetsWereGiven && previousView != null && IsInSameArea(previousView, location, Dimensions, forceRedraw) && !forceRedraw)
         {
             ActivePos = GetPosForTile(location);
             BaseImage = previousView.BaseImage;
@@ -109,7 +128,7 @@ public abstract class BaseGameView : IGameView
         else
         {
             var elements = new List<IViewElement>();
-            if (_offsets == Vector2.Zero)
+            if (!_offsetsWereGiven && _offsets == Vector2.Zero)
             {
                 CalculateOffsets(null, location, Dimensions, force: true);
             }
@@ -472,6 +491,44 @@ public abstract class BaseGameView : IGameView
         rectangle.Y * RenderScale,
         rectangle.Width * RenderScale,
         rectangle.Height * RenderScale);
+
+    /// <summary>
+    /// Holds a requested position inside the map, the way the calculated ones are
+    /// held.
+    /// </summary>
+    /// <remarks>
+    /// Rounded to whole pixels and no further. The calculated offsets are rounded
+    /// to half a tile because they are centring a square on the screen; the
+    /// drawing itself only needs a translation, since it steps a row at a time
+    /// from the offset and takes the stagger from the row's own index. So a
+    /// position worked out from where the pointer is can be used exactly, which is
+    /// the difference between the map holding still under the cursor and creeping
+    /// half a tile with every step of the wheel.
+    /// </remarks>
+    private static Vector2 ClampOffsets(Vector2 requested, Map map, MapDimensions dimensions,
+        int viewWidth, int viewHeight)
+    {
+        var y = viewHeight >= dimensions.TotalHeight
+            ? (dimensions.TotalHeight - viewHeight) / 2f
+            : Math.Clamp(requested.Y, 0, dimensions.TotalHeight - viewHeight);
+
+        float x;
+        if (viewWidth >= dimensions.TotalWidth)
+        {
+            x = (dimensions.TotalWidth - viewWidth) / 2f;
+        }
+        else if (map.Flat)
+        {
+            x = Math.Clamp(requested.X, 0, dimensions.TotalWidth - viewWidth);
+        }
+        else
+        {
+            // A round world has no left or right edge to stop at.
+            x = requested.X;
+        }
+
+        return new Vector2(MathF.Round(x), MathF.Round(y));
+    }
 
     private bool IsInSameArea(IGameView previousView, Tile location, MapDimensions dimensions, bool force = false)
     {
