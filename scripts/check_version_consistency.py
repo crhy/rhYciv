@@ -18,6 +18,11 @@ from pathlib import Path
 REPOSITORY = Path(__file__).resolve().parents[1]
 BUILD_PROPS = REPOSITORY / "Directory.Build.props"
 METAINFO = REPOSITORY / "packaging" / "flatpak" / "io.github.crhy.rhYciv.metainfo.xml"
+SITE = REPOSITORY / "website" / "index.html"
+
+# What the website's source is allowed to say about the version: the placeholder
+# website/build.sh fills in, and nothing else.
+SITE_PLACEHOLDER = "__RHYCIV_VERSION__"
 
 
 def build_version() -> str:
@@ -38,6 +43,24 @@ def newest_release() -> str:
     return release.group(1)
 
 
+def site_version_is_typed_in() -> list[str]:
+    """Versions written into the website's source rather than substituted.
+
+    The front page carried "Download 0.1.2" as literal text and stayed there
+    while five releases went out, so the button on the front page offered a
+    version months behind the release it linked to. The page is built from a
+    placeholder now, and any hand-typed version is a return of that bug.
+    """
+    if not SITE.exists():
+        return []
+
+    page = SITE.read_text(encoding="utf-8")
+    if SITE_PLACEHOLDER not in page:
+        return ["the placeholder is missing from the page entirely"]
+
+    return sorted(set(re.findall(r"\b\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?\b", page)))
+
+
 def main() -> int:
     build, newest = build_version(), newest_release()
     if build != newest:
@@ -48,7 +71,18 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-    print(f"Version {build} agrees with the AppStream metainfo.")
+
+    typed_in = site_version_is_typed_in()
+    if typed_in:
+        print(
+            f"ERROR: {SITE.relative_to(REPOSITORY)} states a version of its own "
+            f"({', '.join(typed_in)}). The page must carry {SITE_PLACEHOLDER}, which "
+            f"website/build.sh fills in, so the site cannot fall behind a release.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"Version {build} agrees with the AppStream metainfo and the website.")
     return 0
 
 
