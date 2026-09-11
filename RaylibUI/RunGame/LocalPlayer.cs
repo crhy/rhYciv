@@ -979,16 +979,38 @@ public class LocalPlayer : IPlayer
         _gameScreen.ForceRedraw();
     }
 
+    /// <summary>
+    /// The end of the game, won or lost. The screen goes up, and answering it
+    /// returns to the main menu.
+    /// <para>
+    /// Both used to be a message and nothing more. A player whose last city fell
+    /// was told their civilisation had passed into memory and then left sitting in
+    /// a game they no longer had a civilisation in -- no turn ever came round to
+    /// them again, and the only way out was to quit the program. Winning was the
+    /// same: the world was yours, and then you went on playing it.
+    /// </para>
+    /// </summary>
+    private void EndOfGame(string dialogName, DialogImageElements? image = null)
+    {
+        SessionLog.Record($"game over: {dialogName}");
+        if (!_gameScreen.ShowPopup(dialogName, handleButtonClick: (_, _, _, _) => _gameScreen.Main.ReloadMain(),
+                dialogImage: image))
+        {
+            // The screen is not in this ruleset's text. The game is still over, and
+            // leaving the player in it is the worse of the two failures.
+            _gameScreen.Main.ReloadMain();
+        }
+    }
+
     public void CivilizationDestroyed()
     {
-        _gameScreen.ShowPopup("CIVDESTROYED");
+        EndOfGame("CIVDESTROYED");
     }
 
     public void CivilizationVictorious()
     {
-        _gameScreen.ShowPopup("CONQUEST",
-            dialogImage: new DialogImageElements(
-                [_gameScreen.Main.ActiveInterface.PicSources["victoryConquest"][0]]));
+        EndOfGame("CONQUEST", new DialogImageElements(
+            [_gameScreen.Main.ActiveInterface.PicSources["victoryConquest"][0]]));
     }
 
     public void CityDecrease(City city)

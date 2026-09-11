@@ -3,6 +3,7 @@ using RhyCiv.Engine.MapObjects;
 using RhyCiv.Engine.UnitActions;
 using RhyCiv.Tests.Mocks;
 using RhyCiv.Tests.TestFiles;
+using Model.Core.Cities;
 
 namespace RhyCiv.Tests.Cities;
 
@@ -59,18 +60,9 @@ public class CityGrowthTests
     [Fact]
     public void ACityLeftAlone_Grows()
     {
-        var (game, _, _) = CleanRoomGameFactory.CreateGame();
-        game.ConnectPlayer(new MockPlayer(game.GetPlayerCiv));
-        var civ = game.GetPlayerCiv;
-        var city = CityActions.BuildCity(civ.Units.First(unit => !unit.Dead), game, "Growing");
+        var (city, _, _) = ACityAfter(30);
 
-        for (var turn = 0; turn < 30; turn++)
-        {
-            game.ChoseNextCiv();
-        }
-
-        Assert.True(city.Size > 1,
-            $"after thirty turns the city is still size {city.Size}");
+        Assert.True(city.Size > 1, $"after thirty turns the city is still size {city.Size}");
     }
 
     [Fact]
@@ -79,17 +71,37 @@ public class CityGrowthTests
         // Growth that does not come with somewhere to work is growth that stops:
         // the next citizen eats without producing, the surplus falls, and the city
         // stalls a size or two above where it started.
-        var (game, _, _) = CleanRoomGameFactory.CreateGame();
-        game.ConnectPlayer(new MockPlayer(game.GetPlayerCiv));
-        var civ = game.GetPlayerCiv;
-        var city = CityActions.BuildCity(civ.Units.First(unit => !unit.Dead), game, "Employed");
-
-        for (var turn = 0; turn < 30; turn++)
-        {
-            game.ChoseNextCiv();
-        }
+        var (city, _, _) = ACityAfter(30);
 
         var specialists = city.NoOfSpecialistsx4 / 4;
         Assert.Equal(city.Size + 1 - specialists, city.WorkedTiles.Count);
+    }
+
+    /// <summary>
+    /// Founds a city and runs the city half of the turn for it, the number of
+    /// times asked.
+    /// <para>
+    /// Deliberately not the whole world's turn. Running every civilisation puts
+    /// the result at the mercy of what the computer players and the barbarians do
+    /// -- on one run in several the city under test was captured or starved for a
+    /// settler, and the test failed for a reason that had nothing to do with what
+    /// it was checking. This is the code path growth actually lives on, run
+    /// directly, and it is the same every time.
+    /// </para>
+    /// </summary>
+    private static (City City, Game Game, Model.Core.Civilization Civ) ACityAfter(int turns)
+    {
+        var (game, _, _) = CleanRoomGameFactory.CreateGame();
+        var player = new MockPlayer(game.GetPlayerCiv);
+        game.ConnectPlayer(player);
+        var civ = game.GetPlayerCiv;
+        var city = CityActions.BuildCity(civ.Units.First(unit => !unit.Dead), game, "Growing");
+
+        for (var turn = 0; turn < turns; turn++)
+        {
+            game.CitiesTurn(player);
+        }
+
+        return (city, game, civ);
     }
 }
