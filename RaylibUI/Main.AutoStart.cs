@@ -222,7 +222,7 @@ namespace RaylibUI
                               $"difficulty {game.DifficultyLevel}");
             Console.WriteLine(string.Join("\t",
                 "city", "owner", "size", "food", "eaten", "surplus", "stored", "box",
-                "shields", "support", "waste", "production", "trade", "corruption",
+                "shields", "support", "waste", "production", "trade", "corruption", "tax", "science",
                 "worked", "specialists", "tile-trade", "route-trade",
                 "happy", "content", "unhappy", "disorder", "improvements"));
 
@@ -235,7 +235,7 @@ namespace RaylibUI
                     city.FoodProduction, city.FoodConsumption, city.SurplusHunger,
                     city.FoodInStorage, (city.Size + 1) * game.Rules.Cosmic.RowsFoodBox,
                     city.TotalProduction, city.Support, city.Waste, city.Production,
-                    city.Trade, city.Corruption,
+                    city.Trade, city.Corruption, city.GetTax(), city.GetScience(),
                     city.WorkedTiles.Count, city.NoOfSpecialistsx4 / 4,
                     city.WorkedTiles.Sum(t => t.GetTrade(city.GetOrganizationLevel(game.Rules))),
                     RhyCiv.Engine.UnitActions.CaravanActions.TradeFromRoutes(game, city),
