@@ -1,20 +1,19 @@
-**Whole features that shipped and had never once run.**
+**Saved games that can be loaded again, and cities that grow.**
 
-Every one of these was already in the game: written, saved, drawn, and unable to
-happen. Diplomacy, trade routes, pollution and the Wonders report were all
-carried in the save format and read by nothing, forty-five menu entries were
-drawn with no command behind them, and the computer civilisations were not
-researching anything at all.
+Two faults in this release had been quietly ruining whole games. Neither of them
+looked like a fault in any one place: a saved game reported success and was
+written unreadable, and cities stopped growing because of a rule about what a
+civilisation can see.
 
 ## Install
 
 | Platform | Download |
 |---|---|
-| **Windows** (x64) | `rhYciv-0.1.7-win-x64.zip` — unzip, run `RaylibUI.exe` |
-| **macOS** (Apple silicon) | `rhYciv-0.1.7-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
-| **macOS** (Intel) | `rhYciv-0.1.7-osx-x64.zip` — same |
-| **Linux** (x64) | `rhYciv-0.1.7-linux-x64.tar.gz` — extract, run `./RaylibUI` |
-| **Linux** (Flatpak) | `rhYciv-0.1.7-x86_64.flatpak` |
+| **Windows** (x64) | `rhYciv-0.1.8-win-x64.zip` — unzip, run `RaylibUI.exe` |
+| **macOS** (Apple silicon) | `rhYciv-0.1.8-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
+| **macOS** (Intel) | `rhYciv-0.1.8-osx-x64.zip` — same |
+| **Linux** (x64) | `rhYciv-0.1.8-linux-x64.tar.gz` — extract, run `./RaylibUI` |
+| **Linux** (Flatpak) | `rhYciv-0.1.8-x86_64.flatpak` |
 
 Nothing else is needed. No commercial Civilization II installation, no runtime to install — each download carries its own .NET runtime and the complete art set.
 
@@ -33,159 +32,106 @@ xattr -dr com.apple.quarantine /Applications/rhYciv.app
 **Linux Flatpak**:
 
 ```
-flatpak install --user ./rhYciv-0.1.7-x86_64.flatpak
+flatpak install --user ./rhYciv-0.1.8-x86_64.flatpak
 flatpak run io.github.crhy.rhYciv
 ```
 
-## You can talk to the other civilisations
+## Your saved games open again
 
-Contact, cease-fires, peace treaties, alliances, embassies, reputation and
-attitude have been carried in every saved game since the beginning and **read by
-nothing**. Civilisations met by walking into each other, and from that moment
-there was no way to end a war, start one deliberately, or make a gift. They
-fought until one of them was gone.
+Saving worked. Loading did not, and the reason was three steps removed from
+anything about saving.
 
-Civilisations now meet when their units or cities come in sight of each other,
-and a **Foreign Ministry** (Kingdom menu, or Ctrl+D) opens a parley with anyone
-you have met: cease-fire, peace, alliance, a declaration of war, a gift of gold
-or of an advance. Computer civilisations answer on their own terms — weighing
-what they think of you against how the war is going — and **come asking for a
-cease-fire themselves when they are losing**, so a war is no longer something
-only you can end. A **Diplomat can establish an embassy**, which is the first
-thing Civ II's Diplomat is for and the one thing this one could not do.
+The save writer asks .NET what type each field is and writes it accordingly. A
+field that holds *a value, or nothing at all* — a research goal that may not have
+been chosen yet — is a kind of type that answers "object" to that question, so
+the writer took the branch that writes an object and produced `{}` where a number
+belonged. Nothing complained. The failure came on the way back in, where the
+reader wants a number, finds an object, and gives up on the entire file.
 
-Treaties bind them the way Civ II's treaties bind, which is to say **not
-reliably**. What holds a computer civilisation back is thinking well of you
-rather than the piece of paper: nobody moves while their attitude is above
-neutral, and below it they turn on the weak, on anyone whose economy has
-eclipsed theirs, and on anyone whose own word is worthless. Breaking a treaty
-costs **two black marks**, one fades every twenty-four turns times the
-difficulty, and every civilisation that has met you thinks less of you for it.
-The parley screen shows their opinion of you and your own reputation, because in
-the original both are what you learn to read.
+A research goal is set the first time you answer the research prompt. So in
+practice **every real saved game was written unreadable**: the game said the save
+had succeeded, and would not open it again. The turns of anarchy after a
+revolution and a city's stolen technology went the same way.
 
-Nuclear Gandhi is reproduced deliberately. India beelines for fission and
-rocketry, builds warheads ahead of anything else, and having built them stops
-finding treaties interesting. A nuclear strike works as Civ II's does:
-everything on the square dies, a city loses half its people, and the ground
-around it is left poisoned.
+The writer produces a number now, and the reader accepts the damaged form as
+"not set" — so **the saves already on your disk open** rather than being lost.
 
-## Caravans trade
+Telling you the save could not be read used to crash on its own account, which is
+the worst possible moment for a second fault. That is fixed too.
 
-Cities were given commodities to supply and demand, the city window had a line
-for trade routes that read a literal **"+xx"**, the map drew the routes as golden
-threads between cities, the save format carried them — and nothing in the game
-could create one. A caravan reaching a foreign city was refused as a failed
-attack; a caravan reaching one of its own cities simply stood there.
+## Cities grow
 
-A caravan arriving now offers what Civ II offers: **open a trade route**, **put
-its cargo into a wonder** the city is building, or go on to a better market. What
-the route is worth is shown before the caravan is spent on it, since that is the
-whole basis for deciding whether to trade here or push on. Routes follow Civ II's
-arithmetic — the distance plus ten, times the trade the two cities make, over
-twenty-four, halved on the same continent and halved again within one
-civilisation — so the profitable routes are the long ones to strangers, and a
-city that wants what the caravan carries pays twice over. **Routes then bring
-their cities trade every turn**, which is what makes them worth opening.
+A citizen is only put to work on a square its civilisation can see, and founding
+a city revealed nothing at all: the engine marked no squares, and the interface
+marked only the one the settler was standing on. A new city therefore worked its
+own centre square and nothing else — two food produced, two food eaten, no
+surplus, and no growth ever — and sat at size one until a unit happened to wander
+across its fields.
 
-## Wonders are unique, and the world hears about them
+Nothing about that looks wrong in any one place. The food box is right, the
+growth rule is right, and the worker assignment is right. They simply could not
+agree.
 
-**Nothing stopped two civilisations — or two cities of one civilisation — from
-each raising the Pyramids** and each taking the benefit. A finished wonder is now
-withdrawn from every build list in the world, and a city that was building it is
-told the race is lost and picks something else, keeping the shields it has spent.
+What it looked like from the outside was a game where nothing ever got bigger: a
+saved game from **AD 1220, turn 162**, held thirty-four cities across the whole
+world and the largest was **size four**. A city now goes from size one to size
+three inside thirty turns.
 
-Civ II's three notices all arrive: scaffolds going up are news everywhere, a
-wonder passing three quarters of its cost is told to the civilisations racing for
-the same one, and a completed wonder is announced to everybody. Capturing a city
-that holds wonders reports them.
+## Clicks that register
 
-The **Wonders of the World** report (F7) built one blank row per city of your own
-civilisation and filled in nothing at all, so the one place in the game that
-answers "who has built what" answered nothing. It lists every wonder with the
-city that holds it, or who is working on it, or that nobody has started.
+Clicking away to another window and clicking back stopped units being selectable.
+Whether a click could begin on a control was decided once, when the pointer
+entered it — and entering with a button already down, which is exactly what the
+click that raises the window looks like, left it refusing clicks with nothing to
+re-arm it. The map is one control filling most of the window, so there was
+nowhere to leave and re-enter: the only way out was to sweep the pointer over the
+menu bar and back.
 
-## Pollution, and the climate
+## Winning and losing end the game
 
-A city works out how much pollution it produces, the improvement exists with art
-to draw it, settlers can be ordered to clear it, and the messages were written —
-and **nothing ever put a single square of it on the map**, so Mass Transit, the
-Recycling Center, the Solar Plant, Hoover Dam and the Eiffel Tower were all
-defending against something that could not occur.
+Both used to be a message and nothing more. A player whose last city fell was
+told their civilisation had passed into memory, and was then left sitting in a
+game they no longer had a civilisation in: no turn ever came round to them again,
+and the only way out was to quit the program. Winning was the same — the world
+was yours, and then you went on playing it. Either screen now returns you to the
+main menu.
 
-A city now rolls its pollution figure each turn against one square of its own
-working radius. The square loses half its yield until it is cleaned, and you are
-told and shown which one. Left uncleaned, enough of it shifts the climate: forest
-becomes jungle, grassland swamp, plains and tundra desert. **Global warming is
-off by default** and turned on in the new **Advanced Settings** dialog, along
-with the cheat and editor menus, which no longer appear on the menu bar unless
-you ask for them.
+## Zoom follows the pointer
 
-Computer civilisations' settlers could not improve terrain **at all** — they
-founded cities and then wandered, so their land was never irrigated, mined or
-roaded, and none of their pollution would ever have been cleaned. They work their
-land now.
+Ctrl and the wheel changed the zoom and left the view centred on the active unit,
+so the square you were aiming at slid away from the cursor — worse the further it
+was from the unit. Zooming in now anchors on the square under the pointer, so
+what you are pointing at stays where it is. Zooming back out past normal lets go,
+and the view returns to following the unit whose turn it is.
 
-## Menus that lead somewhere
+The horizontal shift that decides which column of a round world the drawing
+starts from was also being changed while the whole map was on screen, where it is
+not used — so selecting a unit while zoomed out quietly rotated the world
+sideways, and the rotation only appeared on the next step of zoom.
 
-Forty-five entries across the Game, View, Orders, World, Cheat and Editor menus
-were drawn with **no command behind them**: you clicked and nothing happened.
-Most of them had working commands the menu simply never reached.
+## A city says everything it has to say at once
 
-Build Mines, Build Fortress, Build Airbase and Clear Pollution were all
-implemented and unreachable — the Orders menu's template for generating one entry
-per terrain improvement was keyed to irrigation, so it generated nothing, and
-Build Mines pointed at a command id the command does not have. Move Pieces, View
-Pieces, Center View and Activate Unit had no commands at all and now do; V swaps
-between moving and viewing as it does in Civ II. What is genuinely not
-implemented is left out of the menus rather than advertised, and a test now fails
-on any new entry that neither names a command nor says it should be hidden.
+A city that came out of disorder and finished a unit in the same turn asked
+twice, and answering "zoom to city" on the first opened the city window with the
+second message still queued behind it — so the news arrived after you had already
+looked at the city it was about. Everything one city has to report now arrives as
+one message with one Zoom to City to answer.
 
-All eleven **City Report Options** were read from their dialog, written back,
-defaulted to off, and then consulted by nothing: turning a message off left it
-arriving anyway. They default on, as in Civ II, and each one now governs its
-message.
+## Smaller things
 
-## The difficulty levels differ
-
-The difficulty was asked for at the start of every game, written into the save,
-and read in three places. **Prince and Deity played very nearly the same game.**
-
-Computer civilisations pay **160%** of the listed price for everything they build
-on Chieftain, sliding to **80%** on Deity, and at Emperor and Deity their cities
-bank extra shields on top — Civ II's production box squeeze. Barbarians attack at
-**a quarter strength on Chieftain and half as hard again on Deity**, which is
-most of what makes a landing frightening on the high levels. You always pay the
-listed price and get no help at any level.
-
-**Computer civilisations research now.** Without a Lua script to choose for them
-they researched nothing whatever for the entire game, which is why they were
-still in the bronze age when you reached the moon.
-
-## A tutorial
-
-The Tutorial help option has been written into every save and consulted by
-nothing, because there was no tutorial to govern. It is on for Chieftain, Warlord
-and Prince — the levels people learn on — and there is advice to go with it now:
-**how the number pad moves a unit**, what a Settlers unit is for, what the city
-window does, and how research is chosen. Each piece is shown once and remembered
-between games; Advanced Settings has a checkbox to put it all back.
-
-## Known limitations
-
-Multiplayer, several advisor screens, the space race, and the map and rules
-editors are not implemented. Some interface art is still placeholder. Scripted
-Lua dialogs do not work at all — see #110. What still needs finishing is tracked
-in detail in the 0.1.7 to-do issue.
-
-Each download is about 190 MB because it is fully self-contained. It cannot be
-trimmed: the game discovers its interface implementations by reflection at
-startup, and trimming removes exactly those assemblies.
-
-## Reporting problems
-
-Please open an issue at https://github.com/crhy/rhYciv/issues. Say which platform and which download, and attach the log from:
-
-- **Linux** `~/.local/share/rhYciv/Logs` (Flatpak: `~/.var/app/io.github.crhy.rhYciv/data/rhYciv/Logs`)
-- **Windows** `%LOCALAPPDATA%\rhYciv\Logs`
-- **macOS** `~/Library/Application Support/rhYciv/Logs`
+- **City names on the map** are sized to be read rather than growing with the
+  zoom until the name is wider than the city. "Carthago" was being drawn three
+  times the width of Carthage.
+- **The fortification marker in the city window** is fitted to the unit standing
+  in it, rather than to a map tile there is none of in a list row.
+- **The website states the version it is actually offering.** The front page
+  carried "Download 0.1.2" as typed-in text and stayed there while five releases
+  went out. Everything the page says about the build is now read from the build.
+- **A crash that kills the process before any handler can run leaves something
+  behind.** The packaged launcher keeps what the game and the runtime printed, and
+  the next launch folds it into the crash report — which is the difference between
+  "it crashed on turn 49" and knowing why.
+- **A repeating scheduled job runs more than once.** The scheduler replaced an
+  entry of the same name in place, and the loop removed the entry after running
+  it, so an action that asked to be run again wrote its next run into the very
+  slot about to be removed.
