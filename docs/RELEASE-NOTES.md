@@ -117,6 +117,25 @@ second message still queued behind it — so the news arrived after you had alre
 looked at the city it was about. Everything one city has to report now arrives as
 one message with one Zoom to City to answer.
 
+## Barbarians who were not in a village
+
+Every barbarian in the game came out of a goody hut: a unit walked into a village
+and something unpleasant came out of it. Nothing ever rose out of empty country
+or came ashore from the sea, so a civilisation that had cleared the huts near it
+was never troubled again — and the **Barbarity** question in the new-game dialog
+chose between four levels of a thing that only happened when you went looking for
+it.
+
+Raiders now appear in somebody's country every so often: more often the higher
+the setting, and never on *Villages Only*, which is what it says. Who they come
+for is weighted by how much each civilisation has worth taking. They land three
+to five squares out rather than on top of a city, and they arrive with their
+moves already spent, so the city gets a turn to prepare.
+
+The first two dozen turns are left alone deliberately. A size-one city with one
+warrior in it has no answer to a horde, and losing to one before the game has
+started is a wasted session rather than a difficulty setting.
+
 ## Smaller things
 
 - **City names on the map** are sized to be read rather than growing with the
