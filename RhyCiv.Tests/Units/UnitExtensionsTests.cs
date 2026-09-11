@@ -169,8 +169,24 @@ public class UnitExtensionsTests
     [Fact]
     public void DefenseFactor_RiverAddsAQuarter()
     {
-        // Grassland x1 and a river's +25%.
-        Assert.Equal(12, Defender().DefenseFactor(GroundAttacker(), TerrainTile(river: true), 0));
+        // Grassland x1 and a river's +25%. The quarter used to be rounded away at
+        // the end; this asserted 12 and so was pinning the rounding rather than
+        // the rule.
+        Assert.Equal(12.5, Defender().DefenseFactor(GroundAttacker(), TerrainTile(river: true), 0));
+    }
+
+    [Fact]
+    public void DefenseFactor_TheWeakestUnitStillGainsByDiggingIn()
+    {
+        // Warriors defend at 1. Every other test here uses a defence of ten or a
+        // hundred, where rounding the result down costs nothing -- and on those
+        // values this fault was invisible. On the numbers the game actually uses,
+        // fortifying took Warriors to 1.5 and the rounding took them back to 1, so
+        // digging in did nothing at all for the unit most often left holding a new
+        // city. The attacker's side of the same sum was never rounded.
+        var warriors = Defender(defense: 1, order: (int)OrderType.Fortified);
+
+        Assert.Equal(1.5, warriors.DefenseFactor(GroundAttacker(), TerrainTile(), 0));
     }
 
     [Fact]

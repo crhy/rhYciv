@@ -42,7 +42,25 @@ public static class UnitExtensions
     }
 
 
-    public static int DefenseFactor(this Unit defendingUnit, Unit attackingUnit, Tile tile, int groundDefMultiplier)
+    /// <summary>
+    /// How hard a unit is to shift, all its bonuses applied.
+    /// </summary>
+    /// <remarks>
+    /// Returned as it is calculated rather than rounded down to a whole number.
+    /// The whole of this is worked out in fractions -- fortifying is half again,
+    /// a river a quarter more, forest and jungle half again -- and every one of
+    /// them used to be thrown away at the end by a cast to int.
+    ///
+    /// On the values the tests used, all tens and hundreds, that cost nothing. On
+    /// the values the game actually uses it cost the defender the bonus outright:
+    /// Warriors defend at 1, so fortifying took them to 1.5 and the cast took them
+    /// straight back to 1. Digging in did nothing whatever for the weakest unit in
+    /// the game, which is the one most often left holding a new city -- and the
+    /// attacker's side of the same sum was never rounded, so the loss was all the
+    /// defender's. It is why a barbarian horseman went through fortified warriors
+    /// in one city after another (#61, #75).
+    /// </remarks>
+    public static double DefenseFactor(this Unit defendingUnit, Unit attackingUnit, Tile tile, int groundDefMultiplier)
     {
         //Carried units cannot be the defender
         if (defendingUnit.InShip != null) return 0;
@@ -181,7 +199,7 @@ public static class UnitExtensions
         // Effect of terrain
         df *= tile.Defense;
 
-        return (int)df;
+        return (double)df;
     }
 
     /// <summary>
