@@ -65,6 +65,7 @@ namespace RaylibUI
                                   $"player '{loadedGame.Game.GetPlayerCiv.TribeName}' " +
                                   $"with {loadedGame.Game.GetPlayerCiv.Cities.Count} cities");
                 StartGame(loadedGame.Game, loadedGame.ViewData);
+                ReportGameState(loadedGame.Game);
                 StartZoomSweep();
                 StartWindowChurn();
                 return true;
@@ -192,6 +193,55 @@ namespace RaylibUI
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Prints what this game works out for every city, when RHYCIV_REPORT is
+        /// set, and quits.
+        /// </summary>
+        /// <remarks>
+        /// For comparing against the original. Civilization II's own save files
+        /// load here directly, so the same position can be opened in both games --
+        /// and Civ II states its numbers on the city screen, where they can be read
+        /// off and set beside these. A disagreement names the formula that is
+        /// wrong, which is a great deal more use than an anecdote about a battle.
+        ///
+        /// Tab-separated, so it can be pasted into anything that takes a table.
+        /// </remarks>
+        private void ReportGameState(Model.Core.IGame game)
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_REPORT")))
+            {
+                return;
+            }
+
+            var civ = game.GetPlayerCiv;
+            Console.WriteLine($"# rhYciv report: turn {game.TurnNumber}, {game.Date.GameYearString(game.TurnNumber)}");
+            Console.WriteLine($"# player {civ.TribeName}  gold {civ.Money}  science {civ.Science}  " +
+                              $"tax {civ.TaxRate}%  sci-rate {civ.ScienceRate}%  government {civ.Government}  " +
+                              $"difficulty {game.DifficultyLevel}");
+            Console.WriteLine(string.Join("\t",
+                "city", "owner", "size", "food", "eaten", "surplus", "stored", "box",
+                "shields", "support", "waste", "production", "trade", "corruption",
+                "worked", "specialists", "happy", "content", "unhappy", "disorder"));
+
+            foreach (var city in game.AllCities.OrderBy(c => c.OwnerId).ThenBy(c => c.Name))
+            {
+                city.CalculateOutput(city.Owner.Government, game);
+                var happy = city.CalculateHappiness(game);
+                Console.WriteLine(string.Join("\t",
+                    city.Name, city.Owner.TribeName, city.Size,
+                    city.FoodProduction, city.FoodConsumption, city.SurplusHunger,
+                    city.FoodInStorage, (city.Size + 1) * game.Rules.Cosmic.RowsFoodBox,
+                    city.TotalProduction, city.Support, city.Waste, city.Production,
+                    city.Trade, city.Corruption,
+                    city.WorkedTiles.Count, city.NoOfSpecialistsx4 / 4,
+                    happy.HappyCitizens, happy.ContentCitizens, happy.UnhappyCitizens,
+                    happy.IsInDisorder));
+            }
+
+            Console.Out.Flush();
+            _shouldClose = true;
         }
 
         /// <summary>
