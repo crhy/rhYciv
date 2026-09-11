@@ -223,7 +223,8 @@ namespace RaylibUI
             Console.WriteLine(string.Join("\t",
                 "city", "owner", "size", "food", "eaten", "surplus", "stored", "box",
                 "shields", "support", "waste", "production", "trade", "corruption",
-                "worked", "specialists", "happy", "content", "unhappy", "disorder"));
+                "worked", "specialists", "tile-trade", "route-trade",
+                "happy", "content", "unhappy", "disorder", "improvements"));
 
             foreach (var city in game.AllCities.OrderBy(c => c.OwnerId).ThenBy(c => c.Name))
             {
@@ -236,8 +237,11 @@ namespace RaylibUI
                     city.TotalProduction, city.Support, city.Waste, city.Production,
                     city.Trade, city.Corruption,
                     city.WorkedTiles.Count, city.NoOfSpecialistsx4 / 4,
+                    city.WorkedTiles.Sum(t => t.GetTrade(city.GetOrganizationLevel(game.Rules))),
+                    RhyCiv.Engine.UnitActions.CaravanActions.TradeFromRoutes(game, city),
                     happy.HappyCitizens, happy.ContentCitizens, happy.UnhappyCitizens,
-                    happy.IsInDisorder));
+                    happy.IsInDisorder,
+                    city.Improvements.Count == 0 ? "-" : string.Join("+", city.Improvements.Select(i => i.Name))));
             }
 
             Console.Out.Flush();

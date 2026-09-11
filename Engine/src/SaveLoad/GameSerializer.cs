@@ -246,12 +246,13 @@ public class GameSerializer
 
         if (cityData.CommodityInRoute != null && cityData.TradeRoutePartnerCity != null)
         {
-            city.TradeRoutes = cityData.CommodityInRoute.Zip(cityData.TradeRoutePartnerCity).Select(((tuple) =>
-                new TradeRoute
+            city.TradeRoutes = cityData.CommodityInRoute.Zip(cityData.TradeRoutePartnerCity)
+                .Where(tuple => UnitActions.CaravanActions.IsRecordedRoute(tuple.First, tuple.Second))
+                .Select(tuple => new TradeRoute
                 {
                     Commodity = rules.CaravanCommoditie[tuple.First % rules.CaravanCommoditie.Length],
                     Destination = tuple.Second
-                })).ToArray();
+                }).ToArray();
         }
 
         if (cityData.Workers != null)

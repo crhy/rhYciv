@@ -229,6 +229,24 @@ public static class CaravanActions
     /// produce. Without this the routes were drawn on the map and listed in the
     /// city window and earned nothing whatever.
     /// </summary>
+    /// <summary>
+    /// Whether a trade-route slot holds a route at all.
+    /// </summary>
+    /// <remarks>
+    /// A city keeps three slots whether or not it has any routes, and an unused
+    /// one is zero in both fields. Both readers built a route out of every slot
+    /// regardless, so every city in the world came out of a saved game with three
+    /// routes to whichever city happened to be first in the list -- worth a
+    /// hundred and twenty trade to a city whose squares produced three. It showed
+    /// up the moment a real Civ II save was opened beside the original: Civ II
+    /// said Cardiff had 3 trade and this said 123.
+    ///
+    /// Commodity zero alone is not enough to call a slot empty, because it names a
+    /// real commodity; the pair being zero is what marks one unused.
+    /// </remarks>
+    public static bool IsRecordedRoute(int commodity, int destination) =>
+        commodity != 0 || destination != 0;
+
     public static int TradeFromRoutes(IGame game, City city)
     {
         var total = 0;

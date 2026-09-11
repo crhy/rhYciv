@@ -1032,7 +1032,13 @@ public class Read
                 ActiveTradeRoutes = activeTradeRoutes,
                 CommoditySupplied = commoditySupplied.Where(c => c < rules.CaravanCommoditie.Length).Select(c => rules.CaravanCommoditie[c]).ToArray(),
                 CommodityDemanded = commodityDemanded.Where(c => c < rules.CaravanCommoditie.Length).Select(c => rules.CaravanCommoditie[c]).ToArray(),
-                TradeRoutes = commodityInRoute.Zip(tradeRoutePartnerCity).Select((tuple) => new TradeRoute { Commodity = rules.CaravanCommoditie[tuple.First % rules.CaravanCommoditie.Length], Destination = tuple.Second }).ToArray(),
+                TradeRoutes = commodityInRoute.Zip(tradeRoutePartnerCity)
+                    .Where(tuple => UnitActions.CaravanActions.IsRecordedRoute(tuple.First, tuple.Second))
+                    .Select(tuple => new TradeRoute
+                    {
+                        Commodity = rules.CaravanCommoditie[tuple.First % rules.CaravanCommoditie.Length],
+                        Destination = tuple.Second
+                    }).ToArray(),
                 //CommodityInRoute = commodityInRoute.Select(c => (CommodityType)c).ToArray(),
                 TradeRoutePartnerCity = tradeRoutePartnerCity,
                 //Science = science,    //what does this mean???
