@@ -140,6 +140,14 @@ public class MockPlayer : IPlayer
     {
     }
 
+    /// <summary>Uprisings this player was told about, newest last.</summary>
+    public List<(Tile Where, bool FromTheSea)> Uprisings { get; } = [];
+
+    public void BarbarianUprising(Tile where, bool fromTheSea)
+    {
+        Uprisings.Add((where, fromTheSea));
+    }
+
 
     public void CivilizationVictorious()
     {

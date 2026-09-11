@@ -1002,6 +1002,24 @@ public class LocalPlayer : IPlayer
         }
     }
 
+    /// <summary>
+    /// Raiders in the country. Taking the player to them is the point of the
+    /// message: an uprising several squares from a city is easy to miss entirely
+    /// until it is at the gates.
+    /// </summary>
+    public void BarbarianUprising(Tile where, bool fromTheSea)
+    {
+        _gameScreen.ShowPopup(fromTheSea ? "BARBARIANSLAND" : "BARBARIANS",
+            handleButtonClick: (_, index, _, _) =>
+            {
+                if (index == 0)
+                {
+                    _gameScreen.SetViewAnchor(where);
+                }
+            },
+            options: [Labels.For(LabelIndex.ZoomToCity), Labels.For(LabelIndex.Continue)]);
+    }
+
     public void CivilizationDestroyed()
     {
         EndOfGame("CIVDESTROYED");

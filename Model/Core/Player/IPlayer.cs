@@ -189,6 +189,12 @@ namespace Model.Core.Player
         void NuclearStrike(Tile target, Civilization attacker);
 
         /// <summary>
+        /// Raiders have appeared in this civilisation's country, out of empty
+        /// land or off the sea rather than out of a village somebody walked into.
+        /// </summary>
+        void BarbarianUprising(Tile where, bool fromTheSea);
+
+        /// <summary>
         /// Another civilisation has declared war, or begun one by attacking. If
         /// there was a treaty between them, they have just broken it.
         /// </summary>

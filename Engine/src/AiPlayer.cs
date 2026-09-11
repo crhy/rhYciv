@@ -340,6 +340,12 @@ namespace RhyCiv.Engine
         {
         }
 
+        public void BarbarianUprising(Model.Core.Mapping.Tile where, bool fromTheSea)
+        {
+            // A computer civilisation finds out the way everyone else does: by
+            // meeting them.
+        }
+
         public void CivilizationDestroyed()
         {
         }

@@ -1119,7 +1119,7 @@ namespace RhyCiv.Engine.UnitActions
                 return;
             }
 
-            var barbarianUnitDefinition = GetBarbarianUnitDefinition(game, triggeringUnit);
+            var barbarianUnitDefinition = Barbarians.UnitFor(game, triggeringUnit.Owner);
             if (barbarianUnitDefinition == null)
             {
                 outcome.Message = "The village is deserted, but ominous tracks lead away from it.";
@@ -1148,7 +1148,8 @@ namespace RhyCiv.Engine.UnitActions
             var created = 0;
             foreach (var spawnTile in spawnTiles)
             {
-                var barbarian = CreateBarbarianUnit(barbarianCiv, barbarianUnitDefinition, spawnTile, veteran: DifficultyRules.BarbariansAreVeterans(game));
+                var barbarian = Barbarians.Create(barbarianCiv, barbarianUnitDefinition, spawnTile,
+                    veteran: DifficultyRules.BarbariansAreVeterans(game));
                 barbarian.MovePointsLost = barbarian.MaxMovePoints;
                 spawnTile.SetVisible(triggeringUnit.Owner.Id);
                 created++;
@@ -1165,43 +1166,6 @@ namespace RhyCiv.Engine.UnitActions
                     : "A barbarian horde appears near the village!";
         }
 
-        private static UnitDefinition? GetBarbarianUnitDefinition(IGame game, Unit triggeringUnit)
-        {
-            var preferredTypes = triggeringUnit.Owner.Epoch <= 1
-                ? new[] { UnitType.Horsemen, UnitType.Warriors, UnitType.Archers }
-                : new[] { UnitType.Dragoons, UnitType.Crusaders, UnitType.Horsemen, UnitType.Warriors };
-
-            foreach (var preferredType in preferredTypes)
-            {
-                var index = (int)preferredType;
-                if (index >= 0 && index < game.Rules.UnitTypes.Length)
-                {
-                    return game.Rules.UnitTypes[index];
-                }
-            }
-
-            return game.Rules.UnitTypes.FirstOrDefault(unit => unit.Domain == UnitGas.Ground && unit.Attack > 0);
-        }
-
-        private static Unit CreateBarbarianUnit(Civilization owner, UnitDefinition unitDefinition, Tile tile, bool veteran)
-        {
-            var unit = new Unit
-            {
-                Id = owner.Units.Count != 0 ? owner.Units.Max(u => u.Id) + 1 : 0,
-                Order = (int)OrderType.NoOrders,
-                Owner = owner,
-                Veteran = veteran,
-                X = tile.X,
-                Y = tile.Y,
-                MapIndex = tile.Z,
-                TypeDefinition = unitDefinition,
-                NeedsSupport = false
-            };
-
-            owner.Units.Add(unit);
-            unit.CurrentLocation = tile;
-            return unit;
-        }
         /// <summary>
         /// Gives the mercenaries a soldier's uniform.
         /// <para>

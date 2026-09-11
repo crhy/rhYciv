@@ -33,7 +33,18 @@ namespace RhyCiv.Engine
             ChoseNextCiv();
         }
 
-        private void StartNextTurnCore()
+        /// <summary>
+        /// The part of a turn that belongs to the world rather than to any
+        /// civilisation: the calendar, power ratings, the climate, reputations
+        /// fading, and barbarian uprisings.
+        /// <para>
+        /// Internal so tests can step the world forward without also running every
+        /// civilisation's turn. A rule that fires once every so many turns needs
+        /// hundreds of turns to check, and running eight computer players through
+        /// each of them makes the result depend on what they happen to do.
+        /// </para>
+        /// </summary>
+        internal void StartNextTurnCore()
         {
             TurnNumber++;
 
@@ -48,6 +59,10 @@ namespace RhyCiv.Engine
 
             // And time doing what it does to the memory of a broken treaty.
             Diplomacy.DiplomacyFunctions.FadeReputations(this);
+
+            // Raiders out of the empty country, which until now only ever came out
+            // of a village somebody had walked into.
+            BarbarianUprisings.Resolve(this);
 
             _activeCivId = -1;
         }

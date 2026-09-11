@@ -1,4 +1,5 @@
 using RhyCiv.Engine;
+using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.IO;
 using RhyCiv.Engine.NewGame;
 using RhyCiv.Engine.SaveLoad;
@@ -35,6 +36,79 @@ internal static class CleanRoomGameFactory
         ValidateTemplate(template, rules);
         var game = (Game)new JsonSavFile().LoadGame(template.Save, template.Ruleset, rules);
         return (game, template.Ruleset, rules);
+    }
+
+    /// <summary>
+    /// The same game with the Barbarity question answered a particular way.
+    /// <para>
+    /// The setting is fixed when a game is created and readable but not writable
+    /// afterwards, which is right -- it is one of the answers the player gave at
+    /// the start. So it is set where the player's answer is set: in the saved game
+    /// the template is loaded from.
+    /// </para>
+    /// </summary>
+    internal static (Game Game, Ruleset Ruleset, Rules Rules) CreateGame(BarbarianActivityType activity)
+    {
+        var template = GameTemplate.Value;
+        Labels.UpdateLabels(template.Ruleset);
+        var rules = RulesParser.ParseRules(template.Ruleset);
+        ValidateTemplate(template, rules);
+
+        var save = WithBarbarianActivity(template.Save, (int)activity);
+        var game = (Game)new JsonSavFile().LoadGame(save, template.Ruleset, rules);
+        if (game.BarbarianActivity != (int)activity)
+        {
+            throw new InvalidOperationException(
+                $"asked for barbarian activity {activity} but the loaded game reports {game.BarbarianActivity}");
+        }
+
+        return (game, template.Ruleset, rules);
+    }
+
+    private static byte[] WithBarbarianActivity(byte[] save, int activity)
+    {
+        using var document = JsonDocument.Parse(save);
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                if (property.Name != "game")
+                {
+                    property.WriteTo(writer);
+                    continue;
+                }
+
+                writer.WriteStartObject("game");
+                foreach (var gameProperty in property.Value.EnumerateObject())
+                {
+                    if (gameProperty.Name != "data")
+                    {
+                        gameProperty.WriteTo(writer);
+                        continue;
+                    }
+
+                    writer.WriteStartObject("data");
+                    foreach (var data in gameProperty.Value.EnumerateObject())
+                    {
+                        if (data.Name != "BarbarianActivity")
+                        {
+                            data.WriteTo(writer);
+                        }
+                    }
+
+                    writer.WriteNumber("BarbarianActivity", activity);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+        }
+
+        return stream.ToArray();
     }
 
     private static void ValidateTemplate(Template template, Rules rules)
