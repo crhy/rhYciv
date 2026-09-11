@@ -676,10 +676,13 @@ namespace RhyCiv.UI.Classic.ImageLoader
         /// Width of the grassland shield marker as a fraction of the tile. It is a
         /// marker saying the square yields a shield, not a feature of the terrain,
         /// so it should read at a glance without competing with what is drawn on the
-        /// tile. It was at 0.44, which covered most of the square. The height limit
-        /// is twice this, because the tile is 2:1.
+        /// tile. It was at 0.44, which covered most of the square, then 0.22, which
+        /// still read as an object lying on the ground -- a stone medallion the size
+        /// of a manhole cover in the middle of a field. At an eighth of the square
+        /// it is a token again. The height limit is twice this, because the tile
+        /// is 2:1.
         /// </summary>
-        private const float GrassShieldTileFraction = 0.22f;
+        private const float GrassShieldTileFraction = 0.125f;
 
         private static Image? ComposeShieldTile(TerrainSet terrain, string path)
         {
