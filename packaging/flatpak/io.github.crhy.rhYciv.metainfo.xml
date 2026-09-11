@@ -34,6 +34,15 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.1.9" date="2026-09-11">
+      <description>
+        <p>The map, under the hands.</p>
+        <p>Zoom moves in even steps. The scale was linear in (8 + zoom) / 8, which made one step of the wheel double the map at the far end and change it by two and a half per cent up close -- a factor of nearly forty between the largest step and the smallest, so zoomed out it leapt and zoomed in the wheel appeared to do nothing. Every step is nine per cent now, and eight of them double the scale.</p>
+        <p>Zoom also goes towards the pointer: the point of the map under the cursor is put back under the cursor after the step, rather than the view staying centred on the active unit while the square you were aiming at slid away.</p>
+        <p>The weird diamond shadows are gone. Every square on the frontier of the explored map was given a softening where it meets the unknown, using a 32x16 checkerboard drawn when Civ II's squares were 64x32. Terrain composes at several times that now, so the mask was stretched until each of its pixels was a block -- and what was a shade became a coarse dark patch over a quarter of the square, on every square along the edge of the black. The city window showed them too, because the edge of a city's radius is a frontier as well.</p>
+        <p>The marker on a grassland square that yields an extra shield is an eighth of the square rather than a quarter, so it reads as a token on the ground instead of a stone medallion lying in the middle of a field.</p>
+      </description>
+    </release>
     <release version="0.1.8" date="2026-09-11">
       <description>
         <p>Saved games that can be loaded again, and cities that grow.</p>

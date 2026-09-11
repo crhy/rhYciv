@@ -1,19 +1,18 @@
-**Saved games that can be loaded again, and cities that grow.**
+**The map, under the hands.**
 
-Two faults in this release had been quietly ruining whole games. Neither of them
-looked like a fault in any one place: a saved game reported success and was
-written unreadable, and cities stopped growing because of a rule about what a
-civilisation can see.
+A short release on top of 0.1.8, all of it about how the map behaves while you
+are working it: the zoom, the shading at the edge of what you have explored, and
+one marker that was drawn several times the size it meant.
 
 ## Install
 
 | Platform | Download |
 |---|---|
-| **Windows** (x64) | `rhYciv-0.1.8-win-x64.zip` — unzip, run `RaylibUI.exe` |
-| **macOS** (Apple silicon) | `rhYciv-0.1.8-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
-| **macOS** (Intel) | `rhYciv-0.1.8-osx-x64.zip` — same |
-| **Linux** (x64) | `rhYciv-0.1.8-linux-x64.tar.gz` — extract, run `./RaylibUI` |
-| **Linux** (Flatpak) | `rhYciv-0.1.8-x86_64.flatpak` |
+| **Windows** (x64) | `rhYciv-0.1.9-win-x64.zip` — unzip, run `RaylibUI.exe` |
+| **macOS** (Apple silicon) | `rhYciv-0.1.9-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
+| **macOS** (Intel) | `rhYciv-0.1.9-osx-x64.zip` — same |
+| **Linux** (x64) | `rhYciv-0.1.9-linux-x64.tar.gz` — extract, run `./RaylibUI` |
+| **Linux** (Flatpak) | `rhYciv-0.1.9-x86_64.flatpak` |
 
 Nothing else is needed. No commercial Civilization II installation, no runtime to install — each download carries its own .NET runtime and the complete art set.
 
@@ -32,155 +31,66 @@ xattr -dr com.apple.quarantine /Applications/rhYciv.app
 **Linux Flatpak**:
 
 ```
-flatpak install --user ./rhYciv-0.1.8-x86_64.flatpak
+flatpak install --user ./rhYciv-0.1.9-x86_64.flatpak
 flatpak run io.github.crhy.rhYciv
 ```
 
-## Your saved games open again
+## Zoom moves in even steps
 
-Saving worked. Loading did not, and the reason was three steps removed from
-anything about saving.
+The scale was linear in `(8 + zoom) / 8`. That sounds harmless and is not: it
+made one step of the wheel do wildly different things depending on where you
+already were.
 
-The save writer asks .NET what type each field is and writes it accordingly. A
-field that holds *a value, or nothing at all* — a research goal that may not have
-been chosen yet — is a kind of type that answers "object" to that question, so
-the writer took the branch that writes an object and produced `{}` where a number
-belonged. Nothing complained. The failure came on the way back in, where the
-reader wants a number, finds an object, and gives up on the entire file.
+| zoom | scale | one step of the wheel |
+|---|---|---|
+| −7 → −6 | 0.125 → 0.25 | **×2.0** |
+| 0 → 1 | 1.0 → 1.125 | ×1.13 |
+| 31 → 32 | 4.875 → 5.0 | **×1.026** |
 
-A research goal is set the first time you answer the research prompt. So in
-practice **every real saved game was written unreadable**: the game said the save
-had succeeded, and would not open it again. The turns of anarchy after a
-revolution and a city's stolen technology went the same way.
+A factor of nearly forty between the largest step and the smallest. Zoomed out
+the map leapt about; zoomed in the wheel appeared to do nothing at all.
 
-The writer produces a number now, and the reader accepts the damaged form as
-"not set" — so **the saves already on your disk open** rather than being lost.
+The scale is geometric now: **every step is nine per cent**, and eight of them
+double it. The ends of the range moved to −24…19 so the reachable scale stays
+about what it was — an eighth of normal up to five times it.
 
-Telling you the save could not be read used to crash on its own account, which is
-the worst possible moment for a second fault. That is fixed too.
+## Zoom goes towards the pointer
 
-## Cities grow
+Ctrl and the wheel changed the zoom and left the view centred on the active
+unit, so the square you were aiming at slid away from the cursor — worse the
+further it was from the unit.
 
-A citizen is only put to work on a square its civilisation can see, and founding
-a city revealed nothing at all: the engine marked no squares, and the interface
-marked only the one the settler was standing on. A new city therefore worked its
-own centre square and nothing else — two food produced, two food eaten, no
-surplus, and no growth ever — and sat at size one until a unit happened to wander
-across its fields.
+The point of the map under the cursor is now put back under the cursor after the
+step. Not "centre the square under the cursor", which is a different thing and
+looks worse: that throws the square to the middle of the screen on the first
+click and swings the rest of the map around it.
 
-Nothing about that looks wrong in any one place. The food box is right, the
-growth rule is right, and the worker assignment is right. They simply could not
-agree.
+From zoom 4 upwards the square under the pointer is identical at every step of a
+sweep to the maximum. Below that it can still drift by up to a square a step,
+where the tiles are small enough that a pixel of rounding is a sizeable fraction
+of one.
 
-What it looked like from the outside was a game where nothing ever got bigger: a
-saved game from **AD 1220, turn 162**, held thirty-four cities across the whole
-world and the largest was **size four**. A city now goes from size one to size
-three inside thirty turns.
+## The weird diamond shadows
 
-## Clicks that register
+Every square on the frontier of the explored map is given a softening where it
+meets unexplored ground. The mask for it is a **32×16 checkerboard**, drawn when
+Civ II's squares were 64×32 and a chequer of alternating pixels read as a shade.
 
-Clicking away to another window and clicking back stopped units being selectable.
-Whether a click could begin on a control was decided once, when the pointer
-entered it — and entering with a button already down, which is exactly what the
-click that raises the window looks like, left it refusing clicks with nothing to
-re-arm it. The map is one control filling most of the window, so there was
-nowhere to leave and re-enter: the only way out was to sweep the pointer over the
-menu bar and back.
+Terrain composes at several times that size now, so the same mask was stretched
+until each of its pixels was a block several across — and what was a shade became
+a coarse dark patch covering a quarter of the square. On every square bordering
+the unknown, which is why the shadows traced the edge of the black. The city
+window showed them for the same reason: the squares at the edge of a city's
+radius are frontier squares too.
 
-## Winning and losing end the game
+Above classic resolution the softening is left out. It was not doing anything the
+eye reads as softening there, and the edge of the known world is a clean
+isometric boundary without it.
 
-Both used to be a message and nothing more. A player whose last city fell was
-told their civilisation had passed into memory, and was then left sitting in a
-game they no longer had a civilisation in: no turn ever came round to them again,
-and the only way out was to quit the program. Winning was the same — the world
-was yours, and then you went on playing it. Either screen now returns you to the
-main menu.
+## The grassland shield is a marker again
 
-## Zoom follows the pointer
-
-Ctrl and the wheel changed the zoom and left the view centred on the active unit,
-so the square you were aiming at slid away from the cursor — worse the further it
-was from the unit. Zooming in now anchors on the square under the pointer, so
-what you are pointing at stays where it is. Zooming back out past normal lets go,
-and the view returns to following the unit whose turn it is.
-
-The horizontal shift that decides which column of a round world the drawing
-starts from was also being changed while the whole map was on screen, where it is
-not used — so selecting a unit while zoomed out quietly rotated the world
-sideways, and the rotation only appeared on the next step of zoom.
-
-## A city says everything it has to say at once
-
-A city that came out of disorder and finished a unit in the same turn asked
-twice, and answering "zoom to city" on the first opened the city window with the
-second message still queued behind it — so the news arrived after you had already
-looked at the city it was about. Everything one city has to report now arrives as
-one message with one Zoom to City to answer.
-
-## Digging in is worth something again
-
-The defence sum is worked out in fractions — fortifying is half again, a river
-half a step, forest and jungle half again — and every one of those fractions was
-thrown away at the end by rounding the result down to a whole number. The
-attacker's side of the same sum was never rounded, so the loss was all the
-defender's.
-
-On tens and hundreds that costs nothing, which is why it survived a test suite
-that covers this closely. On the numbers the game actually uses it cost the
-defender the bonus outright: **Warriors defend at 1**, so fortifying took them to
-1.5 and the rounding took them straight back to 1. Digging in did nothing
-whatever for the unit most often left holding a new city — which is the shape of
-"barbarian horsemen kill the fortified city warrior every time".
-
-Two more defence rules were checked against Civ II rather than against this
-project's own notes, because the notes were wrong:
-
-- **City Walls supersede the fortification bonus** rather than multiplying with
-  it. A fortified garrison behind walls was defending at ×4.5 where Civ II gives
-  ×3. The same goes for a fortress.
-- **City Walls answer land attacks only**, which was not being checked at all.
-- **A river adds half a step to the terrain adjustment** rather than multiplying
-  it by a further quarter. As a ×1.25 the two agreed on hills, by coincidence,
-  and nowhere else.
-
-And for the record, since it is the natural next assumption: there is **no**
-defence bonus in Civ II for merely standing in a city, and city size does not
-affect defence. What a city gives a defender is City Walls.
-
-## Barbarians who were not in a village
-
-Every barbarian in the game came out of a goody hut: a unit walked into a village
-and something unpleasant came out of it. Nothing ever rose out of empty country
-or came ashore from the sea, so a civilisation that had cleared the huts near it
-was never troubled again — and the **Barbarity** question in the new-game dialog
-chose between four levels of a thing that only happened when you went looking for
-it.
-
-Raiders now appear in somebody's country every so often: more often the higher
-the setting, and never on *Villages Only*, which is what it says. Who they come
-for is weighted by how much each civilisation has worth taking. They land three
-to five squares out rather than on top of a city, and they arrive with their
-moves already spent, so the city gets a turn to prepare.
-
-The first two dozen turns are left alone deliberately. A size-one city with one
-warrior in it has no answer to a horde, and losing to one before the game has
-started is a wasted session rather than a difficulty setting.
-
-## Smaller things
-
-- **City names on the map** are sized to be read rather than growing with the
-  zoom until the name is wider than the city. "Carthago" was being drawn three
-  times the width of Carthage.
-- **The fortification marker in the city window** is fitted to the unit standing
-  in it, rather than to a map tile there is none of in a list row.
-- **The website states the version it is actually offering.** The front page
-  carried "Download 0.1.2" as typed-in text and stayed there while five releases
-  went out. Everything the page says about the build is now read from the build.
-- **A crash that kills the process before any handler can run leaves something
-  behind.** The packaged launcher keeps what the game and the runtime printed, and
-  the next launch folds it into the crash report — which is the difference between
-  "it crashed on turn 49" and knowing why.
-- **A repeating scheduled job runs more than once.** The scheduler replaced an
-  entry of the same name in place, and the loop removed the entry after running
-  it, so an action that asked to be run again wrote its next run into the very
-  slot about to be removed.
+It marks a square as yielding an extra shield. At 0.44 of the tile it covered
+most of the square; taken to 0.22 it still read as an object lying in the field —
+a stone medallion the size of a manhole cover, dropped in the grass and competing
+with whatever was standing there. It is an eighth of the tile now, which reads as
+a token on the ground, which is what it is.
