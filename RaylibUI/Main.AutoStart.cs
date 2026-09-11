@@ -244,6 +244,27 @@ namespace RaylibUI
                     city.Improvements.Count == 0 ? "-" : string.Join("+", city.Improvements.Select(i => i.Name))));
             }
 
+            // RHYCIV_REPORT_CITY=NAME also lists that city's worked squares, which
+            // is what a disagreement about food or trade comes down to.
+            var detail = Environment.GetEnvironmentVariable("RHYCIV_REPORT_CITY");
+            if (!string.IsNullOrWhiteSpace(detail) &&
+                game.AllCities.FirstOrDefault(c =>
+                    string.Equals(c.Name, detail, StringComparison.OrdinalIgnoreCase)) is { } detailed)
+            {
+                var org = detailed.GetOrganizationLevel(game.Rules);
+                var low = org == 0;
+                Console.WriteLine($"# worked squares of {detailed.Name} (size {detailed.Size}, " +
+                                  $"{detailed.NoOfSpecialistsx4 / 4} specialists)");
+                Console.WriteLine(string.Join("\t", "dx", "dy", "terrain", "special", "food", "shields", "trade"));
+                foreach (var square in detailed.WorkedTiles)
+                {
+                    Console.WriteLine(string.Join("\t",
+                        square.X - detailed.Location.X, square.Y - detailed.Location.Y,
+                        square.Type, square.SpecialsName ?? "-",
+                        square.GetFood(low), square.GetShields(low), square.GetTrade(org)));
+                }
+            }
+
             Console.Out.Flush();
             _shouldClose = true;
         }
