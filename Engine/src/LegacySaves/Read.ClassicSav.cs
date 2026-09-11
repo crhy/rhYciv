@@ -380,6 +380,7 @@ public class Read
             var spaceshipModulesLifeSupport = BitConverter.ToUInt16(bytes, offsetT + sizeT * civId + offsetExtra + 46);
             var spaceshipModulesSolarPanel = BitConverter.ToUInt16(bytes, offsetT + sizeT * civId + offsetExtra + 48);
 
+            tribeId = (byte)TribeIndexForThisRuleset(tribeId, rules);
             var tribe = rules.Leaders[tribeId];
             // If leader name string is empty (no manual input), find the name in RULES.TXT (don't search for barbarians)
             var leaderName = leaderNames[civId];
@@ -1608,6 +1609,56 @@ public class Read
         }
 
         return tileKnowledge;
+    }
+
+    /// <summary>
+    /// Civilization II's tribes, in the order its own RULES.TXT lists them, which
+    /// is the order a saved game's tribe numbers refer to.
+    /// </summary>
+    private static readonly string[] ClassicTribeOrder =
+    [
+        "Romans", "Babylonians", "Germans", "Egyptians", "Americans", "Greeks",
+        "Indians", "Russians", "Zulus", "French", "Aztecs", "Chinese", "English",
+        "Mongols", "Celts", "Japanese", "Vikings", "Spanish", "Persians",
+        "Carthaginians", "Sioux"
+    ];
+
+    /// <summary>
+    /// Turns a tribe number from a Civ II save into this ruleset's index for the
+    /// same tribe.
+    /// </summary>
+    /// <remarks>
+    /// A saved game stores the tribe as a position in Civ II's own leaders table,
+    /// which runs Romans, Babylonians, Germans and on in no order but its own.
+    /// This game's table is alphabetical. Reading one number and looking it up in
+    /// the other put every civilisation in a loaded game under the wrong flag,
+    /// consistently and silently: a Celtic game came out Persian, its German
+    /// rivals came out Babylonian, and the English came out Japanese. The cities
+    /// kept their real names, which is what gave it away -- Berlin and Leipzig
+    /// belonging to the Babylonians.
+    ///
+    /// Matched by name rather than by a table of numbers, so a ruleset that lists
+    /// its tribes in yet another order still lands on the right one. A number that
+    /// names no tribe we know is left alone: it is no more wrong than it was.
+    /// </remarks>
+    private static int TribeIndexForThisRuleset(int classicTribeId, Rules rules)
+    {
+        if (classicTribeId < 0 || classicTribeId >= ClassicTribeOrder.Length)
+        {
+            return classicTribeId;
+        }
+
+        var wanted = ClassicTribeOrder[classicTribeId];
+        for (var index = 0; index < rules.Leaders.Length; index++)
+        {
+            var leader = rules.Leaders[index];
+            if (string.Equals(leader.Plural?.Trim(), wanted, StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
+
+        return classicTribeId < rules.Leaders.Length ? classicTribeId : 0;
     }
 
     private static ITrigger CreateScenarioTrigger(byte version, int triggerId, bool[] modifiers,
