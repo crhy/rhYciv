@@ -8,7 +8,34 @@ namespace RaylibUI;
 
 public abstract class BaseDialog : BaseLayoutController
 {
-    protected Texture2D? BackgroundImage;
+    private Texture2D? _backgroundImage;
+
+    /// <summary>
+    /// The painted panel behind the dialog. Assigning a new one hands the old one
+    /// back to the driver.
+    /// </summary>
+    /// <remarks>
+    /// This was a plain field. Every window repainted it each time it was laid out
+    /// and simply dropped the previous texture on the floor, and closing a window
+    /// dropped the last one too -- so a city window opened twenty times left twenty
+    /// panels of the better part of a megabyte each held in video memory for the
+    /// rest of the session.
+    /// </remarks>
+    protected Texture2D? BackgroundImage
+    {
+        get => _backgroundImage;
+        set
+        {
+            if (_backgroundImage is { } previous &&
+                (value is not { } replacement || replacement.Id != previous.Id))
+            {
+                previous.Unload();
+            }
+
+            _backgroundImage = value;
+        }
+    }
+
     private readonly Point _position;
     
     protected BaseDialog(Main main, Point? position = null) : base(main, main.ActiveInterface?.DialogPadding ?? new Padding(28, 11, 46, 11))
@@ -58,5 +85,15 @@ public abstract class BaseDialog : BaseLayoutController
         }
     }
     
+    /// <summary>
+    /// Gives back the dialog's panel and everything its controls painted. Called
+    /// when the dialog is taken off the screen.
+    /// </summary>
+    public override void ReleaseTextures()
+    {
+        BackgroundImage = null;
+        base.ReleaseTextures();
+    }
+
     protected int PaddingSide => LayoutPadding.Left + LayoutPadding.Right;
 }

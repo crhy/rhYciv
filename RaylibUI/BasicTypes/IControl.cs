@@ -36,6 +36,21 @@ public interface IControl : IComponent
      * This is used by textboxes; most Controls should hook into OnKeyPressed rather than OnCharPressed.
      */
     bool OnCharPressed(char charPressed);
+    /// <summary>
+    /// Releases any GPU texture this control painted for itself.
+    /// </summary>
+    /// <remarks>
+    /// A raylib texture is a GPU allocation with nothing to free it when the
+    /// managed object is collected, so a control that paints its own background
+    /// or button face has to be told when it is finished with. Nothing told them,
+    /// and a session leaked every texture every dialog had ever painted: one
+    /// afternoon's play left almost four thousand textures and about half a
+    /// gigabyte of video memory held by windows that had been closed long before.
+    /// Eventually the driver refuses, and refusing kills the process outright --
+    /// which is the "hard crash" with no managed exception and nothing on stderr.
+    /// </remarks>
+    void ReleaseTextures();
+
     bool OnMouseWheel(float amount);
     void OnMouseMove(Vector2 moveAmount);
     void OnMouseLeave();

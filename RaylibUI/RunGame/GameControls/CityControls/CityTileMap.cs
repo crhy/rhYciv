@@ -180,6 +180,21 @@ public class CityTileMap : BaseControl
         _label.Draw(true);
     }
 
+    /// <summary>
+    /// The composed resource map. It replaces its own texture on each redraw, but
+    /// the last one went with the window when it closed and was never given back.
+    /// </summary>
+    public override void ReleaseTextures()
+    {
+        if (_texture.HasValue)
+        {
+            _texture.Value.Unload();
+            _texture = null;
+        }
+
+        base.ReleaseTextures();
+    }
+
     public override void OnResize()
     {
         var pos = _cityWindow.CityWindowProps.TileMap.ScaleAll(_cityWindow.Scale);

@@ -138,6 +138,24 @@ public abstract class BaseControl : IControl
         return false;
     }
 
+    /// <summary>
+    /// Hands back whatever this control painted for itself, and asks its children
+    /// to do the same. A control that owns no texture of its own needs only the
+    /// walk, which is what this does.
+    /// </summary>
+    public virtual void ReleaseTextures()
+    {
+        if (Controls == null)
+        {
+            return;
+        }
+
+        foreach (var child in Controls)
+        {
+            child.ReleaseTextures();
+        }
+    }
+
     public virtual void OnMouseMove(Vector2 moveAmount)
     {
         if (!Visible) return;

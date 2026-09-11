@@ -11,7 +11,42 @@ public class ScrollBar : BaseControl
     public const int ScrollbarDimDefault = 17;
     private int _scrollbarDim;
     private readonly Action<int> _scrollAction;
-    private readonly Texture2D[] _images;
+    private Texture2D[] _images;
+    private readonly bool _imagesAreVertical;
+    /// <summary>
+    /// The arrows and the thumb, painted once per scrollbar. Every list in every
+    /// window builds its own, so a window opened repeatedly left a set behind each
+    /// time.
+    /// </summary>
+    public override void ReleaseTextures()
+    {
+        foreach (var image in _images)
+        {
+            image.Unload();
+        }
+
+        // Emptied rather than blanked, so Draw knows to paint them again. A dialog
+        // that is closed and opened once more keeps its controls, and a scrollbar
+        // left holding unloaded texture handles would draw nothing at all.
+        _images = [];
+        base.ReleaseTextures();
+    }
+
+    private void EnsureImages()
+    {
+        if (_images.Length > 0)
+        {
+            return;
+        }
+
+        var sourceImages = ImageUtils.GetScrollImages(_scrollbarDim, _imagesAreVertical);
+        _images = sourceImages.Select(Texture2D.LoadFromImage).ToArray();
+        foreach (var image in sourceImages)
+        {
+            image.Unload();
+        }
+    }
+
     private readonly bool _vertical;
     private int _scrollPos;
     private double _increment;
@@ -21,12 +56,9 @@ public class ScrollBar : BaseControl
         _scrollAction = scrollAction;
         _vertical = vertical;
         _scrollbarDim = scrollbarDim == null ? ScrollbarDimDefault : (int)scrollbarDim;
-        var sourceImages = ImageUtils.GetScrollImages(_scrollbarDim, _vertical);
-        _images = sourceImages.Select(Texture2D.LoadFromImage).ToArray();
-        foreach (var image in sourceImages)
-        {
-            image.Unload();
-        }
+        _imagesAreVertical = _vertical;
+        _images = [];
+        EnsureImages();
         if (_vertical)
         {
             Width = _scrollbarDim;
@@ -95,6 +127,7 @@ public class ScrollBar : BaseControl
 
         Graphics.DrawRectangleRec(Bounds, Color.White);
 
+        EnsureImages();
         if (_vertical)
         {
             Graphics.DrawTexture(_images[0], (int)Bounds.X, (int)Bounds.Y, Color.White);

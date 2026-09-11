@@ -66,6 +66,7 @@ namespace RaylibUI
                                   $"with {loadedGame.Game.GetPlayerCiv.Cities.Count} cities");
                 StartGame(loadedGame.Game, loadedGame.ViewData);
                 StartZoomSweep();
+                StartWindowChurn();
                 return true;
             }
 
@@ -191,6 +192,45 @@ namespace RaylibUI
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Opens and closes the city window over and over when RHYCIV_TEST_CHURN is
+        /// set, so a leak of the textures a window paints for itself shows up in a
+        /// minute instead of an afternoon.
+        /// <para>
+        /// This is how the hard crashes were finally pinned down: raylib reports
+        /// every texture it loads and unloads, so a session's captured output can be
+        /// counted, and a window that gives nothing back on the way out shows as a
+        /// load with no matching unload.
+        /// </para>
+        /// </summary>
+        private void StartWindowChurn()
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_TEST_CHURN")))
+            {
+                return;
+            }
+
+            const string churn = "WINDOW_CHURN";
+            var opened = 0;
+
+            void Step()
+            {
+                if (_activeScreen is not RunGame.GameScreen screen ||
+                    screen.Game.GetPlayerCiv.Cities.Count == 0)
+                {
+                    return;
+                }
+
+                var window = screen.ShowCityWindow(screen.Game.GetPlayerCiv.Cities[0]);
+                screen.CloseDialog(window);
+                opened++;
+                Console.WriteLine($"window-churn: {opened}");
+                Schedule(churn, TimeSpan.FromMilliseconds(250), Step);
+            }
+
+            Schedule(churn, TimeSpan.FromSeconds(3), Step);
         }
 
         /// <summary>

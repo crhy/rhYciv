@@ -158,9 +158,10 @@ public abstract class BaseScreen : BaseLayoutController, IScreen
 
     public void CloseDialog(IControlLayout? dialog)
     {
-        if (dialog != null)
+        if (dialog != null && _dialogs.Remove(dialog))
         {
-            _dialogs.Remove(dialog);
+            // The window is gone from the screen; its textures should go with it.
+            dialog.ReleaseTextures();
         }
     }
     
@@ -169,6 +170,11 @@ public abstract class BaseScreen : BaseLayoutController, IScreen
     {
         if (!stack)
         {
+            foreach (var replaced in _dialogs)
+            {
+                replaced.ReleaseTextures();
+            }
+
             _dialogs.Clear();
         }
 

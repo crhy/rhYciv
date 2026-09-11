@@ -23,4 +23,10 @@ public interface IControlLayout : IComponent
     int Width { get; }
     int Height { get; }
     void MouseOutsideControls(Vector2 mousePos);
+
+    /// <summary>
+    /// Releases every GPU texture this layout and its controls painted. Called
+    /// when the layout is taken off the screen; see IControl.ReleaseTextures.
+    /// </summary>
+    void ReleaseTextures();
 }

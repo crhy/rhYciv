@@ -23,6 +23,17 @@ public abstract class BaseLayoutController : IControlLayout
     
     public IList<IControl> Controls { get; } = [];
 
+    /// <summary>
+    /// Asks every control in this layout to give back what it painted.
+    /// </summary>
+    public virtual void ReleaseTextures()
+    {
+        foreach (var control in Controls)
+        {
+            control.ReleaseTextures();
+        }
+    }
+
     public Rectangle Bounds => new(Location.X, Location.Y, Width, Height);
 
     public IControl? Focused

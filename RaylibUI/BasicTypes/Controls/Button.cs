@@ -171,6 +171,12 @@ public class Button : BaseControl
         }
     }
 
+    public override void ReleaseTextures()
+    {
+        InvalidateTexture();
+        base.ReleaseTextures();
+    }
+
     private void InvalidateTexture()
     {
         if (_texture.Width > 0)
