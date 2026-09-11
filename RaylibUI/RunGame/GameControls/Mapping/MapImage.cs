@@ -301,14 +301,31 @@ public static class MapImage
             }
         }
 
-        for (var index = 0; index < directNeighbours.Length; index++)
+        // Softening at the edge of what has been explored.
+        //
+        // The mask for this is a 32x16 checkerboard, drawn when Civ II's tiles were
+        // 64x32 and a chequer of alternating pixels read as a shade. Terrain is
+        // composed at several times that size now, so the same mask is stretched
+        // until each of its pixels is a block several across -- and what was a
+        // shade became a coarse dark patch covering a quarter of the square. On
+        // every square along the frontier. That is the "weird diamond shadows",
+        // and they follow the edge of the explored map because that is exactly
+        // where this is drawn.
+        //
+        // Above classic resolution the softening is left out. It was never doing
+        // anything the eye reads as softening there, and the edge of the known
+        // world is a clean isometric boundary without it.
+        if (terrainSet.RenderScale <= 1)
         {
-            var directNeighbour = directNeighbours[index];
-            if (directNeighbour != null && !(directNeighbour.IsVisible(civilizationId) || map.MapRevealed)) // Don't dither edge of map (neighbour=null)
+            for (var index = 0; index < directNeighbours.Length; index++)
             {
-                var ditherMap = terrainSet.DitherMaps[index];
-                DrawLayer(tilePic, ditherMap.Images[^1],
-                    new Rectangle(ditherMap.X, ditherMap.Y, 32, 16));
+                var directNeighbour = directNeighbours[index];
+                if (directNeighbour != null && !(directNeighbour.IsVisible(civilizationId) || map.MapRevealed)) // Don't dither edge of map (neighbour=null)
+                {
+                    var ditherMap = terrainSet.DitherMaps[index];
+                    DrawLayer(tilePic, ditherMap.Images[^1],
+                        new Rectangle(ditherMap.X, ditherMap.Y, 32, 16));
+                }
             }
         }
 
