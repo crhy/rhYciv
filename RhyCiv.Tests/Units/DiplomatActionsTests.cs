@@ -98,7 +98,7 @@ public class DiplomatActionsTests
     }
 
     [Fact]
-    public void BuyingAUnit_TakesTheGoldAndTheUnitAndSpendsTheDiplomat()
+    public void BuyingAUnit_TakesTheGoldAndTheUnitAndLeavesTheAgentAlive()
     {
         var (game, map, mine) = World();
         mine.Money = 10_000;
@@ -116,8 +116,17 @@ public class DiplomatActionsTests
         Assert.DoesNotContain(target, owner.Units);
         // It has changed sides, not been handed fresh orders.
         Assert.Equal(0, target.MovePoints);
-        // The diplomat does not come home.
-        Assert.True(diplomat.Dead);
+
+        // And the agent lives. Civ II's mission table gives "Mission Success" for
+        // Bribe Unit and nothing else, for a Diplomat and a Spy alike: it is the
+        // one job either walks away from, while every other mission kills a
+        // Diplomat outright. This used to spend the Diplomat as though it had
+        // incited a revolt, so turning one warrior cost the agent as well as the
+        // gold.
+        Assert.False(diplomat.Dead);
+        // It has spent the day on it: a whole move point, which is what stops one
+        // agent working down a line of units in a single turn.
+        Assert.Equal(6 - 3, diplomat.MovePoints);
     }
 
     [Fact]

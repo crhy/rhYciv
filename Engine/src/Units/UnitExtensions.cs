@@ -126,8 +126,12 @@ public static class UnitExtensions
                 positionFactor = 1m + groundDefMultiplier / 100m;
             }
 
-            // And failing both, being dug in.
-            if (positionFactor == 1m && defendingUnit.Order == (int)OrderType.Fortified)
+            // And failing both, being dug in. Settlers and Engineers never are:
+            // Civ II's combat guide names them as "the only units incapable of
+            // fortifying", and a saved game or an older build may still carry the
+            // order on one, so the bonus is refused here as well as at the order.
+            if (positionFactor == 1m && defendingUnit.Order == (int)OrderType.Fortified &&
+                defendingUnit.AiRole != AiRoleType.Settle)
             {
                 positionFactor = 1.5m;
             }

@@ -158,12 +158,7 @@ namespace RhyCiv.Engine.UnitActions
         {
             if (IsSpy(agent))
             {
-                agent.MovePointsLost += game.Rules.Cosmic.MovementMultiplier;
-                if (agent.MovePoints < 0)
-                {
-                    agent.MovePointsLost = agent.MaxMovePoints;
-                }
-
+                SpendMove(game, agent);
                 return;
             }
 
@@ -296,7 +291,13 @@ namespace RhyCiv.Engine.UnitActions
 
             game.Players[loser.Id].UnitLost(target, diplomat);
 
-            SpendDiplomat(game, diplomat);
+            // Buying a unit does not cost the agent its life. Civ II's mission
+            // table gives "Mission Success" for Bribe Unit and nothing else, for
+            // both a Diplomat and a Spy -- it is the one job either of them walks
+            // away from. Every other mission kills a Diplomat. This spent the
+            // Diplomat as though it had incited a revolt, so the price of turning
+            // a warrior was the agent as well as the gold.
+            SpendMove(game, diplomat);
 
             if (where != null)
             {
@@ -359,7 +360,7 @@ namespace RhyCiv.Engine.UnitActions
             // so its map has to be told directly or it keeps the old colours.
             game.UpdateTilesFor([location], loser.Id);
 
-            SpendDiplomat(game, diplomat);
+            SpendAgent(game, diplomat);
 
             location.SetVisible(buyer.Id);
             game.UpdateTiles(new List<Tile> { location });
@@ -371,11 +372,18 @@ namespace RhyCiv.Engine.UnitActions
         /// uses means the interface is told, so the square is repainted and the unit
         /// stops being offered orders.
         /// </summary>
-        private static void SpendDiplomat(IGame game, Unit diplomat)
+        /// <summary>
+        /// A whole move point, and the agent lives. Spending the move rather than
+        /// the single step the walk in would have cost is what stops one agent
+        /// working through a line of targets in a turn.
+        /// </summary>
+        private static void SpendMove(IGame game, Unit agent)
         {
-            diplomat.Dead = true;
-            diplomat.MovePointsLost = diplomat.MaxMovePoints;
-            game.Players[diplomat.Owner.Id].UnitLost(diplomat, null);
+            agent.MovePointsLost += game.Rules.Cosmic.MovementMultiplier;
+            if (agent.MovePoints < 0)
+            {
+                agent.MovePointsLost = agent.MaxMovePoints;
+            }
         }
     }
 }
