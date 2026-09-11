@@ -535,14 +535,25 @@ public class LocalPlayer : IPlayer
     }
 
     /// <summary>
-    /// Something has come off the stocks. Civ II keeps buildings and quiet units
-    /// on separate switches -- a warship every other turn is worth hearing about,
-    /// forty settlers is not -- so which switch applies depends on what was made.
+    /// Something has come off the stocks, and whether it is worth saying so.
     /// </summary>
+    /// <remarks>
+    /// Civ II does not tell you every time a city finishes a unit. It announces
+    /// buildings, and it announces units that cannot fight -- a Settlers or a
+    /// Diplomat, the ones that need orders the moment they appear -- and it says
+    /// nothing at all about a warrior or a horseman. Its City Report Options are
+    /// the evidence: there is a switch for "Show City Improvements Built" and one
+    /// for "Show Non-Combat Units Built", and none for combat units, which there
+    /// would have to be if they were ever announced.
+    ///
+    /// This had it the other way round: a combat unit was announced whatever the
+    /// options said, and only quiet units were subject to a switch. A city turning
+    /// out a warrior every few turns interrupted the game every few turns.
+    /// </remarks>
     public void CityProductionComplete(City city)
     {
         var announced = city.ItemInProduction is UnitProductionOrder unitOrder
-            ? unitOrder.UnitDefinition.Attack > 0 || Reports.ShowNonCombatUnitsBuilt
+            ? unitOrder.UnitDefinition.Attack == 0 && Reports.ShowNonCombatUnitsBuilt
             : Reports.ShowCityImprovementsBuilt;
 
         if (!announced)

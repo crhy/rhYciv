@@ -259,6 +259,18 @@ public class CityWindow : BaseDialog
     };
 
     /// <summary>
+    /// The lit-from-above ramp for a data panel: the food store and the shield
+    /// box. Civ II fills both with a gradient rather than a flat colour, and a
+    /// flat one at this size reads as a hole in the window.
+    /// </summary>
+    private static (Color Top, Color Bottom) GradientFor(PanelTone tone) => tone switch
+    {
+        PanelTone.Land => (new Color(72, 134, 60, 255), new Color(14, 44, 16, 255)),
+        PanelTone.Build => (new Color(66, 82, 170, 255), new Color(10, 14, 62, 255)),
+        _ => (new Color(104, 102, 98, 255), new Color(62, 60, 56, 255))
+    };
+
+    /// <summary>
     /// Tiles the painted stone wallpaper across a panel.
     /// <para>
     /// The window chrome, the menu bar and the side panels are all cut from the
@@ -340,10 +352,14 @@ public class CityWindow : BaseDialog
             }
             else
             {
-                // Land and Build keep a flat colour: those two panels are read as
-                // data (food store, production progress) and a texture behind them
-                // would fight the bars drawn on top.
-                Graphics.DrawRectangleRec(rect, FillFor(tone));
+                // Land and Build take no stone texture: those two panels are read
+                // as data -- the food store, the production progress -- and a
+                // texture behind them would fight what is drawn on top. They are
+                // lit from the top instead, which gives them depth without adding
+                // anything for the eye to read as detail.
+                var (top, bottom) = GradientFor(tone);
+                Graphics.DrawRectangleGradientV((int)rect.X, (int)rect.Y,
+                    (int)rect.Width, (int)rect.Height, top, bottom);
             }
 
             // A shallow bevel: dark along the top and left, light along the bottom

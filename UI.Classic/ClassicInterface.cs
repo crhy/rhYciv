@@ -307,7 +307,11 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
                                 OutputType.Surplus => Labels.For(LabelIndex.Surplus),
                                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
                             } + ":" + val;
-                        }),
+                        })
+                    {
+                        BarTop = new Color(154, 220, 88, 255),
+                        BarBottom = new Color(28, 74, 16, 255)
+                    },
                     new ConsumableResourceArea(name: "Trade",
                         bounds: new Rectangle(206, 116, 224, 16),
                         getDisplayDetails: (val, type) =>
@@ -318,7 +322,11 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
                                 OutputType.Loss => Labels.For(LabelIndex.Corruption),
                                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
                             } + ":" + val;
-                        }, noSurplus: true),
+                        }, noSurplus: true)
+                    {
+                        BarTop = new Color(255, 214, 96, 255),
+                        BarBottom = new Color(132, 76, 4, 255)
+                    },
                     new ConsumableResourceArea(name: "Shields",
                         bounds: new Rectangle(199, 181, 238, 16),
                         getDisplayDetails: (val, type) =>
@@ -334,9 +342,15 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
                             } + ":" + Math.Abs(val);
                         },
                         labelBelow: true
-                    ),
+                    )
+                    {
+                        BarTop = new Color(118, 148, 240, 255),
+                        BarBottom = new Color(14, 26, 88, 255)
+                    },
                     new SharedResourceArea(new Rectangle(206, 140, 224, 16), true)
                     {
+                        BarTop = new Color(252, 150, 72, 255),
+                        BarBottom = new Color(112, 34, 6, 255),
                         Resources =
                         [
                             new()

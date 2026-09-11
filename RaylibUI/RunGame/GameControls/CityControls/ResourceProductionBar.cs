@@ -137,6 +137,8 @@ public class ResourceProductionBar : BaseControl
     {
         base.Draw(pulse);
 
+        DrawBar();
+
         if (_sections.Count == 0)
         {
             return;
@@ -189,6 +191,52 @@ public class ResourceProductionBar : BaseControl
         DrawRightAlignedResourceLabel(finalText, Bounds.X + Width - finalLabelInset, labely, fontSize);
 
     }
+
+    /// <summary>
+    /// The band the row's icons are counted out along.
+    /// </summary>
+    /// <remarks>
+    /// Lit from the top and closed with a darker line at the bottom, so it reads
+    /// as a trough with something in it rather than a flat block of colour. Drawn
+    /// before the icons, which sit on it.
+    /// </remarks>
+    private void DrawBar()
+    {
+        if (_resource.BarTop is not { } top || _resource.BarBottom is not { } bottom)
+        {
+            return;
+        }
+
+        var x = (int)Bounds.X;
+        var y = (int)Bounds.Y;
+        var width = (int)Bounds.Width;
+        var height = (int)Bounds.Height;
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        Graphics.DrawRectangleGradientV(x, y, width, height, top, bottom);
+
+        // A highlight along the top and a shadow along the bottom. One pixel at
+        // the window's own scale, so it stays a line rather than becoming a stripe
+        // on a large screen.
+        var edge = Math.Max(1, (int)Math.Round(_cityWindow.Scale));
+        Graphics.DrawRectangle(x, y, width, edge, Lighten(top, 0.35f));
+        Graphics.DrawRectangle(x, y + height - edge, width, edge, Darken(bottom, 0.35f));
+    }
+
+    private static Color Lighten(Color colour, float amount) => new(
+        (byte)Math.Clamp(colour.R + (255 - colour.R) * amount, 0, 255),
+        (byte)Math.Clamp(colour.G + (255 - colour.G) * amount, 0, 255),
+        (byte)Math.Clamp(colour.B + (255 - colour.B) * amount, 0, 255),
+        colour.A);
+
+    private static Color Darken(Color colour, float amount) => new(
+        (byte)Math.Clamp(colour.R * (1 - amount), 0, 255),
+        (byte)Math.Clamp(colour.G * (1 - amount), 0, 255),
+        (byte)Math.Clamp(colour.B * (1 - amount), 0, 255),
+        colour.A);
 
     private float GetLabelY(Vector2 textDim)
     {
