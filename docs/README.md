@@ -16,6 +16,10 @@
   compatibility atlases and optional art polish.
 - [Texture gap list](TEXTURE-GAP.md): the shot list of terrain, overlay, and
   screen art still procedural or on a legacy square tile.
+- [Comparing against Civilization II](CIV2-COMPARISON.md): the record of opening
+  the same saved game in both and setting the numbers side by side -- how to run
+  it, what agrees, what does not, the rules researched against sources, and what
+  the original's diplomacy actually does.
 - [Civ2 UI Additions compatibility](CIV2-UI-ADDITIONS.md): behavior comparison
   used during implementation; not a dependency.
 - [Flatpak packaging](../packaging/flatpak/README.md): reproducible package build.
