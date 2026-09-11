@@ -34,6 +34,18 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.1.10" date="2026-09-11">
+      <description>
+        <p>The hard crashes, and the first release checked against the original.</p>
+        <p>Sessions had been ending in a crash with no managed exception and nothing on standard error since 0.1.6. The output capture added in 0.1.8 caught it, and it was arithmetic rather than a fault: one afternoon's play loaded 4,170 GPU textures and released 179. A raylib texture has nothing to free it when the managed object is collected, so every window that painted a background or a button face and then closed left it behind -- about half a gigabyte of video memory, after which the driver refuses and refusing kills the process. Windows give their textures back now: 3,298 city windows opened and closed leave 49 textures held, and those are shared art that does not grow.</p>
+        <p>Civilization II's own saved games load here, so the same position can be opened in both and the numbers set side by side. Doing that found three things. Every city in a loaded game had three trade routes it never had, because an unused route slot was being read as a route to whichever city came first -- worth 120 trade to a city whose squares produced three. Every civilisation was under the wrong flag, because a save stores the tribe as a position in Civ II's leaders table and this game's table is alphabetical: a Celtic game reported itself as Persian and its German rivals as Babylonian. And a city taken from you never changed colour on your map, because losing it is exactly what stops you being able to see it.</p>
+        <p>With those fixed, Cardiff at 2500 BC and again at A.D. 1240 agrees with the original on size, food produced and eaten, surplus, shields, support, production, trade, corruption, tax and science. Every number the city screen states.</p>
+        <p>Two rules corrected against Civ II's documentation. Bribing a unit does not cost the Diplomat its life -- that is the one mission either a Diplomat or a Spy walks away from, and it was being spent as though it had incited a revolt. Settlers and Engineers cannot fortify, and were taking the same half-again defence as a Phalanx on top of the twenty hit points they already have.</p>
+        <p>The game no longer announces every unit a city finishes. Civ II announces buildings and units that cannot fight, and says nothing about a warrior or a horseman; this had it the other way round, so a city in production interrupted the game every few turns.</p>
+        <p>The City Resources panel reads as four accounts: a coloured band for each of food, trade, the rates and shields, lit from the top, with the food store and the shield box as ramps rather than flat colour.</p>
+        <p>And the desktop archives carry a note saying to extract the folder before running. A tester reported "Could not load file or assembly System.Runtime", which is what Windows produces when the executable is run from inside the zip -- a correct download failing in a way that reads like a broken one.</p>
+      </description>
+    </release>
     <release version="0.1.9" date="2026-09-11">
       <description>
         <p>The map, under the hands.</p>

@@ -1,96 +1,108 @@
-**The map, under the hands.**
+**The hard crashes, and the first release checked against the original.**
 
-A short release on top of 0.1.8, all of it about how the map behaves while you
-are working it: the zoom, the shading at the edge of what you have explored, and
-one marker that was drawn several times the size it meant.
+Sessions had been ending in a crash since 0.1.6 — always with no managed
+exception and nothing on standard error, which is the signature of something
+outside .NET's reach. This release ends them, and it also opens Civilization II's
+own saved games and compares the result against the game it is a re-implementation
+of.
 
 ## Install
 
 | Platform | Download |
 |---|---|
-| **Windows** (x64) | `rhYciv-0.1.9-win-x64.zip` — unzip, run `RaylibUI.exe` |
-| **macOS** (Apple silicon) | `rhYciv-0.1.9-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
-| **macOS** (Intel) | `rhYciv-0.1.9-osx-x64.zip` — same |
-| **Linux** (x64) | `rhYciv-0.1.9-linux-x64.tar.gz` — extract, run `./RaylibUI` |
-| **Linux** (Flatpak) | `rhYciv-0.1.9-x86_64.flatpak` |
+| **Windows** (x64) | `rhYciv-0.1.10-win-x64.zip` — **extract the folder first**, then run `RaylibUI.exe` |
+| **macOS** (Apple silicon) | `rhYciv-0.1.10-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
+| **macOS** (Intel) | `rhYciv-0.1.10-osx-x64.zip` — same |
+| **Linux** (x64) | `rhYciv-0.1.10-linux-x64.tar.gz` — extract, run `./RaylibUI` |
+| **Linux** (Flatpak) | `rhYciv-0.1.10-x86_64.flatpak` |
 
-Nothing else is needed. No commercial Civilization II installation, no runtime to install — each download carries its own .NET runtime and the complete art set.
+**Extract before running.** A tester reported `Could not load file or assembly 'System.Runtime'`, which is what Windows produces when the `.exe` is double-clicked while it is still inside the zip: it unpacks that one file to a temporary folder and runs it with none of the nine hundred beside it. Nothing is wrong with the download. The archives now carry a note saying so.
 
-### The builds are unsigned — please read this before reporting a launch failure
+The builds are unsigned. **macOS**: `xattr -dr com.apple.quarantine /Applications/rhYciv.app`. **Windows**: SmartScreen → *More info* → *Run anyway*.
 
-They are not code-signed, because signing certificates cost money this project does not have yet. Both desktop platforms will try to stop you:
+## The hard crashes
 
-**macOS** will say the app "is damaged and can't be opened" or is from an unidentified developer. It is not damaged; that is the quarantine flag on anything downloaded unsigned. Clear it:
-
-```
-xattr -dr com.apple.quarantine /Applications/rhYciv.app
-```
-
-**Windows** will show a SmartScreen warning. Choose *More info* → *Run anyway*.
-
-**Linux Flatpak**:
+The output capture added in 0.1.8 finally caught one, and it was not a fault —
+it was arithmetic. raylib reports every texture it loads and unloads, so a
+crashed session can simply be counted:
 
 ```
-flatpak install --user ./rhYciv-0.1.9-x86_64.flatpak
-flatpak run io.github.crhy.rhYciv
+4,170 textures loaded
+  179 unloaded
+3,991 still held  ≈ 546 MB of video memory
 ```
 
-## Zoom moves in even steps
+Every one of them belonging to a window that had been closed. A raylib texture is
+a GPU allocation with nothing to free it when the managed object is collected, so
+anything that paints its own background has to be told when it is finished with.
+Nothing told them. Eventually the driver refuses, and a driver refusing kills the
+process outright.
 
-The scale was linear in `(8 + zoom) / 8`. That sounds harmless and is not: it
-made one step of the wheel do wildly different things depending on where you
-already were.
+Four places were painting without ever giving back: dialog panels (repainted on
+every layout and dropped on close), button faces, the scrollbars every list
+builds, and the city window's composed resource map.
 
-| zoom | scale | one step of the wheel |
-|---|---|---|
-| −7 → −6 | 0.125 → 0.25 | **×2.0** |
-| 0 → 1 | 1.0 → 1.125 | ×1.13 |
-| 31 → 32 | 4.875 → 5.0 | **×1.026** |
+| | windows opened | loaded | unloaded | **held** |
+|---|---|---|---|---|
+| before | 169 | 3,256 | 170 | **3,086** |
+| after | 3,298 | 29,737 | 29,688 | **49** |
 
-A factor of nearly forty between the largest step and the smallest. Zoomed out
-the map leapt about; zoomed in the wheel appeared to do nothing at all.
+The 49 are shared art loaded once, and they do not grow.
 
-The scale is geometric now: **every step is nine per cent**, and eight of them
-double it. The ends of the range moved to −24…19 so the reachable scale stays
-about what it was — an eighth of normal up to five times it.
+## Checked against Civilization II
 
-## Zoom goes towards the pointer
+Civ II's saved games load here, which means the same position can be opened in
+both games and the numbers set beside each other. That found three faults nothing
+else would have.
 
-Ctrl and the wheel changed the zoom and left the view centred on the active
-unit, so the square you were aiming at slid away from the cursor — worse the
-further it was from the unit.
+**Every city in a loaded game had three trade routes it never had.** A city keeps
+three route slots whether or not it uses any, and an unused one is zero in both
+fields — which both readers turned into a route to whichever city came first in
+the list. Cardiff's squares produce 3 trade; the phantom routes were worth 120
+more.
 
-The point of the map under the cursor is now put back under the cursor after the
-step. Not "centre the square under the cursor", which is a different thing and
-looks worse: that throws the square to the middle of the screen on the first
-click and swings the rest of the map around it.
+**Every civilisation was under the wrong flag.** A save stores each civilisation's
+tribe as a position in Civ II's own leaders table, which runs Romans, Babylonians,
+Germans and on in no order but its own; this game's table is alphabetical. A
+Celtic game reported its own player as Persian, its German rivals as Babylonian
+and the English as Japanese. The cities kept their real names, which is what gave
+it away.
 
-From zoom 4 upwards the square under the pointer is identical at every step of a
-sweep to the maximum. Below that it can still drift by up to a square a step,
-where the tiles are small enough that a pixel of rounding is a sizeable fraction
-of one.
+**A city taken from you never changed colour on your map** — because losing it is
+exactly what stops you being able to see it, and the map is only refreshed for
+civilisations that can see a square. The one civilisation certain to have it on
+their map was the one certain never to be told.
 
-## The weird diamond shadows
+With those fixed, **Cardiff at 2500 BC and again at A.D. 1240** agrees with the
+original on size, food produced and eaten, surplus, shields, support, production,
+trade, corruption, tax and science — every number the city screen states.
 
-Every square on the frontier of the explored map is given a softening where it
-meets unexplored ground. The mask for it is a **32×16 checkerboard**, drawn when
-Civ II's squares were 64×32 and a chequer of alternating pixels read as a shade.
+## Two rules corrected
 
-Terrain composes at several times that size now, so the same mask was stretched
-until each of its pixels was a block several across — and what was a shade became
-a coarse dark patch covering a quarter of the square. On every square bordering
-the unknown, which is why the shadows traced the edge of the black. The city
-window showed them for the same reason: the squares at the edge of a city's
-radius are frontier squares too.
+- **Bribing a unit does not cost the Diplomat its life.** Civ II's mission table
+  gives Bribe Unit as "Mission Success" for a Diplomat and a Spy alike; every
+  other mission kills a Diplomat. It was being spent as though it had incited a
+  revolt, so turning one warrior cost the agent as well as the gold. A message
+  says what happened now, which nothing did before.
+- **Settlers and Engineers cannot fortify** — "the only units incapable of
+  fortifying". They were, and took the same half-again defence as a Phalanx on
+  top of the twenty hit points a Settlers unit already has. That is what let one
+  settler in a city kill two attacking horsemen. They keep the fortress, which
+  they are the ones who build.
 
-Above classic resolution the softening is left out. It was not doing anything the
-eye reads as softening there, and the edge of the known world is a clean
-isometric boundary without it.
+## The game stops interrupting you
 
-## The grassland shield is a marker again
+Civ II announces buildings, and announces units that cannot fight — a Settlers or
+a Diplomat, the ones that want orders the moment they appear. It says nothing at
+all about a warrior or a horseman. This had it the other way round: combat units
+were announced whatever the options said, and the quiet ones could be switched
+off. A city in production interrupted the game every few turns.
 
-It marks a square as yielding an extra shield. At 0.44 of the tile it covered
-most of the square; taken to 0.22 it still read as an object lying in the field —
-a stone medallion the size of a manhole cover, dropped in the grass and competing
-with whatever was standing there. It is an eighth of the tile now, which reads as
-a token on the ground, which is what it is.
+## The city screen
+
+Each line of the City Resources panel has a band of its own — green for food,
+amber for trade, a deeper orange for what the rates take, blue for shields — lit
+from the top and closed with a darker line, so the block reads as four separate
+accounts rather than four rows of small pictures on grey. The food store and the
+shield box are ramps rather than flat colour; at that size a flat fill reads as a
+hole cut in the window.
