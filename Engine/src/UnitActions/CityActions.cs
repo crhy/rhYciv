@@ -191,6 +191,18 @@ namespace RhyCiv.Engine.UnitActions
 
             AssignTradeCommodities(city, game.Rules);
 
+            // A city sees the ground it works. Founding one used to reveal nothing
+            // at all -- the UI command marked the single square the settler stood on
+            // and the engine marked none -- so the twenty squares around a new city
+            // stayed unseen unless a unit happened to walk over them.
+            //
+            // That is not only a matter of what is drawn. A citizen is only put to
+            // work on a square the civilisation can see, so a city whose radius was
+            // unseen worked nothing but its own centre: two food in, two food eaten,
+            // no surplus, and no growth ever. It is why by AD 1220 the largest city
+            // in the world was size four.
+            tile.Map.SetAsStartingLocation(tile, city.OwnerId);
+
             city.AutoAddDistributionWorkers(game.Rules);
             city.CalculateOutput(city.Owner.Government, game);
 
