@@ -229,6 +229,14 @@ The %STRING2 city of %STRING0 %STRING3 %STRING1.
 @options
 Zoom to City
 Continue
+@CITYNEWS
+@title=%STRING0
+@width=340
+@button=Ok
+%STRING1
+@options
+Zoom to City
+Continue
 @BADBUILD
 @title=%STRING0
 @width=340

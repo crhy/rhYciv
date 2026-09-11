@@ -346,22 +346,126 @@ public class GameScreen : BaseScreen
         _statusPanel.Height = (int)statusRect.Height;
     }
 
+    /// <summary>
+    /// One city's news for this turn, gathered so it arrives as a single message.
+    /// </summary>
+    private sealed record CityNews(City City, List<(string Dialog, IList<string>? Strings, IList<int>? Numbers)> Items);
+
+    /// <summary>
+    /// News reported since the last frame, in the order the cities were processed.
+    /// </summary>
+    private readonly List<CityNews> _pendingCityNews = [];
+
+    /// <summary>
+    /// Something a city has to say, held back until the turn's processing has
+    /// finished so everything one city has to report arrives together.
+    /// <para>
+    /// A turn is processed inside a single frame, one city at a time, and each
+    /// thing that happened used to put up its own message as it happened. A city
+    /// that came out of disorder and finished a unit in the same turn therefore
+    /// asked twice, and answering "zoom to city" on the first put the city window
+    /// up with the second message still waiting behind it -- so the news arrived
+    /// after the player had already looked at the city it was about.
+    /// </para>
+    /// </summary>
     public void ShowCityDialog(string dialog, City city, IList<string>? replaceStrings = null,
         IList<int>? replaceNumbers = null)
     {
-        replaceStrings ??= new List<string>
-            { city.Name, city.ItemInProduction.GetDescription(), city.Owner.Adjective, Labels.For(LabelIndex.builds) };
-        ShowPopup(dialog,
-            handleButtonClick: (s, i, arg3, arg4) =>
+        var news = _pendingCityNews.FirstOrDefault(entry => entry.City == city);
+        if (news == null)
+        {
+            news = new CityNews(city, []);
+            _pendingCityNews.Add(news);
+        }
+
+        news.Items.Add((dialog, replaceStrings, replaceNumbers));
+    }
+
+    /// <summary>
+    /// Puts up everything the cities reported while the turn was being processed,
+    /// one message per city.
+    /// </summary>
+    private void ReleaseCityNews()
+    {
+        if (_pendingCityNews.Count == 0)
+        {
+            return;
+        }
+
+        var pending = _pendingCityNews.ToList();
+        _pendingCityNews.Clear();
+
+        foreach (var news in pending)
+        {
+            ShowOneCityMessage(news);
+        }
+    }
+
+    private void ShowOneCityMessage(CityNews news)
+    {
+        var city = news.City;
+        var options = new List<string> { Labels.For(LabelIndex.ZoomToCity), Labels.For(LabelIndex.Continue) };
+
+        void Answered(string _, int index, IList<bool>? __, IDictionary<string, string>? ___)
+        {
+            if (index == 0)
             {
-                if (i == 0)
-                {
-                    ShowCityWindow(city);
-                }
-            },
-            replaceNumbers: replaceNumbers,
-            options: [Labels.For(LabelIndex.ZoomToCity), Labels.For(LabelIndex.Continue)],
-            replaceStrings: replaceStrings);
+                ShowCityWindow(city);
+            }
+        }
+
+        if (news.Items.Count == 1)
+        {
+            // On its own it keeps its own dialog, so a single piece of news looks
+            // exactly as it always has -- its own title, its own layout.
+            var (dialog, strings, numbers) = news.Items[0];
+            ShowPopup(dialog, handleButtonClick: Answered, replaceNumbers: numbers,
+                options: options, replaceStrings: strings ?? DefaultCityStrings(city));
+            return;
+        }
+
+        var sentences = news.Items
+            .Select(item => CityDialogSentence(item.Dialog, item.Strings ?? DefaultCityStrings(city), item.Numbers))
+            .Where(sentence => !string.IsNullOrWhiteSpace(sentence))
+            .ToList();
+
+        if (sentences.Count == 0)
+        {
+            return;
+        }
+
+        if (!ShowPopup("CITYNEWS", handleButtonClick: Answered, options: options,
+                replaceStrings: [city.Name, string.Join(" ", sentences)]))
+        {
+            // No combined dialog in this ruleset's text. Rather than swallow the
+            // news, fall back to reporting each piece as it used to be reported.
+            foreach (var (dialog, strings, numbers) in news.Items)
+            {
+                ShowPopup(dialog, handleButtonClick: Answered, replaceNumbers: numbers,
+                    options: options, replaceStrings: strings ?? DefaultCityStrings(city));
+            }
+        }
+    }
+
+    private static List<string> DefaultCityStrings(City city) =>
+        [city.Name, city.ItemInProduction.GetDescription(), city.Owner.Adjective, Labels.For(LabelIndex.builds)];
+
+    /// <summary>
+    /// One city message's body, as a single run of prose: the dialog's own lines
+    /// from the game's text, joined and with its placeholders filled in.
+    /// </summary>
+    private string CityDialogSentence(string dialogName, IList<string> strings, IList<int>? numbers)
+    {
+        var popupBox = MainWindow.ActiveInterface.GetDialog(dialogName);
+        if (popupBox?.Text is not { Count: > 0 } lines)
+        {
+            return string.Empty;
+        }
+
+        var body = string.Join(" ", lines
+            .Select(line => line.TrimStart('^'))
+            .Where(line => !string.IsNullOrWhiteSpace(line)));
+        return DialogUtils.ReplacePlaceholders(body, strings, numbers) ?? string.Empty;
     }
 
     public CityWindow ShowCityWindow(City city, bool viewOnly = false)
@@ -700,6 +804,9 @@ public class GameScreen : BaseScreen
 
     public override void Draw(bool pulse)
     {
+        // The turn is processed inside a single frame, so by the time a frame is
+        // drawn every city has finished reporting and the news can be grouped.
+        ReleaseCityNews();
         ReleaseQueuedPopup();
         base.Draw(pulse);
     }
