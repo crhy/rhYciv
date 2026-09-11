@@ -79,6 +79,39 @@ namespace RhyCiv.Engine
         public IPlayer[] Players { get; }
 
 
+        /// <summary>
+        /// Brings one civilisation's record of some squares up to date whether or
+        /// not it can currently see them.
+        /// </summary>
+        /// <remarks>
+        /// A city changing hands is the case this exists for, and losing one is
+        /// the case that was wrong. What a player sees drawn is their remembered
+        /// record of a square, and that record is only refreshed for civilisations
+        /// that can see the square now -- but a city stops being visible to its
+        /// owner at the very moment they stop owning it: the garrison is gone and
+        /// the city is somebody else's, so nothing of theirs is in sight of it any
+        /// more. The map therefore went on drawing it in their own colours,
+        /// indefinitely. Reported as barbarians taking a city and the city not
+        /// turning red.
+        ///
+        /// They have just been told they lost it, so the map has no business
+        /// disagreeing.
+        /// </remarks>
+        public void UpdateTilesFor(IList<Tile> tilesChanged, int civilizationId)
+        {
+            if (tilesChanged.Count == 0 || civilizationId < 0 || civilizationId >= Players.Length)
+            {
+                return;
+            }
+
+            foreach (var tile in tilesChanged)
+            {
+                tile.UpdatePlayer(civilizationId);
+            }
+
+            Players[civilizationId].MapChanged(tilesChanged.ToList());
+        }
+
         public void UpdateTiles(IList<Tile> tilesChanged)
         {
             foreach (var player in Players)

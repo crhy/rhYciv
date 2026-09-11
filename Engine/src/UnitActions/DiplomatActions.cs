@@ -355,6 +355,10 @@ namespace RhyCiv.Engine.UnitActions
             game.Players[loser.Id].CityLost(city);
             game.Players[buyer.Id].CityCaptured(city);
 
+            // The civilisation that was bought out cannot see the city any more,
+            // so its map has to be told directly or it keeps the old colours.
+            game.UpdateTilesFor([location], loser.Id);
+
             SpendDiplomat(game, diplomat);
 
             location.SetVisible(buyer.Id);

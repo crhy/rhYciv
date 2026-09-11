@@ -146,6 +146,47 @@ jobs:
           </plist>
           PLIST
 
+      # A note inside the archive, because the first thing that goes wrong is
+      # never read on the download page.
+      #
+      # A self-contained build is an executable plus the nine hundred files it
+      # needs beside it. Windows Explorer will happily let somebody double-click
+      # the .exe while it is still inside the zip: it extracts that one file to a
+      # temporary folder, runs it there with none of its companions, and the
+      # runtime fails with "Could not load file or assembly 'System.Runtime'".
+      # That is a complete build and a correct download failing for a reason that
+      # reads like a broken one -- reported by a tester in exactly those words.
+      - name: Write the note that ships in the archive
+        shell: bash
+        run: |
+          cat > publish/READ-ME-FIRST.txt <<'NOTE'
+          rhYciv
+          ======
+
+          EXTRACT THIS FOLDER FIRST, then run the game from where you extracted it.
+
+          Do not run the game from inside the zip. Windows will let you
+          double-click it there, but it only unpacks the one file you clicked, and
+          the game will stop with an error about "System.Runtime" or a missing
+          assembly. Nothing is wrong with the download -- the program simply needs
+          the rest of the folder beside it.
+
+            Windows : right-click the zip -> Extract All, then run RaylibUI.exe
+            macOS   : unzip, then drag rhYciv.app to Applications
+            Linux   : tar -xzf the archive, then run ./RaylibUI
+
+          The builds are not code-signed, so Windows SmartScreen and macOS
+          Gatekeeper will both warn on first launch. On macOS, clear the quarantine
+          flag with:
+
+            xattr -dr com.apple.quarantine /Applications/rhYciv.app
+
+          Nothing else is needed: no Civilization II installation, and no .NET
+          runtime to install. Everything is in this folder.
+
+          Problems: https://github.com/crhy/rhYciv/issues
+          NOTE
+
       - name: Package
         shell: bash
         run: |

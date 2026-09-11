@@ -872,6 +872,11 @@ namespace RhyCiv.Engine.UnitActions
                         
                         game.Players[loser.Id].CityLost(tileTo.CityHere);
 
+                        // And their map. They cannot see the square any more --
+                        // losing the city is exactly what took it out of their
+                        // sight -- so nothing else will ever correct it.
+                        game.UpdateTilesFor([tileTo], loser.Id);
+
                         // The capture is reported before its spoils. It used to be
                         // the other way round, which put "you have learned Writing"
                         // in front of "the gates of Ulundi are open" and left the

@@ -697,7 +697,7 @@ Your scholars have mastered %STRING0. What yesterday was impossible now becomes 
 @title=An Enemy Unit Changes Sides
 @width=360
 @button=Ok
-Coin, promises, and self-interest prove stronger than loyalty. The unit lowers its old banner and accepts your command.
+Coin, promises, and self-interest prove stronger than loyalty. The %STRING0 lowers its old banner and accepts your command; it will take fresh orders next turn. Your agent stays behind to see the arrangement kept, and does not return.
 
 @BRIDGEBUILDING
 @title=Bridges Open the Roads

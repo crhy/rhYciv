@@ -1588,6 +1588,12 @@ public class LocalPlayer : IPlayer
 
             if (DiplomatActions.BribeUnit(_gameScreen.Game, diplomat, target))
             {
+                // Say what happened. The unit changes sides and the agent stays
+                // behind, and neither was reported: what the player saw was their
+                // diplomat vanishing, with the unit they had just paid for standing
+                // where the enemy unit had been and no longer blinking for orders.
+                // Both were working; nothing said so.
+                _gameScreen.ShowPopup("BRIBEDUNIT", replaceStrings: [target.Name]);
                 _gameScreen.ForceRedraw();
                 _gameScreen.Game.ChooseNextUnit();
             }

@@ -32,6 +32,13 @@ public interface IGame
     bool ProcessEndOfTurn();
     void ChoseNextCiv();
     void UpdateTiles(IList<Tile> tiles);
+
+    /// <summary>
+    /// Brings one civilisation's record of some squares up to date whether or not
+    /// it can currently see them. See the implementation for why losing a city
+    /// needs this.
+    /// </summary>
+    void UpdateTilesFor(IList<Tile> tiles, int civilizationId);
     double MaxDistance { get; }
     int DifficultyLevel { get; set; }
     IGameDate Date { get; }

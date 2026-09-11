@@ -48,6 +48,14 @@ internal class MockGame : IGame
 
     }
 
+    /// <summary>Squares this mock was asked to refresh, and for whom.</summary>
+    public List<(IList<Tile> Tiles, int CivilizationId)> TilesRefreshedFor { get; } = [];
+
+    public void UpdateTilesFor(IList<Tile> tiles, int civilizationId)
+    {
+        TilesRefreshedFor.Add((tiles, civilizationId));
+    }
+
     public double MaxDistance => throw new NotImplementedException();
 
     /// <summary>The difficulty, which reputation and corruption both read.</summary>
