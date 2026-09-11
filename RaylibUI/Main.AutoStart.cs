@@ -65,6 +65,7 @@ namespace RaylibUI
                                   $"player '{loadedGame.Game.GetPlayerCiv.TribeName}' " +
                                   $"with {loadedGame.Game.GetPlayerCiv.Cities.Count} cities");
                 StartGame(loadedGame.Game, loadedGame.ViewData);
+                StartZoomSweep();
                 return true;
             }
 
@@ -190,6 +191,57 @@ namespace RaylibUI
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Steps the zoom up one level every couple of seconds when
+        /// RHYCIV_TEST_ZOOM_SWEEP is set, so a run of screenshots covers every zoom
+        /// level in order.
+        /// <para>
+        /// Zoom faults are about what changes between one level and the next --
+        /// a map that shifts sideways as it is zoomed cannot be seen in any single
+        /// frame, only in the step from one to the one after. Starting the game at
+        /// a fixed zoom shows neither.
+        /// </para>
+        /// </summary>
+        private void StartZoomSweep()
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_TEST_ZOOM_SWEEP")))
+            {
+                return;
+            }
+
+            const string sweep = "ZOOM_SWEEP";
+
+            // From the far end, so the sweep crosses the point where the whole map
+            // stops fitting across the screen -- which is where the view used to
+            // jump sideways.
+            if (_activeScreen is RunGame.GameScreen start)
+            {
+                start.TriggerMapEvent(new RhyCiv.Engine.Events.MapEventArgs(
+                    RhyCiv.Engine.Enums.MapEventType.ZoomChange) { Zoom = RunGame.GameScreen.MinimumZoom });
+            }
+
+            void Step()
+            {
+                if (_activeScreen is not RunGame.GameScreen screen)
+                {
+                    return;
+                }
+
+                var next = screen.Zoom + 1;
+                if (next > RunGame.GameScreen.MaximumZoom)
+                {
+                    return;
+                }
+
+                Console.WriteLine($"zoom-sweep: {next}");
+                screen.TriggerMapEvent(new RhyCiv.Engine.Events.MapEventArgs(
+                    RhyCiv.Engine.Enums.MapEventType.ZoomChange) { Zoom = next });
+                Schedule(sweep, TimeSpan.FromSeconds(2), Step);
+            }
+
+            Schedule(sweep, TimeSpan.FromSeconds(2), Step);
         }
 
         /// <summary>

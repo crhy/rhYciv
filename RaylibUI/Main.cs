@@ -112,9 +112,15 @@ namespace RaylibUI
                     _events[i].Remaining -= frameTime;
                     if (_events[i].Remaining < 0)
                     {
-                        _events[i].Action();
+                        // Taken off the list before it runs, not after. Schedule
+                        // replaces an entry of the same name in place, so an action
+                        // that asks to be run again -- the natural way to write a
+                        // repeating job -- wrote its next run into the very slot
+                        // that was about to be removed, and never ran a second time.
+                        var due = _events[i];
                         _events.RemoveAt(i);
                         i--;
+                        due.Action();
                     }
                 }
 

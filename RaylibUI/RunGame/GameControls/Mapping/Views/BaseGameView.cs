@@ -531,7 +531,8 @@ public abstract class BaseGameView : IGameView
         }
 
         // Whole map in x-dir shown
-        if (ViewWidth >= dimensions.TotalWidth)
+        var wholeMapAcross = ViewWidth >= dimensions.TotalWidth;
+        if (wholeMapAcross)
         {
             offsetX = (dimensions.TotalWidth - ViewWidth) /2;
             setOffsetX = offsetX != (int)_offsets.X;
@@ -577,7 +578,20 @@ public abstract class BaseGameView : IGameView
         {
             _offsets.X = offsetX;
             _offsets.Y = offsetY;
-            _xShift = xShift;
+
+            // The shift decides which column of a round world the drawing starts
+            // from, and it only means anything alongside an offset computed from
+            // it. When the whole map is across the screen the offset above just
+            // centres it and the shift is not consulted at all -- but it was being
+            // overwritten with a value derived from the active square anyway, which
+            // rotated the world sideways with nothing on screen to show it. The
+            // rotation surfaced on the next step of zoom, the moment the view
+            // narrowed enough to start drawing from the moved shift: "after a
+            // certain zoom threshold the map jumps all over from right to left".
+            if (!wholeMapAcross)
+            {
+                _xShift = xShift;
+            }
         }
 
         return setOffsetX || setOffsetY;

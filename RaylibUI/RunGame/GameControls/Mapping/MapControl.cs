@@ -500,10 +500,36 @@ public class MapControl : BaseControl
 
         var nextZoom = Math.Clamp(_gameScreen.Zoom + (amount > 0 ? 1 : -1),
             GameScreen.MinimumZoom, GameScreen.MaximumZoom);
-        if (nextZoom != _gameScreen.Zoom)
+        if (nextZoom == _gameScreen.Zoom)
         {
-            _gameScreen.TriggerMapEvent(new MapEventArgs(MapEventType.ZoomChange) { Zoom = nextZoom });
+            return true;
         }
+
+        // Zoom towards whatever the pointer is over, so the square under the cursor
+        // is still under the cursor afterwards.
+        //
+        // Without this the view stays centred on the active unit, and the square
+        // being zoomed towards slides away from the pointer -- worse the further
+        // from the unit it is, which is why zooming in looked like the map was
+        // jumping from side to side. Anchoring also settles the view: every step
+        // is measured from the same square rather than from the offsets of the
+        // step before.
+        //
+        // Zooming back out lets the anchor go, so the view returns to following
+        // the unit whose turn it is rather than staying where the pointer last was.
+        if (amount > 0)
+        {
+            if (GetTileAtMousePosition() is { } under)
+            {
+                _gameScreen.SetViewAnchor(under);
+            }
+        }
+        else if (nextZoom <= 0)
+        {
+            _gameScreen.SetViewAnchor(null);
+        }
+
+        _gameScreen.TriggerMapEvent(new MapEventArgs(MapEventType.ZoomChange) { Zoom = nextZoom });
         return true;
     }
 
