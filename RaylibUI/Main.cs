@@ -37,9 +37,21 @@ namespace RaylibUI
             var hasCivDir = Settings.LoadConfigSettings();
 
             //========= RAYLIB WINDOW SETTINGS
-            Raylib.SetConfigFlags(ConfigFlags.Msaa4XHint| ConfigFlags.VSyncHint |
-                                  ConfigFlags.ResizableWindow);
+            // Multisampling is asked for by default. RHYCIV_NO_MSAA=1 turns it off,
+            // which is a diagnostic rather than a setting: a session that ends with
+            // the process gone and no managed exception is a fault below .NET, and
+            // knowing whether it still happens without multisampling separates a
+            // driver's multisample path from everything this game does.
+            var wantMsaa = Environment.GetEnvironmentVariable("RHYCIV_NO_MSAA") is not ("1" or "true");
+            var flags = ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow;
+            if (wantMsaa)
+            {
+                flags |= ConfigFlags.Msaa4XHint;
+            }
+
+            Raylib.SetConfigFlags(flags);
             Window.Init(1600, 900, "rhYciv");
+
             DisplayScale.Update();
             var appIcon = Image.Load(AssetPaths.Resolve("FOSSart/rhyciv-app-icon.png"));
             Window.SetIcon(appIcon);
