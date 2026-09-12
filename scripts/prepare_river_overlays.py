@@ -77,6 +77,28 @@ MOUTH_FLARE = 1.9
 MOUTH_REACH = 0.45
 
 
+def rhythm_of(profile, envelope_only: bool = True):
+    """The along-the-stroke half of a profile, tapered to nothing at both ends.
+
+    A profile carries two independent things: the cross-section, which decides
+    what the channel looks like and must be identical in every spoke so that
+    neighbouring tiles meet along their shared edge; and the rhythm along the
+    stroke -- how it thickens and thins, lightens and darkens -- which is what
+    stops a swept spoke reading as a smooth extrusion.
+
+    Only the first has to be shared. So the rhythm can come from a different
+    painting for every spoke, and all the source art contributes instead of one
+    picture supplying everything, *provided* the rhythm is tapered to 1.0 at each
+    end of the spoke. Untapered it changes the channel's width where the spoke
+    meets the tile edge, and the join opens up again.
+    """
+    _, _, along, tone = profile
+    t = np.linspace(0.0, 1.0, len(along))
+    envelope = np.sin(np.pi * t)
+    return (1.0 + (along - 1.0) * envelope,
+            1.0 + (tone - 1.0) * envelope)
+
+
 def straightness(path: Path) -> float:
     _, alpha = isotile.key_matte(path)
     ys, xs = np.nonzero(alpha > 0.25)
@@ -144,12 +166,19 @@ def build(source_directory: Path, check: bool) -> int:
 
     # Each spoke is generated once and reused across every mask that includes it,
     # so a river crossing two adjacent tiles is drawn with the same channel.
+    # Every painting in the folder supplies a rhythm, taken in turn, so no two
+    # spokes of a river are swept with the same one and all the art is in use.
+    rhythms = [rhythm_of(isotile.cross_section(path)) for path in sources]
+    print(f"  river: {len(sources)} sources, {len(BANDS)} gauges")
+
     for band, (name, scale, stem) in enumerate(BANDS):
-        band_profile = profile_for(stem)
+        colour, coverage, _, _ = profile_for(stem)
         width = RIVER_WIDTH * scale
 
         spokes = {}
         for index, direction in enumerate(FOUR):
+            along, tone = rhythms[(band * len(FOUR) + index) % len(rhythms)]
+            band_profile = (colour, coverage, along, tone)
             start, end = isotile.spoke_path(direction)
             spokes[direction] = isotile.sweep(band_profile, start, end, width,
                                               seed=2000 + index + 100 * band,

@@ -119,7 +119,15 @@ namespace RaylibUI
                 ? new FastRandom(seed)
                 : new FastRandom();
             config.QuickStart = true;
+            // RHYCIV_AUTOSTART_SIZE=75x120 generates at a named size, so a world can
+            // be measured against a Civ II save of the same dimensions.
             config.WorldSize = new[] { 50, 80 };
+            if (Environment.GetEnvironmentVariable("RHYCIV_AUTOSTART_SIZE") is { } sizeWanted &&
+                sizeWanted.Split('x') is { Length: 2 } parts &&
+                int.TryParse(parts[0], out var wide) && int.TryParse(parts[1], out var high))
+            {
+                config.WorldSize = new[] { wide, high };
+            }
             config.BarbarianActivity = 1;
             config.DifficultyLevel = 2;
 
@@ -335,6 +343,32 @@ namespace RaylibUI
                             square.Type, square.SpecialsName ?? "-",
                             square.GetFood(low), square.GetShields(low), square.GetTrade(org),
                             clash));
+                    }
+                }
+            }
+
+            // RHYCIV_REPORT_MAP=1 prints what the world is made of: how much of it
+            // is land, and how that land is divided. Civ II's own saves load here,
+            // so the same line printed for one of those and for a generated world
+            // is a direct comparison of the two generators.
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_REPORT_MAP")))
+            {
+                foreach (var map in game.Maps)
+                {
+                    var tiles = map.Tile.Cast<Model.Core.Mapping.Tile>()
+                        .Where(t => t != null).ToList();
+                    var ocean = tiles.Count(t => t.Type == Model.Core.Mapping.TerrainType.Ocean);
+                    var land = tiles.Count - ocean;
+                    var rivers = tiles.Count(t => t.River);
+                    Console.WriteLine($"map: {map.XDim}x{map.YDim} = {tiles.Count} tiles, " +
+                                      $"land {land} ({100.0 * land / Math.Max(1, tiles.Count):0.0}%), " +
+                                      $"ocean {ocean} ({100.0 * ocean / Math.Max(1, tiles.Count):0.0}%), " +
+                                      $"river {rivers} ({100.0 * rivers / Math.Max(1, land):0.0}% of land)");
+                    foreach (var group in tiles.Where(t => t.Type != Model.Core.Mapping.TerrainType.Ocean)
+                                 .GroupBy(t => t.Type).OrderByDescending(g => g.Count()))
+                    {
+                        Console.WriteLine($"map:   {group.Key,-10} {group.Count(),6} " +
+                                          $"({100.0 * group.Count() / Math.Max(1, land):0.0}% of land)");
                     }
                 }
             }
