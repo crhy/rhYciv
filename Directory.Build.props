@@ -6,7 +6,7 @@
     asserts that those two agree.
   -->
   <PropertyGroup>
-    <VersionPrefix>0.1.10</VersionPrefix>
+    <VersionPrefix>0.1.11</VersionPrefix>
     <!--
       Empty for a stable release. Set it to e.g. "beta.1" for a prerelease; the
       quality gate builds the full version as prefix-suffix and asserts it

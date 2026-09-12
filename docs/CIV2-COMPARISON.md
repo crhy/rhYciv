@@ -22,7 +22,7 @@ looked at.
 | Rule | Status | How |
 |---|---|---|
 | Terrain yields (all eleven types) | verified | Civilopedia + city screens |
-| Terrain specials | verified except 7 | Civilopedia pages; Buffalo, Resources, Bonus, Gold, Iron, Furs, Icy Oil still unchecked |
+| Terrain specials | verified, complete | every Civilopedia page; Whales was the only wrong figure |
 | City square: free road, auto-irrigate, min 1 shield | verified | Civilopedia, and Maesteg on hills |
 | City square on terrain that can be mined *or* irrigated | verified | Maesteg: irrigated, not mined |
 | Food produced, eaten, surplus, food box | verified | four cities, three governments |
@@ -432,6 +432,12 @@ of those pages settle the table without argument.
 | Spice | Swamp | 3 / 0 / 4 | 3 / 0 / 4 | ✓ |
 | Game (Musk Ox) | Tundra | 3 / 1 / 0 | 3 / 1 / 0 | ✓ |
 | Ivory | Glacier | 1 / 1 / 4 | 1 / 1 / 4 | ✓ |
+| Icy Oil | Glacier | 0 / 4 / 0 | 0 / 4 / 0 | ✓ |
+| Buffalo | Plains | 1 / 3 / 0 | 1 / 3 / 0 | ✓ |
+| Resources | Grassland | 2 / 1 / 0 | 2 / 1 / 0 | ✓ |
+| Gold | Mountains | 0 / 1 / 6 | 0 / 1 / 6 | ✓ |
+| Iron | Mountains | 0 / 4 / 0 | 0 / 4 / 0 | ✓ |
+| Furs | Tundra | 2 / 0 / 3 | 2 / 0 / 3 | ✓ |
 | Fish | Ocean | 3 / 0 / 2 | 3 / 0 / 2 | ✓ |
 | **Whales** | **Ocean** | **2 / 2 / 3** | **was 2 / 1 / 2** | **fixed** |
 
@@ -445,8 +451,23 @@ suspect on a previous pass from recollection alone, as 1/4/0, 3/2/0 and 3/1/0.
 "corrected" without the Civilopedia to check against, three good numbers would
 have been broken to fix one bad one.
 
-Still unchecked in that table, for want of a screenshot: Buffalo, the grassland
-shield (Resources), Bonus, Gold, Iron, Furs and Icy Oil.
+**The table is complete.** Every special Civ II has a Civilopedia page for has
+been checked, and Whales was the only wrong number in it.
+
+The one entry left over is `Bonus`, and it is not a Civ II resource at all — there
+is no Civilopedia page to find, which is the answer rather than a gap. Civ II's
+terrain table gives every terrain **two** special slots, and grassland has only
+one real special: the shield, which the table calls Resources. `Bonus` is the
+name this ruleset gives the leftover second slot, and `SpecialType` is franker
+about it, calling the pair `Grassland1` and `Grassland2`. Its figures — 2 food, 0
+shields, 0 trade — are plain grassland, so the slot adds nothing, which is what an
+unused slot should do.
+
+Worth knowing, because it means the grassland shield does **not** come from that
+special in either game. It comes from the square's coordinates: Civ II fixes which
+grassland squares carry a shield by a pattern over the map, and `Tile.HasShield`
+does the same. The special table entry is the *description* of a shielded square,
+not the thing that makes one.
 
 ### Take the save at the same moment as the screenshot
 

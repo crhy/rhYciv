@@ -34,6 +34,18 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.1.11" date="2026-09-11">
+      <description>
+        <p>
+          Imported Civilization II games keep their wonders, which had been read
+          from the save and discarded. Trade routes are paid Civilization II's
+          rate rather than Civilization I's. The whales resource is worth what it
+          is worth in the original. Diplomacy is a nested audience with the other
+          leader's portrait in view throughout, and there are portraits for every
+          civilisation but one.
+        </p>
+      </description>
+    </release>
     <release version="0.1.10" date="2026-09-11">
       <description>
         <p>The hard crashes, and the first release checked against the original.</p>
