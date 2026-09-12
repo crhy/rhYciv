@@ -76,6 +76,15 @@ F_shelf  = FBM(4, 3)
 # finished -- the coast keeps the calm it was tuned for.
 OCEAN_PAINTING = (Path(__file__).resolve().parents[1]
                   / "RaylibUI" / "FOSSart" / "Terrain" / "ocean.png")
+
+# And the land end is the grassland painting, for the same reason. The ramp below
+# ends on (81, 99, 19), which is exactly the painting's *average* colour and none
+# of its grain -- so a coast tile's inland half was the right green and perfectly
+# smooth, sitting against a grassland tile full of texture. The join showed as a
+# hard line, which is what "coastal tiles still need a little grass texture to
+# blend in" is.
+GRASS_PAINTING = (Path(__file__).resolve().parents[1]
+                  / "RaylibUI" / "FOSSart" / "Terrain" / "grassland.png")
 F_swellw = FBM(7, 3)
 F_spray  = FBM(150, 2)
 F_tone   = FBM(13, 3)
@@ -185,16 +194,17 @@ CENTRE_IRREGULARITY = 0.55
 # Most surf the shoreline may ever be covered by.
 FOAM_CEILING = 0.34
 
-def _load_painting():
-    """The ocean painting, resampled onto the supersampled canvas."""
-    if not OCEAN_PAINTING.exists():
-        print(f"note: {OCEAN_PAINTING.name} not found; open water stays procedural")
+def _load_painting(path, what):
+    """A terrain painting, resampled onto the supersampled canvas."""
+    if not path.exists():
+        print(f"note: {path.name} not found; {what} stays procedural")
         return None
-    art = Image.open(OCEAN_PAINTING).convert("RGB").resize((sw, sh), Image.LANCZOS)
+    art = Image.open(path).convert("RGB").resize((sw, sh), Image.LANCZOS)
     return np.asarray(art, dtype=float)
 
 
-_painting = _load_painting()
+_painting = _load_painting(OCEAN_PAINTING, "open water")
+_grass = _load_painting(GRASS_PAINTING, "the inland end")
 
 
 def build(N, E, Sc, Wc):
@@ -303,6 +313,16 @@ def build(N, E, Sc, Wc):
         deep = (1 - smoothstep(-130, -30, d_col)) * sea
         w = (0.88 * deep)[..., None]
         img = img * (1 - w) + _painting * w
+
+    # ---- the painted land ---------------------------------------------------
+    # Inland takes its grain from the grassland painting, on the far side of the
+    # sand so the beach and the wet strip are left exactly as they were. By the
+    # time the coast tile meets an ordinary grassland tile it is that painting,
+    # and the two no longer meet along a visible line.
+    if _grass is not None:
+        inland = smoothstep(18, 62, d)
+        w = (0.9 * inland)[..., None]
+        img = img * (1 - w) + _grass * w
 
     # ---- surf ---------------------------------------------------------------
     # Surf is a broken thread along the waterline, and it is off-white rather than

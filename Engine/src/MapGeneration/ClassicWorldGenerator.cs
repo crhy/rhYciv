@@ -261,7 +261,7 @@ internal static class ClassicWorldGenerator
                 path.Add(current);
                 if (distanceToOcean[current.X, current.Y] <= 1) break;
 
-                var choices = Neighbours(current.X, current.Y, width, height, wrapX)
+                var choices = EdgeNeighbours(current.X, current.Y, width, height, wrapX)
                     .Where(cell => terrain[cell.X, cell.Y] != TerrainType.Ocean && !visited.Contains(cell))
                     .Where(cell => terrain[cell.X, cell.Y] is not TerrainType.Glacier and not TerrainType.Mountains)
                     .Select(cell => new
@@ -307,7 +307,11 @@ internal static class ClassicWorldGenerator
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
-            foreach (var neighbour in Neighbours(current.X, current.Y, width, height, wrapX))
+
+            // Edge-sharing, to match the river walk: "next to the sea" has to mean
+            // the same thing to the generator as it does to the renderer, or a river
+            // stops one tile short of a mouth it thinks it has reached.
+            foreach (var neighbour in EdgeNeighbours(current.X, current.Y, width, height, wrapX))
             {
                 if (distance[neighbour.X, neighbour.Y] <= distance[current.X, current.Y] + 1) continue;
                 distance[neighbour.X, neighbour.Y] = distance[current.X, current.Y] + 1;
@@ -353,6 +357,38 @@ internal static class ClassicWorldGenerator
         for (var x = 0; x < width; x++)
             values[x, y] = (values[x, y] - minimum) / range;
         return values;
+    }
+
+    /// <summary>
+    /// The four tiles that share an <em>edge</em> with this one: NE, SE, SW, NW.
+    /// </summary>
+    /// <remarks>
+    /// These are the offsets <c>MapNavigationFunctions.DirectNeighbours</c> yields,
+    /// and they are the only steps a river may take. A river is drawn as one
+    /// picture per tile chosen by which of those four neighbours also carry a
+    /// river, so two river tiles that share only a <em>corner</em> cannot be joined
+    /// by any picture: neither appears in the other's mask, and both are drawn as a
+    /// stub running to an edge with nothing on the far side.
+    ///
+    /// The river walk used the eight-neighbour set, which includes the four
+    /// corner-touching tiles, so roughly half of every river's steps landed
+    /// somewhere the renderer had no way to connect to. That is why rivers came out
+    /// as a scatter of short disjointed squiggles -- they were generated in one
+    /// adjacency and drawn in another.
+    /// </remarks>
+    private static IEnumerable<Cell> EdgeNeighbours(int x, int y, int width, int height, bool wrapX)
+    {
+        var odd = y & 1;
+        int[][] offsets = [[odd, -1], [odd, 1], [-1 + odd, 1], [-1 + odd, -1]];
+        foreach (var offset in offsets)
+        {
+            var nx = x + offset[0];
+            var ny = y + offset[1];
+            if (ny < 0 || ny >= height) continue;
+            if (wrapX) nx = Wrap(nx, width);
+            else if (nx < 0 || nx >= width) continue;
+            yield return new Cell(nx, ny);
+        }
     }
 
     private static IEnumerable<Cell> Neighbours(int x, int y, int width, int height, bool wrapX)
