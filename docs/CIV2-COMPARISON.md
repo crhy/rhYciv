@@ -312,8 +312,9 @@ the moment the screenshots were taken, which is what made this comparable at all
 | happiness | 6 content, 2 specialists, no disorder | same | ✓ |
 | corruption | 0 | 2 | ✗ |
 | **Carmarthen** — food / eaten / surplus | 18 / 14 / 4 | 18 / 14 / 4 | ✓ |
-| shields | 8 | 7 | ✗ |
-| base trade / route / corruption | 14 / +2 / 1 | 13 / +1 / 3 | ✗ |
+| shields / support / production | 8 / 2 / 6 | 8 / 2 / 6 | ✓ |
+| base trade | 14 | 14 | ✓ |
+| route / corruption | +2 / 1 | +1 / 4 | ✗ |
 
 Cardiff now agrees with Civ II on **every figure its city screen shows**. That is
 the first city to do so, and it is worth saying plainly because it means the
@@ -340,11 +341,7 @@ one real city in a real position.
    already carries an Apolyton citation and the last person to reason about
    corruption from first principles here got it wrong.
 
-2. **Carmarthen's odd square.** One shield and one trade short on the same number
-   of squares with the same number of entertainers, so it is again a question of
-   *which* square. The hover screenshots of its resource map should settle it.
-
-3. **The asymmetric trade route.** Cardiff's route pays +1 and Carmarthen's pays
+2. **The asymmetric trade route.** Cardiff's route pays +1 and Carmarthen's pays
    +2, from the same pair of cities. The sourced formula is symmetric in T1 and
    T2 and the source states plainly that both cities receive the same amount, so
    something not in it is at work. Carmarthen's line carries a trailing `+` that
@@ -355,7 +352,29 @@ one real city in a real position.
    overrule it. **Unresolved; needs either a second source or a second pair of
    cities to measure.**
 
-4. **The delivery bonus**, which remains Civ I's and unmeasured.
+3. **The delivery bonus**, which remains Civ I's and unmeasured.
+
+### Whales were worth a shield and an arrow too little
+
+Carmarthen was one shield and one trade short of Civ II with the same squares
+worked. Hovering each of its squares in turn named the culprit in one shot: Civ
+II prices its whales square at 2 food, 2 shields, 4 trade under a Republic, and
+this game priced it 2 / 1 / 3.
+
+The standalone ruleset had `Whales, 1, 2, 2, 1, 2` where Civ II's figures are
+2 food, 2 shields, 3 trade — the fourth arrow on the screen being the Republic's
+own, added to any square already producing trade. Corrected, and Carmarthen's
+food, shields, support, production and base trade all agree.
+
+Two confirmations, as a terrain number deserves: the measurement above, and the
+published Civ II terrain tables, which give Whales as raising ocean from 1/0/2 to
+2/2/3.
+
+**The rest of the specials table has not been checked this way**, and one wrong
+number in it was invisible for as long as nobody put a city beside its original.
+Coal, Musk Ox/Game and Spice are the three this pass could not confirm from a
+source and should not be changed on recollection. Hovering one square of each in
+Civ II settles each of them in a single screenshot.
 
 ### Take the save at the same moment as the screenshot
 
