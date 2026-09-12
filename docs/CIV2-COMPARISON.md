@@ -235,41 +235,127 @@ the map are 2🌾1🛡 on the centre and 3🌾3☘ on the one worked square, and
 sum to the header. The worked square at 3 / 0 / 3 is an ocean fish square with
 the Republic's extra arrow.
 
-### Trade cities: Cardiff agrees exactly, Carmarthen does not
+### Every wonder in every imported game was missing — fixed
 
-A.D. 1700, turn 196, Republic, both size 7 with one entertainer.
+A Civ II save does not record wonders on its cities. It keeps a table near the
+front saying which city holds each of the twenty-eight, in a fixed order starting
+with the Pyramids. `Read.ClassicSav.cs` parsed that table into three local arrays
+and then never looked at them again, so **no city in an imported game held any
+wonder at all**.
+
+It was invisible until two city screens were put side by side. Civ II's Cardiff
+lists Palace, Granary, Temple and the **Great Library**; this game listed the
+first three. Civ II's Kells lists Temple and **Michelangelo's Chapel**; this game
+listed the Temple.
+
+And it had a consequence nobody would have traced back to a save reader. Kells
+came out of the save in **civil disorder** — with Michelangelo's Chapel, which
+counts as a Cathedral in every one of its owner's cities, it is not, and Civ II's
+own Happiness Analysis shows six content citizens and two specialists with
+nothing red left on the third row. What looked like a happiness bug was a missing
+wonder.
+
+Getting the wonder table's position wrong by one is silent in the same way, and
+it happened on the first attempt: Cardiff was handed the Oracle instead of the
+Great Library and Kells Copernicus' Observatory instead of Michelangelo's Chapel.
+Nothing threw, nothing looked wrong, the cities simply held the neighbouring
+wonder. `RhyCiv.Tests/IO/WonderTableTests.cs` now fixes the first wonder's index
+at 39 and checks what sits at either end of the table.
+
+### Trade routes were being paid Civilization I's formula — fixed
+
+Civ II's ongoing trade route bonus, from two independent write-ups of the
+formula, is
+
+```
+foreign route:  (T1 + T2 + 4) / 8
+own cities:    k(T1 + T2 + 4) / 16
+```
+
+where T1 and T2 are the two cities' **base trade** — what their own squares
+produce, before routes and before corruption — every division drops its
+remainder, and k is a transport modifier (1.5 for a road along the route, 2 for a
+railroad) that this game does not work out yet and treats as 1. Distance does not
+enter it.
+
+What this game had was `(distance + 10) * (Ta + Tb) / 24`, halved for the same
+continent and again for the same civilisation. That is **Civilization I's**
+formula, and not even that game's continuing-route formula — it is Civ I's
+one-off payment for the delivery, charged again every turn. Measured against Civ
+II on the same save it paid four arrows a turn where Civ II paid one.
+
+The delivery bonus keeps that arithmetic, because a delivery is a different thing
+and distance genuinely belongs in it, but it now owns the calculation rather than
+borrowing the route's. **The delivery figure has not been checked against Civ II
+and remains unverified.**
+
+Base trade is now recorded on the city as `TileTrade`, because a route cannot be
+valued from the city's `Trade`: the route's own arrows are part of that, so a
+route worked out from it would pay itself more every turn.
+
+### Trade cities: Cardiff agrees exactly
+
+A.D. 1700, turn 196, Republic, from `tradesave.sav` — a save taken deliberately at
+the moment the screenshots were taken, which is what made this comparable at all.
 
 | | Civ II | rhYciv | |
 |---|---|---|---|
 | **Cardiff** — food / eaten / surplus | 17 / 14 / 3 | 17 / 14 / 3 | ✓ |
 | shields / support / production | 10 / 2 / 8 | 10 / 2 / 8 | ✓ |
-| tile trade / corruption | 11 / 0 | 11 / 0 | ✓ |
-| trade route | Carmarthen Silk +1 | none | ✗ |
+| base trade / route / corruption / net | 11 / +1 / 0 / 12 | 11 / +1 / 0 / 12 | ✓ |
+| improvements | Palace, Granary, Temple, Great Library | same | ✓ |
+| citizens / specialists / disorder | 7 / 1 / no | 7 / 1 / no | ✓ |
+| **Kells** — food / eaten / surplus | 19 / 16 / 3 | 19 / 16 / 3 | ✓ |
+| shields / support / production | 9 / 2 / 7 | 9 / 2 / 7 | ✓ |
+| base trade | 10 | 10 | ✓ |
+| improvements | Temple, Michelangelo's Chapel | same | ✓ |
+| happiness | 6 content, 2 specialists, no disorder | same | ✓ |
+| corruption | 0 | 2 | ✗ |
 | **Carmarthen** — food / eaten / surplus | 18 / 14 / 4 | 18 / 14 / 4 | ✓ |
-| shields / support / production | 8 / 2 / 6 | 7 / 2 / 5 | ✗ |
-| tile trade / corruption | 14 / 1 | 13 / 3 | ✗ |
-| trade route | Cardiff Gems +2 | none | ✗ |
+| shields | 8 | 7 | ✗ |
+| base trade / route / corruption | 14 / +2 / 1 | 13 / +1 / 3 | ✗ |
 
-Cardiff agrees on every figure the screen shows, which is worth stating plainly:
-a capital of seven citizens working seven squares, food, shields, support,
-production, trade and corruption all identical. The city-square shield is part of
-that — Cardiff's centre is plain grassland, and without the rule above this game
-made it nine shields against Civ II's ten.
+Cardiff now agrees with Civ II on **every figure its city screen shows**. That is
+the first city to do so, and it is worth saying plainly because it means the
+terrain reading, the city square rules, the government, the trade route formula,
+the improvement list and the happiness model are all right together for at least
+one real city in a real position.
 
-Carmarthen is short one shield and one trade on the same number of squares with
-the same number of entertainers, so it is again a question of *which* square, not
-of what a square is worth.
+### What is left, in order
 
-Its corruption is the more interesting one: 3 against Civ II's 1, where Cardiff,
-the capital, is 0 in both. Distance corruption under a Republic is the obvious
-suspect and has not yet been checked against a source. **This is the next rule to
-research.**
+1. **Corruption.** Kells 2 against 0, Carmarthen 3 against 1, Cardiff 0 against 0.
+   Kells and Carmarthen are the *same* distance from the capital — both four
+   columns and six rows away — so the two games can be compared directly at one
+   distance. Civ II gives Kells, with 10 trade, no corruption at all, and
+   Carmarthen, with 16, exactly one. That brackets Civ II's rate at this distance
+   between 1/16 and 1/10 of trade. This game's rate is about one fifth. Working
+   back through the documented formula, `trade × min(32, distance) × 15/(4+gov) /
+   100`, Civ II is behaving as though the distance were between 3.75 and 6 where
+   this game computes something between 12 and 17.
 
-Neither city has a trade route in this game's reading of the save, and both have
-one in Civ II. That may be nothing: the save is an autosave, and autosaves are
-written at the *start* of a turn, while the screenshots were taken part-way
-through one in which caravans were delivered and routes established. It cannot be
-settled without a save taken at the same moment as the picture — see below.
+   The suspect is `CityExtensions.ComputeDistanceFactor`, which measures a
+   straight-line distance on the *stored* column numbers and then multiplies by
+   `Map.ScaleFactor` (`XDim * YDim / 4000`). No source consulted so far has a map
+   scale term in it at all. **Do not change this without a source**: the formula
+   already carries an Apolyton citation and the last person to reason about
+   corruption from first principles here got it wrong.
+
+2. **Carmarthen's odd square.** One shield and one trade short on the same number
+   of squares with the same number of entertainers, so it is again a question of
+   *which* square. The hover screenshots of its resource map should settle it.
+
+3. **The asymmetric trade route.** Cardiff's route pays +1 and Carmarthen's pays
+   +2, from the same pair of cities. The sourced formula is symmetric in T1 and
+   T2 and the source states plainly that both cities receive the same amount, so
+   something not in it is at work. Carmarthen's line carries a trailing `+` that
+   Cardiff's does not — `Cardiff Gems: +2☘+` against `Carmarthen Silk: +1☘` — and
+   Cardiff demands Gems while Carmarthen does not demand Silk. That suggests the
+   demanded commodity raises the standing route and not only the delivery, but the
+   source consulted says the opposite, and one observation is not enough to
+   overrule it. **Unresolved; needs either a second source or a second pair of
+   cities to measure.**
+
+4. **The delivery bonus**, which remains Civ I's and unmeasured.
 
 ### Take the save at the same moment as the screenshot
 

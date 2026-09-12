@@ -81,6 +81,20 @@ namespace Model.Core.Cities
         public int SurplusHunger { get; set; }
 
         public int Trade { get; set; }
+
+        /// <summary>
+        /// The trade the city's own squares produce, before any trade route adds to
+        /// it and before corruption takes its share.
+        /// </summary>
+        /// <remarks>
+        /// Civ II's trade route formula is written in terms of this figure, and a
+        /// route cannot be valued from <see cref="Trade"/> without chasing its own
+        /// tail: the route's arrows are part of Trade, so a route worked out from
+        /// Trade would pay itself more every turn. It is also what Civ II shows in
+        /// the Citizens header at the top of a city screen.
+        /// </remarks>
+        public int TileTrade { get; set; }
+
         public int Corruption { get; set; }
         
         // PRODUCTION

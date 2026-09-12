@@ -1083,6 +1083,8 @@ public class Read
             objects.Cities.Add(city);
         }
 
+        AddWondersToTheirCities(objects.Cities, rules, wonderCity, wonderBuilt);
+
         // Set home cities of units
         foreach (var civ in objects.Civilizations)
             foreach (var unit in civ.Units)
@@ -1468,6 +1470,50 @@ public class Read
         }
         var str = new string(asciich);
         return str.Replace("\0", string.Empty); // remove null characters
+    }
+
+
+    /// <summary>
+    /// The number of ordinary city improvements a ruleset lists before its wonders.
+    /// Civ II's improvement table runs Nothing, Palace, Barracks ... Capitalization
+    /// and then the twenty-eight wonders in their own fixed order, so the wonder a
+    /// save calls number <c>i</c> is the improvement at this index plus <c>i</c>.
+    /// Pyramids, the first wonder, is improvement 39: the table starts at Nothing,
+    /// which is improvement 0.
+    /// </summary>
+    private const int FirstWonderIndex = 39;
+
+    /// <summary>
+    /// Gives each built wonder to the city that holds it.
+    /// </summary>
+    /// <remarks>
+    /// Civ II keeps its wonders apart from its cities, in a table near the front of
+    /// the save saying which city holds each of the twenty-eight. This reader had
+    /// always parsed that table and then dropped it on the floor: every wonder in
+    /// every imported game was simply absent. It is not a small loss -- an imported
+    /// Kells with Michelangelo's Chapel was read as having only a Temple, which put
+    /// it into civil disorder that Civ II's own city screen does not show, and
+    /// Cardiff lost the Great Library.
+    /// </remarks>
+    private static void AddWondersToTheirCities(IList<City> cities, Rules rules,
+        short[] wonderCity, bool[] wonderBuilt)
+    {
+        for (var wonder = 0; wonder < wonderBuilt.Length; wonder++)
+        {
+            if (!wonderBuilt[wonder])
+            {
+                continue;
+            }
+
+            var holder = wonderCity[wonder];
+            var improvement = FirstWonderIndex + wonder;
+            if (holder < 0 || holder >= cities.Count || improvement >= rules.Improvements.Length)
+            {
+                continue;
+            }
+
+            cities[holder].AddImprovement(rules.Improvements[improvement]);
+        }
     }
 
     private static List<ConstructedImprovement> GetImprovementsFrom(bool[,] farmlandPresent, bool[,] irrigationPresent,

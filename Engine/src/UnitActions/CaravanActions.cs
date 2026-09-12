@@ -123,8 +123,45 @@ public static class CaravanActions
     /// which is why the profitable routes are the long ones to strangers.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// The arrows a standing trade route brings its city every turn.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Civ II: <c>(T1 + T2 + 4) / 8</c> for a route to another civilisation, and
+    /// <c>k(T1 + T2 + 4) / 16</c> between two of your own cities, where T1 and T2
+    /// are the two cities' base trade and every division drops its remainder. The
+    /// k is a transport modifier -- 1.5 for a road along the route, 2 for a
+    /// railroad -- which this game does not work out yet and so treats as 1.
+    /// </para>
+    /// <para>
+    /// What was here before was Civilization <em>I</em>'s formula, and not even
+    /// that one's continuing-route formula: it was Civ I's one-off delivery
+    /// payment, <c>(distance + 10) * (Ta + Tb) / 24</c>, charged again every turn.
+    /// Measured against Civ II on the same save it paid four arrows a turn where
+    /// Civ II paid one. Distance does not enter the Civ II figure at all.
+    /// </para>
+    /// </remarks>
     public static int RouteValue(City home, City destination)
     {
+        // One division, not two: Civ II's arithmetic drops remainders as it goes,
+        // so halving a halved figure is not the same as dividing by sixteen.
+        var divisor = home.Owner == destination.Owner ? 16 : 8;
+
+        return (home.TileTrade + destination.TileTrade + 4) / divisor;
+    }
+
+    /// <summary>
+    /// What the arrival itself is worth, paid once in gold and again in research.
+    /// A city that wants what the caravan is carrying pays twice over.
+    /// </summary>
+    public static int DeliveryBonus(Unit caravan, City home, City destination)
+    {
+        // The payment for the delivery itself, which is a different thing from the
+        // route it leaves behind and is worked out differently: distance and the
+        // two civilisations' remoteness from one another are what make a caravan
+        // worth sending that far. This is still Civ I's shape and has not been
+        // measured against Civ II -- see docs/CIV2-COMPARISON.md.
         var distance = MapDistance(home.Location, destination.Location);
         var value = (distance + 10) * (home.Trade + destination.Trade) / 24;
 
@@ -138,16 +175,7 @@ public static class CaravanActions
             value /= 2;
         }
 
-        return Math.Max(1, value);
-    }
-
-    /// <summary>
-    /// What the arrival itself is worth, paid once in gold and again in research.
-    /// A city that wants what the caravan is carrying pays twice over.
-    /// </summary>
-    public static int DeliveryBonus(Unit caravan, City home, City destination)
-    {
-        var bonus = RouteValue(home, destination) * DeliveryMultiplier;
+        var bonus = Math.Max(1, value) * DeliveryMultiplier;
 
         if (Demands(destination, caravan.CaravanCommodity))
         {

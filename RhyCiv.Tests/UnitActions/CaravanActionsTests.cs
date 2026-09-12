@@ -183,7 +183,10 @@ public class CaravanActionsTests
     {
         var tile = map.Tile[x, y];
         tile.Island = island;
-        var city = new City { Name = name, Owner = owner, Location = tile, Trade = trade };
+        var city = new City
+        {
+            Name = name, Owner = owner, Location = tile, Trade = trade, TileTrade = trade
+        };
         tile.CityHere = city;
         owner.Cities.Add(city);
         return city;

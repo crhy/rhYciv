@@ -47,6 +47,10 @@ namespace RhyCiv.Engine
                 totalTrade += tileTrade;
             });
 
+            // Recorded before the routes are added, because that is the figure a
+            // route is valued from and it must not include the route's own arrows.
+            city.TileTrade = totalTrade;
+
             // A trade route brings its city trade every turn for as long as it
             // stands. The routes were drawn on the map and listed in the city window
             // and earned nothing whatever.
