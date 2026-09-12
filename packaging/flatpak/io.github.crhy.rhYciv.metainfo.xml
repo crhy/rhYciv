@@ -34,6 +34,19 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.2.1" date="2026-09-12">
+      <description>
+        <p>
+          The bugs 0.2.0 shipped, found by playing it. Capturing a city in a
+          loaded game no longer takes the game down. Goody huts stay taken,
+          rivers join up and widen from a trickle to an estuary, the sea has
+          water in it again and the coast meets the grass. A long press sends a
+          unit where you point it, zooming keeps the unit you were moving, and a
+          Diplomat can buy an empty city instead of destroying it. Barbarians no
+          longer declare war, and nobody you have never met offers you peace.
+        </p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-09-11">
       <description>
         <p>

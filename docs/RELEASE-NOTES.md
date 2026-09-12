@@ -1,117 +1,114 @@
-**Twenty-one leaders across the table, and the rules checked against Civilization
-II square by square.**
+**A map worth looking at, and the bugs that 0.2.0 shipped.**
 
-Diplomacy is no longer a menu with nobody behind it: every civilisation has a
-face, and talking to one keeps them in view from the first word to the last. And
-the comparison against the original went deep enough this time that one city now
-agrees with Civ II on **every figure its city screen shows** — which meant finding
-out that imported games had been losing every wonder in the world.
+0.2.0 went out and was played hard for an evening, which is the best thing that
+can happen to a release. This is what that found: a crash that killed any loaded
+game the moment a city changed hands, goody huts that came back from the dead,
+rivers that never joined up, and a sea painted almost black.
 
 ## Install
 
 | Platform | Download |
 |---|---|
-| **Windows** (x64) | `rhYciv-0.2.0-win-x64.zip` — **extract the folder first**, then run `RaylibUI.exe` |
-| **macOS** (Apple silicon) | `rhYciv-0.2.0-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
-| **macOS** (Intel) | `rhYciv-0.2.0-osx-x64.zip` — same |
-| **Linux** (x64) | `rhYciv-0.2.0-linux-x64.tar.gz` — extract, run `./RaylibUI` |
-| **Linux** (Flatpak) | `rhYciv-0.2.0-x86_64.flatpak` |
+| **Windows** (x64) | `rhYciv-0.2.1-win-x64.zip` — **extract the folder first**, then run `RaylibUI.exe` |
+| **macOS** (Apple silicon) | `rhYciv-0.2.1-osx-arm64.zip` — unzip, drag `rhYciv.app` to Applications |
+| **macOS** (Intel) | `rhYciv-0.2.1-osx-x64.zip` — same |
+| **Linux** (x64) | `rhYciv-0.2.1-linux-x64.tar.gz` — extract, run `./RaylibUI` |
+| **Linux** (Flatpak) | `rhYciv-0.2.1-x86_64.flatpak` |
 
 **Extract before running.** Windows produces `Could not load file or assembly
-'System.Runtime'` when the `.exe` is double-clicked while still inside the zip: it
-unpacks that one file to a temporary folder and runs it with none of the nine
-hundred beside it. Nothing is wrong with the download.
+'System.Runtime'` when the `.exe` is double-clicked while still inside the zip.
+Nothing is wrong with the download.
 
 The builds are unsigned. **macOS**: `xattr -dr com.apple.quarantine
 /Applications/rhYciv.app`. **Windows**: SmartScreen → *More info* → *Run anyway*.
 
-## An audience, not a menu
+## The crash that ended loaded games
 
-Talking to another civilisation used to be one dialog that asked everything at
-once. It is an audience now, and you stay in it: *What Will You Discuss?* leads to
-a proposal or a gift, each of those to the actual terms, and backing out of a
-matter returns you to the audience rather than ending it. You leave when you say
-farewell, which is how Civ II's own negotiations behave.
+Capturing a city — by anyone, in any game loaded from a rhYciv save — threw a
+NullReferenceException and took the game down. It was reported from a game at
+turn 165 where barbarians took a city on their turn.
 
-The other leader is there the whole time. **Forty-two portraits**, one for each of
-the twenty-one civilisations in each gender — Montezuma and the Aztec Empress,
-Cunobelinus and Boudica, Tomyris, Gunnhild, Washington, Gandhi — each with their
-own banner, emblem and words.
+`JsonSaveObjects.Scenario` was declared `null!` and nothing ever assigned it, so
+**every game loaded from one of this game's own saves carried a null scenario**.
+Nothing reads it until a city changes hands, and then the game dies at that
+moment. It hid because Civilization II's own reader *does* build one, so every
+position imported from a `.SAV` was safe.
 
-Their court's attitude and your own reputation are stated in Civ II's own
-vocabulary rather than words of this game's invention, so somebody who knows the
-original can read a relationship at a glance: nine ranks from Worshipful down to
-Enraged.
+## The map
 
-## Every wonder in an imported game was missing
+**The sea was a flat near-black fill.** Open water was not being drawn with the
+ocean painting at all — it came from the coastline tileset's own all-water tile,
+which measures (6, 24, 50) and varies by two or three levels across the whole
+diamond. The generator had been tuned against a photograph of a fjord, where the
+sea is nearly black right up to the rock: a fair reading of a coast, applied to
+every water tile on the map. Deep water now takes its colour and its swell from
+the painting, and measures (24, 76, 132) varying by nearly forty.
 
-A Civ II save does not record wonders on its cities. It keeps a table near the
-front of the file saying which city holds each of the twenty-eight, and this game
-had always read that table and then dropped it on the floor. **No city in any
-imported game held any wonder at all.** Cardiff lost the Great Library, Kells lost
-Michelangelo's Chapel, and nothing anywhere said so.
+**The coast met the grass along a hard line.** The shoreline ramp ended on exactly
+the grassland painting's average colour and none of its grain — the right green,
+perfectly smooth, against a tile full of texture. It takes the painting now, on
+the far side of the sand so the beach is untouched.
 
-It had a consequence nobody would have traced back to a save reader. Kells came
-out of the save in **civil disorder**. It is not in disorder in Civ II, whose own
-Happiness Analysis shows six content citizens with nothing red left; the
-difference was Michelangelo's Chapel, which counts as a Cathedral in every city
-its owner holds. What presented as a happiness bug was a missing wonder.
+**Rivers never joined up**, and it was not the art. A river is drawn as one
+picture per tile chosen by which of its four *edge-sharing* neighbours also carry
+a river — but the generator walked rivers through the *eight*-neighbour set,
+including the four tiles that touch only at a corner. Two tiles sharing a corner
+cannot be joined by any picture. Across three test worlds, 15 of 45, 18 of 50 and
+19 of 44 river tiles were orphaned stubs: generated in one adjacency, drawn in
+another.
 
-## Trade routes were being paid Civilization I's formula
+**And rivers now widen as they go.** Four gauges — a trickle, a stream, a river,
+an estuary — chosen by how far each tile sits from the sea along its own
+watercourse, which is recovered by walking the river inland from its mouth. Every
+painting in the art folder contributes: the cross-section is shared so tiles still
+meet, and the variation along the stroke comes from a different painting for each
+spoke.
 
-Civ II's standing trade route brings `(T1 + T2 + 4) / 8` arrows a turn, halved
-between two of your own cities, and distance does not enter it at all.
+## Everything else that was reported
 
-What this game had was `(distance + 10) × (Ta + Tb) / 24` — which is
-Civilization **I**'s one-off payment for the caravan's delivery, charged again
-every turn. Measured against Civ II on the same saved position, it paid four
-arrows a turn where the original paid one.
+- **Goody huts came back when a game was loaded.** Where they are is computed from
+  the map seed rather than stored, so loading a game put one back on every square
+  that ever had one — including all the ones already entered.
+- **A long press never armed the go-to.** `MouseDown` is raised on every frame the
+  button is held, so the timer was reset sixty times a second and the press was
+  never more than one frame old.
+- **Zooming stopped the active unit blinking**, because a zoom about the pointer
+  replaced the mode's own view with a plain static one that has no active unit.
+- **A Diplomat destroyed an empty size-1 city instead of offering to buy it.**
+  Whether a move was an attack or a move was decided on the units standing there,
+  and an undefended city has none — so the Diplomat walked in and took it the way
+  a warrior would.
+- **Barbarians announced declarations of war**, which Civ II never does: there they
+  are permanently at war with everyone and it is never stated. They are no longer
+  a party to the diplomatic model at all.
+- **Civilisations you had never met offered you cease-fires**, because declaring
+  war set the contact flag directly instead of making contact properly, so two
+  sides became acquainted without either being told.
+- **Selling a building read like a refusal**, and quitting the game only offered
+  the main menu.
+- **One crash was being reported twice**, the second time blaming the graphics
+  driver, because the managed handler wrote its report and left the session record
+  open for the next launch to find.
 
-The two games are constantly confused in forum threads, including in threads
-whose titles say Civ2. That is exactly where this came from.
+## Multisampling is off by default
 
-## Rules corrected against the original
+Every hard crash this game has been reported with happened with 4x multisampling
+on, because until this release that was the only way it ran; the one long session
+played without it ended cleanly, and the next session with it back on crashed
+inside seven minutes. Two sessions prove nothing, and it is acted on because the
+trade is so one-sided: this is a game of 2D sprites blitted axis-aligned, where
+multisampling has almost nothing to antialias. `RHYCIV_MSAA=1` turns it back on.
 
-- **A city square always produces at least one shield.** Civ II's Civilopedia:
-  "if the city is built on Terrain that normally produces no Shields, one Shield
-  is automatically added". A city founded on plain grassland produced nothing at
-  all here until a citizen was put somewhere that did.
-- **Whales are worth two shields and three trade**, not one and two. It was the
-  only wrong figure in the whole terrain specials table, which has now been
-  checked entry by entry against the Civilopedia's own pages.
-- **The city square is irrigated, not mined**, on ground that permits either.
-  The Civilopedia says "irrigated or mined, depending on the type of terrain"
-  without saying which wins; a size-one city on hills in Civ II answers it.
+**The remaining hard crash is not explained.** It leaves no managed exception,
+which means a fault below .NET. See issue #132.
 
-## One city that agrees completely
+## Measuring a world against Civilization II's
 
-Cardiff, A.D. 1700, seven citizens under a Republic: food produced, eaten and
-surplus, shields, support, production, base trade, its trade route, corruption,
-its list of improvements and wonders, its citizens and its lack of disorder — every
-figure identical to Civ II's.
+`RHYCIV_REPORT_MAP` prints what a world is made of and `RHYCIV_AUTOSTART_SIZE`
+generates at a named size, so a generated map and a Civ II save of the same
+dimensions can be set beside each other. Twenty Civ II saves at 75×120 read
+between 23.9% and 42.8% land, most of them between 24 and 31, with rivers on 2.3%
+to 3.4% of it.
 
-That is the first city to match on everything, and it matters because it means the
-terrain reading, the city square rules, the government, the trade route formula,
-the improvements and the happiness model are all correct *together*, on a real
-position in a real game.
-
-**What still disagrees, honestly:** corruption. Two cities the same distance from
-the capital bracket Civ II's rate between a tenth and a sixteenth of trade, where
-this game takes about a fifth. The distance term is the suspect and it will not be
-changed without a source. The caravan delivery payment and waste have never been
-compared at all.
-
-All of it — what was measured, what agreed, what did not, every source and what
-each was used to decide — is in `docs/CIV2-COMPARISON.md`.
-
-## Also in this release
-
-- Settlers can no longer be announced as though they were a completed warrior, and
-  the quiet units stay quiet.
-- The city screen's resource panel reads as four separate accounts rather than
-  four rows of small pictures on grey, with the food store and shield box drawn as
-  ramps.
-- Fonts carry Latin-1 and Latin Extended-A, so accented leader and city names
-  render instead of dropping to boxes.
-- A headless screenshot harness can now walk a nested dialog and photograph each
-  page, which is how the audience above was checked without a mouse.
+The rules comparison against Civ II continues in `docs/CIV2-COMPARISON.md`, which
+records what has been measured, what agreed, what did not, and every source.
