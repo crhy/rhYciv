@@ -33,7 +33,8 @@ public class JsonMapData
                 var tileData = new TileData
                 {
                     T = (int)tile.Terrain.Type,
-                    R = tile.River
+                    R = tile.River,
+                    H = tile.HasGoodyHut
                 };
                 
                 if (encoder != null)
@@ -46,6 +47,7 @@ public class JsonMapData
         }
 
         Tiles = tiles;
+        HutsRecorded = true;
     }
 
     public bool FlatWorld { get; set; }
@@ -56,6 +58,18 @@ public class JsonMapData
     public int Ydim { get; set; }
     
     public List<TileData> Tiles { get; set; } = [];
+
+    /// <summary>
+    /// Whether this save records which goody huts are still standing.
+    /// </summary>
+    /// <remarks>
+    /// Saves written before it did carry no hut state at all, and their huts have
+    /// to go on being worked out from the map seed -- wrongly, but no more wrongly
+    /// than they already were. Without this flag, loading one of those would read
+    /// every tile's missing "hut standing" as "hut taken" and quietly strip the
+    /// map of huts that had never been visited.
+    /// </remarks>
+    public bool HutsRecorded { get; set; }
     public int ResourceSeed { get; set; }
     public int LocatorXdim { get; set; }
     public int LocatorYdim { get; set; }

@@ -15,8 +15,9 @@ public class WaitingView : BaseGameView
     // seen. Anchoring the view there is what threw the map into unexplored black
     // on pressing Turn.
     public WaitingView(GameScreen gameScreen, IGameView? currentView, int viewHeight,
-        int viewWidth, bool forceRedraw) : base(gameScreen, gameScreen.Player.ActiveTile,
-        currentView, viewHeight, viewWidth, true, 200, Array.Empty<Tile>(), forceRedraw)
+        int viewWidth, bool forceRedraw, System.Numerics.Vector2? offsets = null)
+        : base(gameScreen, gameScreen.Player.ActiveTile,
+        currentView, viewHeight, viewWidth, true, 200, Array.Empty<Tile>(), forceRedraw, offsets)
     {
         var activeInterface = gameScreen.Main.ActiveInterface;
 

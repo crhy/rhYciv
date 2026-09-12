@@ -792,8 +792,16 @@ public class MapControl : BaseControl
             // A zoom about the pointer, which says exactly where the map goes.
             _zoomOffsets = null;
             _ = ForceRedraw;
-            nextView = new StaticView(_gameScreen, _currentView, _viewHeight, _viewWidth,
-                forceRedraw: true, _gameScreen.ViewAnchor, zoomed);
+
+            // The mode keeps its own view across the zoom. Replacing it with a
+            // plain static one put the map where the pointer asked for but stopped
+            // the active unit blinking and took the selection off it, so zooming in
+            // to look at where you were going lost the unit you were moving.
+            nextView = _gameScreen.ViewAnchor is { } zoomAnchor
+                ? new StaticView(_gameScreen, _currentView, _viewHeight, _viewWidth,
+                    forceRedraw: true, zoomAnchor, zoomed)
+                : _gameScreen.ActiveMode.GetDefaultView(_gameScreen, _currentView, _viewHeight,
+                    _viewWidth, forceRedraw: true, zoomed);
         }
         else
         {

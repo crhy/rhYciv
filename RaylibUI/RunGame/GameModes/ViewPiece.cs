@@ -80,9 +80,9 @@ public class ViewPiece : IGameMode
     }
 
     public IGameView GetDefaultView(GameScreen gameScreen, IGameView? currentView, int viewHeight, int viewWidth,
-        bool forceRedraw)
+        bool forceRedraw, System.Numerics.Vector2? offsets = null)
     {
-        if (!forceRedraw && currentView is WaitingView animation)
+        if (offsets is null && !forceRedraw && currentView is WaitingView animation)
         {
             if (animation.ViewWidth == viewWidth && animation.ViewHeight == viewHeight &&
                 animation.Location == gameScreen.Game.ActivePlayer.ActiveTile)
@@ -93,7 +93,7 @@ public class ViewPiece : IGameMode
             }
         }
         _gameScreen.StatusPanel.Update();
-        return new WaitingView(gameScreen, currentView, viewHeight, viewWidth, forceRedraw);
+        return new WaitingView(gameScreen, currentView, viewHeight, viewWidth, forceRedraw, offsets);
     }
 
     public bool MapClicked(Tile tile, MouseButton mouseButton)

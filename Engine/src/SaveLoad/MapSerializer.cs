@@ -59,6 +59,15 @@ public class MapSerializer
                     {
                         tile.Improvements.AddRange(improvements);
                     }
+
+                    // The constructor put a hut back wherever the seed says one
+                    // belongs. If this save knows which are still standing, the
+                    // ones already taken are taken away again.
+                    if (mapData.HutsRecorded && !tileData.H)
+                    {
+                        tile.HasGoodieHut = false;
+                    }
+
                     map.Tile[col, row] = tile;
                 }
             }

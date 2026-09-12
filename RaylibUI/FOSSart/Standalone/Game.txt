@@ -207,7 +207,7 @@ Home city: %STRING2
 @width=340
 @button=Ok
 @button=Cancel
-This city can sell one building a turn.
+The %STRING0 can be pulled down and its materials sold.
 @options
 Sell the %STRING0 for %NUMBER0 gold
 Keep it
@@ -220,7 +220,7 @@ This building cannot be sold.
 @title=Already Sold
 @width=320
 @button=Ok
-This city has already stripped away one improvement this turn. What is dismantled cannot be endlessly sold twice.
+This city has already sold a building this turn. It cannot sell two in one turn.
 @BUILT
 @title=%STRING0
 @width=340

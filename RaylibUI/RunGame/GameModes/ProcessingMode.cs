@@ -19,12 +19,13 @@ public class ProcessingMode : IGameMode
         _gameScreen = gameScreen;
     }
     public IGameView GetDefaultView(GameScreen gameScreen, IGameView? currentView, int viewHeight, int viewWidth,
-        bool forceRedraw)
+        bool forceRedraw, System.Numerics.Vector2? offsets = null)
     {
-        if (currentView is not StaticView existing)
+        if (offsets is not null || currentView is not StaticView existing)
         {
             _gameScreen.StatusPanel.Update();
-            return new StaticView(gameScreen, currentView, viewHeight, viewWidth, forceRedraw);
+            return new StaticView(gameScreen, currentView, viewHeight, viewWidth, forceRedraw,
+                offsets: offsets);
         }
 
         existing.Reset();

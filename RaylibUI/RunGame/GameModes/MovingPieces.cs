@@ -69,9 +69,9 @@ public class MovingPieces : IGameMode
         !(Input.IsKeyDown(KeyboardKey.LeftControl) || Input.IsKeyDown(KeyboardKey.RightControl));
 
     public IGameView GetDefaultView(GameScreen gameScreen, IGameView? currentView, int viewHeight, int viewWidth,
-        bool forceRedraw)
+        bool forceRedraw, System.Numerics.Vector2? offsets = null)
     {
-        if (!forceRedraw && currentView is UnitReadyView animation)
+        if (offsets is null && !forceRedraw && currentView is UnitReadyView animation)
         {
             if (animation.ViewWidth == viewWidth && animation.ViewHeight == viewHeight && animation.Unit == gameScreen.Player.ActiveUnit)
 
@@ -82,7 +82,7 @@ public class MovingPieces : IGameMode
         }
 
         _gameScreen.StatusPanel.Update();
-        return new UnitReadyView(gameScreen, currentView, viewHeight, viewWidth, gameScreen.Player.ActiveUnit!, forceRedraw);
+        return new UnitReadyView(gameScreen, currentView, viewHeight, viewWidth, gameScreen.Player.ActiveUnit!, forceRedraw, offsets);
     }
 
     /// <summary>
@@ -504,6 +504,19 @@ public class MovingPieces : IGameMode
     private const string GotoCursor = "GOTO_TO";
     public void MouseDown(Tile tile)
     {
+        // Only the first frame of a press starts the clock.
+        //
+        // This is raised on every frame the button is held down, not once when it
+        // goes down, so assigning here unconditionally reset the timer sixty times
+        // a second. The press was therefore never more than one frame old, never
+        // reached the three hundred milliseconds that arms a go-to, and a long
+        // press did nothing at all: no crosshair, and no unit sent anywhere. The
+        // release clears it again, so the next press starts from nothing.
+        if (_downTime.HasValue)
+        {
+            return;
+        }
+
         _downTime = DateTime.Now;
         _gameScreen.Main.Schedule(GotoCursor, _holdTime, () =>
         {

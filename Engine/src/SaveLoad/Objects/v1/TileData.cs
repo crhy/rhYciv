@@ -25,4 +25,16 @@ public class TileData
     /// True if the tile has a river
     /// </summary>
     public bool R { get; set; }
+
+    /// <summary>
+    /// True if this square's goody hut is still standing.
+    /// </summary>
+    /// <remarks>
+    /// Where the huts are is worked out from the square's coordinates and the
+    /// map's seed rather than stored, which is how Civ II does it and is fine
+    /// until one is taken: nothing recorded that, so every hut a game had ever
+    /// entered was standing again the moment the game was loaded. Reported as
+    /// huts appearing in country that had already been explored.
+    /// </remarks>
+    public bool H { get; set; }
 }
