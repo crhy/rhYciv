@@ -111,6 +111,21 @@ def key_matte(path: Path) -> tuple[np.ndarray, np.ndarray]:
     return cleaned, alpha
 
 
+# How far past the water's own width the profile reaches, to carry the banks.
+BANK_MARGIN = 2.1
+
+
+def _water_mask(colours: np.ndarray) -> np.ndarray:
+    """Which of these painted pixels are water rather than land.
+
+    The painted material is tan, olive, grey or blue; only the water is blue, and
+    it is blue by a margin rather than marginally. Used to find the channel in a
+    source that carries more than the channel.
+    """
+    red, green, blue = colours[:, 0], colours[:, 1], colours[:, 2]
+    return (blue > red + 18) & (blue > green + 6)
+
+
 def cross_section(path: Path, samples: int = 129) -> tuple[np.ndarray, ...]:
     """Reduce a painted segment to the profile that sweeping it will reproduce.
 
@@ -126,14 +141,37 @@ def cross_section(path: Path, samples: int = 129) -> tuple[np.ndarray, ...]:
         raise SystemExit(f"{path.name}: almost no ink after keying the matte")
 
     points = np.stack([xs, ys], axis=1).astype(np.float64)
-    centre = points.mean(axis=0)
-    centred = points - centre
-    # The painted segment's own axis, so the profile is measured square to it.
-    _, _, vectors = np.linalg.svd(centred, full_matrices=False)
+
+    # The axis is the *water's*, not the painting's.
+    #
+    # Keying the matte leaves whatever was painted on it, and that is not always
+    # a ribbon of river: a source painted as an island with a river through it
+    # leaves the whole island, whose axis is the island's. Measured against that,
+    # the slice runs across vegetation, bank, a little water and bank again, and
+    # the median of it is mud -- no channel in the profile at all, which is what
+    # sweeping it then reproduced on every tile.
+    #
+    # So the frame is taken from the blue pixels, which are the water wherever the
+    # river is in the frame, and the profile is sampled across it out to a margin
+    # wide enough to carry the banks. A source that is already a ribbon gives the
+    # same answer it always did; one painted as a scene now gives the right one.
+    channel = _water_mask(rgb[ys, xs])
+    frame_points = points[channel] if channel.sum() >= 512 else points
+
+    centre = frame_points.mean(axis=0)
+    _, _, vectors = np.linalg.svd(frame_points - centre, full_matrices=False)
     axis, normal = vectors[0], vectors[1]
 
+    centred = points - centre
     u = centred @ axis      # along the stroke
     v = centred @ normal    # across it
+
+    # How far out to sample. Measured on the water, then opened up to take in the
+    # banks either side; measured on everything, it would be the island's width.
+    channel_half = None
+    if channel.sum() >= 512:
+        channel_v = (frame_points - centre) @ normal
+        channel_half = float(np.percentile(np.abs(channel_v), 98.0)) * BANK_MARGIN
 
     weights = alpha[ys, xs]
     colours = rgb[ys, xs]
@@ -161,7 +199,12 @@ def cross_section(path: Path, samples: int = 129) -> tuple[np.ndarray, ...]:
 
     # Across: median colour and mean coverage in each of `samples` bins, spanning
     # the middle of the ink so a stray speck cannot widen the profile.
-    half = np.percentile(np.abs(v), 99.0)
+    # Never past the edge of what was painted: opening the span out to take in the
+    # banks must not open it out into bare matte, where the bins have nothing to
+    # take a median of and the profile ends in a block of whatever survived the
+    # key at the very edge of the brush stroke.
+    painted_half = float(np.percentile(np.abs(v), 99.0))
+    half = min(channel_half, painted_half) if channel_half else painted_half
     edges = np.linspace(-half, half, samples + 1)
     index = np.clip(np.digitize(v, edges) - 1, 0, samples - 1)
 
