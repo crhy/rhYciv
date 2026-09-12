@@ -947,7 +947,14 @@ namespace RhyCiv.Engine
 
             foreach (var other in game.AllCivilizations)
             {
-                if (other == Civilization || !other.Alive || other.PlayerType == PlayerType.Barbarians ||
+                // Somebody you have never met does not send an envoy. This asked
+                // only whether the two were at war, and war can be arrived at
+                // without an introduction, so a cease-fire could be put to the
+                // player by a civilisation they had never seen or heard of.
+                if (other == Civilization || !other.Alive ||
+                    other.PlayerType == PlayerType.Barbarians ||
+                    Civilization.PlayerType == PlayerType.Barbarians ||
+                    !DiplomacyFunctions.HaveMet(Civilization, other) ||
                     !DiplomacyFunctions.AtWar(Civilization, other))
                 {
                     continue;

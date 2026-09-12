@@ -161,12 +161,30 @@ public static class DiplomacyFunctions
     /// </summary>
     public static void DeclareWar(IGame game, Civilization aggressor, Civilization victim)
     {
+        // The barbarians are not a party to any of this. They sign nothing, declare
+        // nothing and are never at peace, so there is no state to record and nobody
+        // to tell: a horde falling on a city is not a diplomatic event. This used to
+        // run for them like anybody else, which put "the barbarians have declared
+        // war" in front of the player -- something the original never says, because
+        // in Civ II they are always at war with everyone and it is never announced.
+        if (aggressor.PlayerType == PlayerType.Barbarians ||
+            victim.PlayerType == PlayerType.Barbarians)
+        {
+            return;
+        }
+
         var betrayal = UnderTreaty(aggressor, victim);
+
+        // Being attacked by somebody is certainly meeting them, but it has to be a
+        // meeting and not just a flag: setting Contact here directly meant the two
+        // were in contact without either being told, so the player found themselves
+        // at war with a civilisation they had never been introduced to, receiving
+        // cease-fire offers from people they had never seen.
+        MakeContact(game, aggressor, victim);
 
         foreach (var (from, to) in new[] { (aggressor, victim), (victim, aggressor) })
         {
             var relation = Between(from, to);
-            relation.Contact = true;
             relation.War = true;
             relation.CeaseFire = false;
             relation.Peace = false;

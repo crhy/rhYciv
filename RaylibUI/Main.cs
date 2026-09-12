@@ -37,12 +37,21 @@ namespace RaylibUI
             var hasCivDir = Settings.LoadConfigSettings();
 
             //========= RAYLIB WINDOW SETTINGS
-            // Multisampling is asked for by default. RHYCIV_NO_MSAA=1 turns it off,
-            // which is a diagnostic rather than a setting: a session that ends with
-            // the process gone and no managed exception is a fault below .NET, and
-            // knowing whether it still happens without multisampling separates a
-            // driver's multisample path from everything this game does.
-            var wantMsaa = Environment.GetEnvironmentVariable("RHYCIV_NO_MSAA") is not ("1" or "true");
+            // Multisampling is off unless RHYCIV_MSAA=1 asks for it.
+            //
+            // Every hard crash this game has been reported with -- the process gone,
+            // no managed exception, nothing on stderr, which is a fault below .NET --
+            // happened with 4x multisampling on, because until recently that was the
+            // only way it ran. The one long session played without it ended cleanly,
+            // and the next session with it back on crashed inside seven minutes.
+            //
+            // That is two sessions, which proves nothing on its own. It is acted on
+            // because the trade is so one-sided: this is a game of 2D sprites blitted
+            // axis-aligned, where multisampling has almost nothing to antialias and
+            // costs a little fill rate for it. Giving it up is close to free, and the
+            // crashes are not. The switch remains so the question can go on being
+            // asked from either side.
+            var wantMsaa = Environment.GetEnvironmentVariable("RHYCIV_MSAA") is "1" or "true";
             var flags = ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow;
             if (wantMsaa)
             {
@@ -383,6 +392,20 @@ namespace RaylibUI
             Soundman?.Dispose();
             Window.Close();
             AudioDevice.Close();
+        }
+
+        /// <summary>
+        /// Closes the game after the current frame.
+        /// </summary>
+        /// <remarks>
+        /// The only way out used to be the main menu's own exit, so "Quit" from
+        /// inside a game put the player at the menu and left them to quit a second
+        /// time. Civ II's Quit leaves the game, and being asked which you meant is
+        /// better than being given only the one nobody asked for.
+        /// </remarks>
+        public void Close()
+        {
+            _shouldClose = true;
         }
 
         public void ReloadMain()

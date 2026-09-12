@@ -332,6 +332,7 @@ Quit the current game? Any unsaved decisions, battles, and discoveries since you
 @options
 Keep playing
 Quit to the main menu
+Quit to the desktop
 @GAMEOPTIONS
 @title=Game Options
 @width=360

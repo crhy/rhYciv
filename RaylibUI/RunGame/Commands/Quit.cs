@@ -19,9 +19,19 @@ public class Quit(GameScreen gameScreen)
 
     private void DialogClick(string button, int option, IList<bool>? _, IDictionary<string, string>? _2)
     {
-        if (button == Labels.Ok && option == 1)
+        if (button != Labels.Ok)
         {
-            GameScreen.Main.ReloadMain();
+            return;
+        }
+
+        switch (option)
+        {
+            case 1:
+                GameScreen.Main.ReloadMain();
+                break;
+            case 2:
+                GameScreen.Main.Close();
+                break;
         }
     }
 }
