@@ -21,8 +21,20 @@ public class Civ2WorldGeneratorTests
         }
     }
 
+    /// <summary>
+    /// An ordinary world is about three tiles of sea to one of land, which is what
+    /// Civilization II's own worlds are.
+    /// </summary>
+    /// <remarks>
+    /// The range here is measured rather than chosen. Twenty Civ II saves at
+    /// 75x120 were opened in this game and counted: 23.9% land at the lowest,
+    /// 42.8% at the highest, and most of them between 24 and 31. This test used to
+    /// assert 0.44 to 0.54, which is what the generator was set to and about twice
+    /// Civ II -- a world half made of land, with the seas correspondingly cramped.
+    /// Reported as "land masses seem bigger than Civ 2".
+    /// </remarks>
     [Fact]
-    public void LandMassSettingChangesWorldCoverageInTheExpectedOrder()
+    public void AnOrdinaryWorldIsMostlySea_AsCivIIsAre()
     {
         var small = ClassicWorldGenerator.Generate(Config(1024, propLand: 0), 50, 80);
         var normal = ClassicWorldGenerator.Generate(Config(1024, propLand: 1), 50, 80);
@@ -30,7 +42,13 @@ public class Civ2WorldGeneratorTests
 
         Assert.True(CountLand(small) < CountLand(normal));
         Assert.True(CountLand(normal) < CountLand(large));
-        Assert.InRange(CountLand(normal) / 4000d, 0.44, 0.54);
+
+        Assert.InRange(CountLand(normal) / 4000d, 0.26, 0.34);
+
+        // And the two either side stay inside what Civ II's worlds actually span,
+        // so neither setting takes the map somewhere the original never goes.
+        Assert.InRange(CountLand(small) / 4000d, 0.15, 0.26);
+        Assert.InRange(CountLand(large) / 4000d, 0.34, 0.46);
     }
 
     [Fact]

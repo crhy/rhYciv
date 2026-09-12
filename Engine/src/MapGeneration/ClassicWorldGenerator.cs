@@ -242,7 +242,10 @@ internal static class ClassicWorldGenerator
                 sources.Add(new Cell(x, y));
         }
 
-        var riverRatio = config.Climate switch { 0 => 0.018, 2 => 0.060, _ => 0.037 };
+        // How much of the land carries a river, by climate. Counted off the same
+        // twenty Civ II worlds as the land ratio above: they run 2.3% to 3.4% of
+        // their land, so an ordinary world is a little under three in a hundred.
+        var riverRatio = config.Climate switch { 0 => 0.014, 2 => 0.045, _ => 0.028 };
         var targetTiles = Math.Max(1, (int)Math.Round(landCount * riverRatio));
         var riverTiles = 0;
         var attempts = 0;
@@ -435,11 +438,31 @@ internal static class ClassicWorldGenerator
         4 => (-1, 0), 5 => (-1, -1), 6 => (0, -1), _ => (1, -1)
     };
 
+    /// <summary>
+    /// How much of a world is land, by the land-mass setting chosen at the start.
+    /// </summary>
+    /// <remarks>
+    /// Measured against Civilization II rather than chosen. Twenty of its own saved
+    /// worlds at 75x120 were opened here and counted: they run from 23.9% land to
+    /// 42.8%, and most of them sit between 24 and 31 -- so an ordinary Civ II world
+    /// is around three tiles of sea to one of land, with the outliers above 36%
+    /// presumably started on the large setting.
+    /// <para>
+    /// The middle setting here was 0.49, and it hit it exactly: a generated world
+    /// was half land, about twice Civ II's, and the seas were correspondingly
+    /// cramped. Reported as "land masses seem bigger than Civ 2, I think there's
+    /// more water in Civ 2", which is precisely what the counting says.
+    /// </para>
+    /// <para>
+    /// <c>RHYCIV_REPORT_MAP=1</c> prints the share for any world, generated or
+    /// loaded from a .SAV, so this can be re-measured rather than argued about.
+    /// </para>
+    /// </remarks>
     private static double GetLandRatio(int setting) => setting switch
     {
-        0 => 0.30,
-        2 => 0.68,
-        _ => 0.49
+        0 => 0.20,
+        2 => 0.42,
+        _ => 0.30
     };
 
     private static int Wrap(int value, int maximum) => (value % maximum + maximum) % maximum;

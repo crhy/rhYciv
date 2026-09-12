@@ -164,6 +164,11 @@ namespace RaylibUI
 
             StartGame(game, CivInit.ViewData);
 
+            // The report was only ever reached by the load path, so asking a freshly
+            // generated world what it was made of printed nothing at all -- which is
+            // exactly the comparison a generated world is wanted for.
+            ReportGameState(game);
+
             if (reveal && _activeScreen is RunGame.GameScreen gameScreen)
             {
                 gameScreen.TileCache.Clear();
