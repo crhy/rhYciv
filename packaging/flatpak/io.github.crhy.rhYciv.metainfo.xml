@@ -34,15 +34,17 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
-    <release version="0.1.11" date="2026-09-11">
+    <release version="0.2.0" date="2026-09-11">
       <description>
         <p>
-          Imported Civilization II games keep their wonders, which had been read
-          from the save and discarded. Trade routes are paid Civilization II's
-          rate rather than Civilization I's. The whales resource is worth what it
-          is worth in the original. Diplomacy is a nested audience with the other
-          leader's portrait in view throughout, and there are portraits for every
-          civilisation but one.
+          Diplomacy is an audience you stay in, with the other leader in view
+          throughout: forty-two portraits, one for each civilisation in each
+          gender. Imported Civilization II games keep their wonders, which had
+          been read from the save and discarded, taking a city's happiness with
+          them. Trade routes are paid Civilization II's rate rather than
+          Civilization I's, a city square always yields at least one shield, and
+          the terrain specials table has been checked entry by entry against the
+          original's own Civilopedia.
         </p>
       </description>
     </release>
