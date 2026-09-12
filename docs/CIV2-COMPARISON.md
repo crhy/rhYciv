@@ -36,9 +36,12 @@ eaten, surplus, stored, box size, shields, support, waste, production, trade,
 corruption, tax, science, worked squares, specialists, tile trade, route trade,
 the happiness split and the improvements — and quits.
 
-`RHYCIV_REPORT_CITY=NAME` adds a listing of that city's worked squares with the
-terrain, the special and what each yields. A disagreement about a city's food or
-trade always comes down to which squares it is working and what they are worth.
+`RHYCIV_REPORT_CITY=NAME[,NAME...]` adds a listing of each named city's worked
+squares with the terrain, the special, what each yields, and — where two of the
+listed cities have both claimed a square — which other city has it. A
+disagreement about a city's food or trade always comes down to which squares it
+is working and what they are worth, and a city working land that looks worse than
+what lies beside it is usually a square a neighbour has already taken.
 
 **Get Civ II's numbers.** Open the same save and screenshot the city screen. Civ
 II states its own figures there, which is what makes this work at all.
@@ -47,6 +50,34 @@ II states its own figures there, which is what makes this work at all.
 is what the city *eats*, not what it grows. What it grows is on the Citizens
 header above the resource map, as `17🌾 4⚒ 6🔶`. Mistaking one for the other
 produces a disagreement that is not there — it did here, and cost a pass.
+
+**Ask Civ II what a single square is worth.** The Citizens header carries a
+*second* triple, at its right-hand end. That one is the yield of the square the
+mouse is resting on, and it changes as the cursor moves over the resource map. It
+is the most useful thing on the screen for this work: it settles what one square
+produces without any arithmetic on totals, and a screenshot of it is worth more
+than a screenshot of the city. Clicking the square takes its citizen off, and the
+totals on the left fall by exactly that triple — which is also how to confirm you
+are reading the right number.
+
+**Count the icons on the resource map.** Every worked square has its yield drawn
+on it in wheat, shields and arrows, including the city's own square. Those icons
+sum to the totals in the header, so the whole arrangement can be read off one
+screenshot: which squares, and what each is worth. The citizen faces above say
+how many of the rest are entertainers — the entertainer's face is plainly
+different from a worker's.
+
+**Photograph this game's nested dialogs.** `RHYCIV_AUTOCLICK="Button,Button"`
+presses a named button on whatever window is in front, once per timed screenshot,
+so the later pages of a dialog can be captured headlessly:
+
+```
+cd RaylibUI/bin/Debug/net9.0
+RHYCIV_AUTOSTART=1 RHYCIV_TEST_DIPLOMACY=Persians \
+RHYCIV_SHOT_DIR=/tmp/shots RHYCIV_SHOT_INTERVAL=6 \
+RHYCIV_AUTOCLICK="We Have a Proposal,Never Mind,We Offer a Gift" \
+xvfb-run -a -s "-screen 0 1600x920x24" dotnet RaylibUI.dll
+```
 
 ---
 
@@ -117,33 +148,80 @@ be told it had changed.
 
 ## What still disagrees
 
-### Republic: food, trade and corruption
+### Kells under a Republic — traced to the end
 
-Kells, A.D. 1620, turn 188, size 8, Republic, Temple only.
+The same city in both games, from `Cu_Auto.SAV`: Kells, A.D. 1670, turn 193,
+size 8, Republic, Temple only, five units supported.
 
 | | Civ II | rhYciv |
 |---|---|---|
 | Size | 8 | 8 |
-| Shields / support / production | 7 / 5 / 2 | 7 / 5 / 2 |
-| Worked squares / specialists | 7 / 2 | 7 / 2 |
-| **Food produced** | **18** | **20** |
-| **Trade** | **10** | **12** |
-| **Corruption** | **0** | **3** |
+| Squares worked / entertainers | 6 / 3 | 7 / 2 |
+| **Food produced** | **18** | **19** |
+| **Shields** | **7** | **9** |
+| **Trade** | **10** | **10** |
 
-Both work seven squares with two entertainers and shields agree exactly, so the
-terrain reading is sound and the difference is *which* seven squares — one
-square's worth of food and trade, in a mask read straight out of the save.
+The city screen was photographed with the cursor resting on one square after
+another, which is what made this readable. Civ II's Citizens box shows the city's
+totals on the left and **the yield of the square under the cursor** on the right,
+and clicking a square takes its citizen off: one shot has the totals fall from
+18/7/10 to 15/5/10 exactly as a square reading 3/2/0 stops being worked. So the
+right-hand triple is a per-square readout, and the totals are plain sums over the
+worked squares including the city's own.
 
-Corruption 0 against 3 for a city that is not the capital is the more suspicious
-of the two, and may be a separate fault in how Republic distance corruption is
-worked out.
+Counting the icons drawn on Civ II's resource map then gives its whole
+arrangement: the city square and four grassland squares at 3 food / 1 shield /
+2 trade each, plus a pheasant forest at 3 / 2 / 0. That is 18 / 7 / 10, the
+displayed totals, from six squares. The citizen row confirms it — of the eight
+faces, the last three are entertainers.
 
-Monarchy and Despotism agree completely, so whatever this is, it is specific to
-Republic or to this position.
+This game's arrangement is the same six squares plus a seventh, a plain forest at
+1 / 2 / 0, worked by the citizen Civ II keeps as a third entertainer.
+
+Two things were wrong, and neither was corruption or Republic:
+
+1. **The city square produced no shields.** Civ II's Civilopedia, under Game
+   Concepts / City Squares: "if the city is built on Terrain that normally
+   produces no Shields, one Shield is automatically added to the other resources
+   generated in the city square." Kells sits on plain grassland, so Civ II's
+   centre square gives 3 / 1 / 2 where this game gave 3 / 0 / 2. Fixed, with
+   tests in `RhyCiv.Tests/Terrains/CitySquareYieldTests.cs`.
+
+2. **The eighth citizen is put to work rather than kept content.** Drop the plain
+   forest from the arrangement above and the totals become 18 / 7 / 10 — Civ II's
+   figures exactly, on every count. The entire remaining gap is that Civ II's
+   Kells needs three entertainers to stay out of disorder and this game thinks two
+   are enough. That is the happiness model, not the terrain, the government, or
+   corruption, and it is the next thing to measure.
+
+The earlier reading of this comparison — food 20 against 18, trade 12 against 10,
+corruption 3 against 0 — was taken at turn 188 and attributed to Republic
+corruption and to a disagreement about *which* squares were worked. Both were
+wrong. Trade agrees exactly, corruption agrees at 0, and the square lists differ
+by one square, not by the composition of seven.
 
 A false lead worth recording: the worked-square listing shows an entry at
 `dx = -3`, which looks impossible for a city radius. It is not. Civ II stores X
 doubled, so odd deltas are legitimate.
+
+### Still to do: the city square is improved to its maximum
+
+The same Civilopedia entry says more than the shield rule, and the rest is not
+implemented: "The city square automatically contains a road, which is upgraded to
+a railroad when the Railroad Advance is discovered. The city square is also
+automatically irrigated or mined, depending on the type of terrain."
+
+It did not show up at Kells because that save already carries irrigation on the
+city square, put there by a worker, and this game reads the improvement bits
+straight out of the save. It will show up on any city this game founds itself: a
+new city on grassland yields 2 food where Civ II yields 3.
+
+This game currently stands in for the rule with a floor — a city square with less
+than 2 food is given 1 more — which happens to give the right answer on desert
+and tundra and the wrong one on grassland. Replacing the floor with the real rule
+needs a decision the Civilopedia does not make for us: which of irrigation and
+mining applies on terrain that permits both, hills above all. That wants either a
+source or a measurement in Civ II before it is written.
 
 ---
 

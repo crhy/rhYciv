@@ -285,21 +285,44 @@ namespace RaylibUI
             // RHYCIV_REPORT_CITY=NAME also lists that city's worked squares, which
             // is what a disagreement about food or trade comes down to.
             var detail = Environment.GetEnvironmentVariable("RHYCIV_REPORT_CITY");
-            if (!string.IsNullOrWhiteSpace(detail) &&
-                game.AllCities.FirstOrDefault(c =>
-                    string.Equals(c.Name, detail, StringComparison.OrdinalIgnoreCase)) is { } detailed)
+            if (!string.IsNullOrWhiteSpace(detail))
             {
-                var org = detailed.GetOrganizationLevel(game.Rules);
-                var low = org == 0;
-                Console.WriteLine($"# worked squares of {detailed.Name} (size {detailed.Size}, " +
-                                  $"{detailed.NoOfSpecialistsx4 / 4} specialists)");
-                Console.WriteLine(string.Join("\t", "dx", "dy", "terrain", "special", "food", "shields", "trade"));
-                foreach (var square in detailed.WorkedTiles)
+                // A comma-separated list, because a city's arrangement can only be
+                // judged against its neighbours': two cities may not work the same
+                // square, and a square already taken is the usual reason a city is
+                // working land that looks worse than what is lying next to it.
+                var wanted = detail.Split(',', StringSplitOptions.RemoveEmptyEntries |
+                                               StringSplitOptions.TrimEntries);
+                var claimed = new Dictionary<string, string>();
+                foreach (var name in wanted)
                 {
-                    Console.WriteLine(string.Join("\t",
-                        square.X - detailed.Location.X, square.Y - detailed.Location.Y,
-                        square.Type, square.SpecialsName ?? "-",
-                        square.GetFood(low), square.GetShields(low), square.GetTrade(org)));
+                    if (game.AllCities.FirstOrDefault(c =>
+                            string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)) is not { } detailed)
+                    {
+                        Console.WriteLine($"# no city called {name}");
+                        continue;
+                    }
+
+                    var org = detailed.GetOrganizationLevel(game.Rules);
+                    var low = org == 0;
+                    Console.WriteLine($"# worked squares of {detailed.Name} at " +
+                                      $"({detailed.Location.X},{detailed.Location.Y}), size {detailed.Size}, " +
+                                      $"{detailed.NoOfSpecialistsx4 / 4} specialists, " +
+                                      $"{game.GetActiveCiv.Government}");
+                    Console.WriteLine(string.Join("\t", "x", "y", "dx", "dy", "terrain", "special",
+                        "food", "shields", "trade", "alsoWorkedBy"));
+                    foreach (var square in detailed.WorkedTiles)
+                    {
+                        var key = $"{square.X},{square.Y}";
+                        var clash = claimed.TryGetValue(key, out var other) ? other : "-";
+                        claimed[key] = detailed.Name;
+                        Console.WriteLine(string.Join("\t",
+                            square.X, square.Y,
+                            square.X - detailed.Location.X, square.Y - detailed.Location.Y,
+                            square.Type, square.SpecialsName ?? "-",
+                            square.GetFood(low), square.GetShields(low), square.GetTrade(org),
+                            clash));
+                    }
                 }
             }
 

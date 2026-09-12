@@ -130,6 +130,19 @@ public static class TileResourceExtensions
                 shields -= 1;
             }
 
+            // Civ II's Civilopedia, under Game Concepts / City Squares: "if the city
+            // is built on Terrain that normally produces no Shields, one Shield is
+            // automatically added to the other resources generated in the city
+            // square." It is why founding on grassland is not the waste it looks
+            // like, and why a city never has a turn where it can build nothing at
+            // all. Measured against Civ II itself: Kells, on plain grassland, shows
+            // seven shields where this game showed eight -- it counted a sixth
+            // worked square Civ II did not -- and one of Civ II's seven is this.
+            if (tile.CityHere != null && shields < 1)
+            {
+                shields = 1;
+            }
+
             return (int)shields;
         }
 
