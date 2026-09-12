@@ -204,24 +204,83 @@ A false lead worth recording: the worked-square listing shows an entry at
 `dx = -3`, which looks impossible for a city radius. It is not. Civ II stores X
 doubled, so odd deltas are legitimate.
 
-### Still to do: the city square is improved to its maximum
+### The city square is improved to its maximum — measured, and already right
 
-The same Civilopedia entry says more than the shield rule, and the rest is not
-implemented: "The city square automatically contains a road, which is upgraded to
-a railroad when the Railroad Advance is discovered. The city square is also
-automatically irrigated or mined, depending on the type of terrain."
+The same Civilopedia entry says more than the shield rule: "The city square
+automatically contains a road, which is upgraded to a railroad when the Railroad
+Advance is discovered. The city square is also automatically irrigated or mined,
+depending on the type of terrain."
 
-It did not show up at Kells because that save already carries irrigation on the
-city square, put there by a worker, and this game reads the improvement bits
-straight out of the save. It will show up on any city this game founds itself: a
-new city on grassland yields 2 food where Civ II yields 3.
+**An earlier pass of this document predicted that this game got that wrong, and
+that a new city on grassland would yield 2 food against Civ II's 3. That
+prediction was false and is corrected here.** This game has carried the rule all
+along, in the ruleset rather than in code: `TerrainImprovementFunctions` marks
+both Irrigation and Road `AllCitys`, and `GameExtensions.SetImprovementsForCity`
+lays them on the city's square when the city is founded. Mining is deliberately
+not marked, and a test now founds cities and checks the result rather than
+leaving it to be assumed again
+(`RhyCiv.Tests/Cities/NewCitySquareTests.cs`).
 
-This game currently stands in for the rule with a floor — a city square with less
-than 2 food is given 1 more — which happens to give the right answer on desert
-and tundra and the wrong one on grassland. Replacing the floor with the real rule
-needs a decision the Civilopedia does not make for us: which of irrigation and
-mining applies on terrain that permits both, hills above all. That wants either a
-source or a measurement in Civ II before it is written.
+The Civilopedia does not say which of irrigation and mining wins on terrain that
+permits both, and hills is the case that decides it. **Civ II was asked.**
+Maesteg, a size-one Celtic city on hills, A.D. 1700: the city square reads 2 food,
+1 shield, 0 trade. Hills are 1 food and no shields, irrigation adds a food and a
+mine adds three shields — so the city square is **irrigated, not mined**, and the
+single shield is the minimum, not a mine's three. That is what this game does,
+and it is now written down with the measurement behind it.
+
+That reading came from the Citizens header and the resource map together: the
+header says 5 food, 1 shield, 3 trade for the whole city, the two icon groups on
+the map are 2🌾1🛡 on the centre and 3🌾3☘ on the one worked square, and they
+sum to the header. The worked square at 3 / 0 / 3 is an ocean fish square with
+the Republic's extra arrow.
+
+### Trade cities: Cardiff agrees exactly, Carmarthen does not
+
+A.D. 1700, turn 196, Republic, both size 7 with one entertainer.
+
+| | Civ II | rhYciv | |
+|---|---|---|---|
+| **Cardiff** — food / eaten / surplus | 17 / 14 / 3 | 17 / 14 / 3 | ✓ |
+| shields / support / production | 10 / 2 / 8 | 10 / 2 / 8 | ✓ |
+| tile trade / corruption | 11 / 0 | 11 / 0 | ✓ |
+| trade route | Carmarthen Silk +1 | none | ✗ |
+| **Carmarthen** — food / eaten / surplus | 18 / 14 / 4 | 18 / 14 / 4 | ✓ |
+| shields / support / production | 8 / 2 / 6 | 7 / 2 / 5 | ✗ |
+| tile trade / corruption | 14 / 1 | 13 / 3 | ✗ |
+| trade route | Cardiff Gems +2 | none | ✗ |
+
+Cardiff agrees on every figure the screen shows, which is worth stating plainly:
+a capital of seven citizens working seven squares, food, shields, support,
+production, trade and corruption all identical. The city-square shield is part of
+that — Cardiff's centre is plain grassland, and without the rule above this game
+made it nine shields against Civ II's ten.
+
+Carmarthen is short one shield and one trade on the same number of squares with
+the same number of entertainers, so it is again a question of *which* square, not
+of what a square is worth.
+
+Its corruption is the more interesting one: 3 against Civ II's 1, where Cardiff,
+the capital, is 0 in both. Distance corruption under a Republic is the obvious
+suspect and has not yet been checked against a source. **This is the next rule to
+research.**
+
+Neither city has a trade route in this game's reading of the save, and both have
+one in Civ II. That may be nothing: the save is an autosave, and autosaves are
+written at the *start* of a turn, while the screenshots were taken part-way
+through one in which caravans were delivered and routes established. It cannot be
+settled without a save taken at the same moment as the picture — see below.
+
+### Take the save at the same moment as the screenshot
+
+Civ II's `Cu_Auto.SAV` is written at the start of each turn, so anything done
+during the turn — a caravan delivered, a city founded, squares rearranged — is in
+the screenshot and not in the save. Two comparisons here ran into it: Maesteg,
+founded mid-turn, is not in the save at all, and the trade routes above appear in
+neither city's record.
+
+So for anything mid-turn, save deliberately (Game → Save Game) immediately before
+or after taking the picture, and name the file after what it is for.
 
 ---
 

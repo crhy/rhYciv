@@ -309,6 +309,19 @@ namespace RaylibUI
                                       $"({detailed.Location.X},{detailed.Location.Y}), size {detailed.Size}, " +
                                       $"{detailed.NoOfSpecialistsx4 / 4} specialists, " +
                                       $"{game.GetActiveCiv.Government}");
+                    // Civ II lists a city's trade routes at the foot of its screen as
+                    // "Cardiff Gems: +2", so the partner, the commodity and the
+                    // arrows it pays are all comparable directly.
+                    foreach (var route in detailed.TradeRoutes)
+                    {
+                        var partner = route.Destination >= 0 && route.Destination < game.AllCities.Count
+                            ? game.AllCities[route.Destination].Name
+                            : $"#{route.Destination}";
+                        Console.WriteLine($"#   route to {partner}, commodity {route.Commodity}, " +
+                                          $"worth {RhyCiv.Engine.UnitActions.CaravanActions.TradeFromRoutes(game, detailed)} " +
+                                          $"in total for {detailed.TradeRoutes.Length} route(s)");
+                    }
+
                     Console.WriteLine(string.Join("\t", "x", "y", "dx", "dy", "terrain", "special",
                         "food", "shields", "trade", "alsoWorkedBy"));
                     foreach (var square in detailed.WorkedTiles)
