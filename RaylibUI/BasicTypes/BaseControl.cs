@@ -241,6 +241,21 @@ public abstract class BaseControl : IControl
 
     public event EventHandler<MouseEventArgs>? Click;
 
+    /// <summary>
+    /// Raises this control's click as though the mouse had been pressed and
+    /// released on it.
+    /// </summary>
+    /// <remarks>
+    /// The headless screenshot harness walks nested dialogs with this. There is no
+    /// pointer under Xvfb, and synthesising one would be testing raylib's hit
+    /// detection rather than the game's dialogs -- which is not what a screenshot
+    /// of the third page of a parley is for.
+    /// </remarks>
+    public void PerformClick()
+    {
+        Click?.Invoke(this, new MouseEventArgs { Button = MouseButton.Left });
+    }
+
     public virtual void Draw(bool pulse)
     {
         if (!Visible) return;

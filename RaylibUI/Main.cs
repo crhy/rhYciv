@@ -236,6 +236,11 @@ namespace RaylibUI
             frame.Export(path);
             frame.Unload();
             Console.WriteLine($"screenshot: {path}");
+
+            if (byTimer)
+            {
+                AutoClickAfterScreenshot();
+            }
         }
 
         private void DrawScene(bool pulse)

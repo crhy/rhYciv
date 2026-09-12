@@ -41,6 +41,19 @@ public class ImageBox : BaseControl
 
     public int[,] Coords { get; set; } = new int[,] { { 0, 0 } };
 
+    /// <summary>
+    /// Whether this box's <see cref="Height"/> is a real constraint on the image.
+    /// <para>
+    /// It usually is, and the image is scaled down to fit rather than spilling over
+    /// whatever is drawn below it. But a dialog that lays a tall picture beside a
+    /// short paragraph tells the table the box is one pixel high, so that the row
+    /// takes its height from the text and the picture is free to run down behind
+    /// the rest of the dialog. That is a layout arrangement, not a constraint, and
+    /// a box in that position clears this so the image is still drawn full size.
+    /// </para>
+    /// </summary>
+    public bool ClampHeight { get; set; } = true;
+
     private float _scale = 1.0f;
     public float Scale 
     {
@@ -204,7 +217,7 @@ public class ImageBox : BaseControl
         var coordX = index < Coords.GetLength(0) ? Coords[index, 0] : 0;
         var coordY = index < Coords.GetLength(0) ? Coords[index, 1] : 0;
         var boxWidth = Math.Max(1, Width);
-        var boxHeight = Math.Max(1, Height);
+        var boxHeight = ClampHeight ? Math.Max(1, Height) : Math.Max(1, GetPreferredHeight());
         var drawScale = Math.Max(0.01f, _scale);
         var drawWidth = texture.Width * drawScale;
         var drawHeight = texture.Height * drawScale;

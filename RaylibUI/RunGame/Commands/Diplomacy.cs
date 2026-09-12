@@ -97,44 +97,196 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
                $"{DiplomacyFunctions.StandingName(us, civ)}, {embassy})";
     }
 
+    /// <summary>
+    /// The leader on the other side of the table, carried through every step of
+    /// the audience.
+    /// </summary>
+    /// <remarks>
+    /// Civ II holds a parley in a throne room and keeps the other leader in front
+    /// of you from the opening line to the last, so the whole exchange reads as a
+    /// conversation with a person. Losing the portrait between steps would turn it
+    /// back into a sequence of unrelated message boxes, which is what it was.
+    /// </remarks>
+    private DialogImageElements? _portrait;
+
+    /// <summary>Shows one step of the audience, with the leader still present.</summary>
+    private void Step(string dialog,
+        Action<string, int, IList<bool>?, IDictionary<string, string>?> answered,
+        IList<string>? replaceStrings = null, IList<string>? buttons = null,
+        ListboxDefinition? listBox = null, IList<TextBoxDefinition>? textBoxes = null)
+    {
+        gameScreen.ShowPopup(dialog, handleButtonClick: answered, replaceStrings: replaceStrings,
+            buttons: buttons, listBox: listBox,
+            textBoxes: textBoxes is null ? null : textBoxes.ToList(),
+            dialogImage: _portrait);
+    }
+
+    /// <summary>Goes back to the audience once the current dialog is answered.</summary>
+    private void ReturnToAudience(Civilization other) =>
+        gameScreen.QueueAfterCurrentPopup(() => Audience(other));
+
+    /// <summary>
+    /// How tall the leader's portrait is drawn, in logical pixels.
+    /// </summary>
+    /// <remarks>
+    /// The art is a 1254-pixel square, which drawn at its own size makes a dialog
+    /// larger than the screen -- the first attempt at this produced a window of
+    /// stone with the question hanging off the top corner. Big enough to be a
+    /// person you are talking to, small enough to leave room for what is being
+    /// said.
+    /// </remarks>
+    private const float PortraitHeight = 300f;
+
     private void Parley(Civilization other)
     {
-        var us = gameScreen.Player.Civilization;
-        var proposals = DiplomacyFunctions.AvailableProposals(us, other).ToList();
-        var buttons = proposals.Select(ButtonFor).Append(Farewell).ToList();
-
-        // The other leader is across the table. Civ II holds a parley in a throne
-        // room with their portrait on the wall and speaks in their voice; this was
-        // a panel of buttons with nobody on the other side of it. A tribe whose
-        // portrait has not been drawn yet simply has none, which is what every
-        // parley looked like before.
-        var portrait = LeaderPortraits.For(other);
-
-        gameScreen.ShowPopup("DIPLOMACYMENU", (button, _, _, _) =>
+        _portrait = null;
+        if (LeaderPortraits.For(other) is { } portrait)
         {
-            var chosen = proposals.FirstOrDefault(proposal => ButtonFor(proposal) == button);
-            if (button == Farewell)
+            // Measured with the same helper the image box itself uses to size the
+            // control, so the scale asked for is the scale applied.
+            var height = RaylibUtils.Images.GetImageHeight(portrait, gameScreen.Main.ActiveInterface);
+            var scale = height > 0 ? PortraitHeight / height : 1f;
+            _portrait = new DialogImageElements(portrait, scale);
+        }
+
+        Audience(other);
+    }
+
+    /// <summary>
+    /// The audience itself: what may be raised, given who they are to us.
+    /// </summary>
+    /// <remarks>
+    /// Nested, as Civ II's is. Its parley offers a handful of openings -- have a
+    /// proposal to make, wish to offer you a gift, cancel this worthless alliance,
+    /// consider this disclosure complete -- and each opens a list of its own, so
+    /// the exchange has the shape of a conversation. This was one flat list of
+    /// every action at once, which asked the player to pick a treaty and a gift
+    /// from the same menu.
+    ///
+    /// The audience also stays open. Everything but taking leave comes back here,
+    /// so several matters can be settled in one sitting rather than one per trip
+    /// through the Foreign Ministry.
+    /// </remarks>
+    private void Audience(Civilization other)
+    {
+        var us = gameScreen.Player.Civilization;
+        var relation = DiplomacyFunctions.Between(us, other);
+        var proposals = DiplomacyFunctions.AvailableProposals(us, other).ToList();
+
+        var buttons = new List<string>();
+        if (proposals.Any(IsTreaty))
+        {
+            buttons.Add(ProposeButton);
+        }
+
+        buttons.Add(GiftButton);
+
+        if (relation.Alliance)
+        {
+            buttons.Add(BreakAllianceButton);
+        }
+
+        if (proposals.Contains(DiplomacyFunctions.Proposal.DeclareWar))
+        {
+            buttons.Add(DeclareWarButton);
+        }
+
+        buttons.Add(Farewell);
+
+        Step("DIPLOMACYMENU", (button, _, _, _) =>
+        {
+            switch (button)
             {
+                case ProposeButton:
+                    gameScreen.QueueAfterCurrentPopup(() => ProposeMenu(other));
+                    break;
+                case GiftButton:
+                    gameScreen.QueueAfterCurrentPopup(() => GiftMenu(other));
+                    break;
+                case BreakAllianceButton:
+                case DeclareWarButton:
+                    gameScreen.QueueAfterCurrentPopup(() => DeclareWar(other));
+                    break;
+            }
+        }, replaceStrings: [other.Adjective, Standing(other)], buttons: buttons);
+    }
+
+    /// <summary>The treaties that can be put to them, and never mind.</summary>
+    private void ProposeMenu(Civilization other)
+    {
+        var us = gameScreen.Player.Civilization;
+        var treaties = DiplomacyFunctions.AvailableProposals(us, other).Where(IsTreaty).ToList();
+        if (treaties.Count == 0)
+        {
+            Audience(other);
+            return;
+        }
+
+        var buttons = treaties.Select(ButtonFor).Append(NeverMind).ToList();
+
+        Step("DIPLOMACYPROPOSE", (button, _, _, _) =>
+        {
+            var chosen = treaties.FirstOrDefault(proposal => ButtonFor(proposal) == button);
+            if (button == NeverMind)
+            {
+                ReturnToAudience(other);
                 return;
             }
 
-            gameScreen.QueueAfterCurrentPopup(() => Act(chosen, other));
-        }, replaceStrings: [other.Adjective, Standing(other)], buttons: buttons,
-            dialogImage: portrait is null ? null : new DialogImageElements(portrait));
+            gameScreen.QueueAfterCurrentPopup(() => Propose(chosen, other));
+        }, replaceStrings: [other.Adjective], buttons: buttons);
     }
+
+    /// <summary>Gold or knowledge, and never mind.</summary>
+    private void GiftMenu(Civilization other)
+    {
+        Step("DIPLOMACYGIFT", (button, _, _, _) =>
+        {
+            switch (button)
+            {
+                case GiftGoldButton:
+                    gameScreen.QueueAfterCurrentPopup(() => OfferGold(other));
+                    break;
+                case GiftTechButton:
+                    gameScreen.QueueAfterCurrentPopup(() => OfferTechnology(other));
+                    break;
+                default:
+                    ReturnToAudience(other);
+                    break;
+            }
+        }, replaceStrings: [other.Adjective],
+            buttons: [GiftGoldButton, GiftTechButton, NeverMind]);
+    }
+
+    private static bool IsTreaty(DiplomacyFunctions.Proposal proposal) =>
+        proposal is DiplomacyFunctions.Proposal.CeaseFire
+            or DiplomacyFunctions.Proposal.Peace
+            or DiplomacyFunctions.Proposal.Alliance;
+
+    private const string ProposeButton = "We Have a Proposal";
+    private const string GiftButton = "We Offer a Gift";
+    private const string BreakAllianceButton = "Cancel This Alliance";
+    private const string DeclareWarButton = "Declare War";
+    private const string GiftGoldButton = "Gold";
+    private const string GiftTechButton = "Knowledge";
+    private const string NeverMind = "Never Mind";
 
     /// <summary>The one line of context the parley opens with.</summary>
     private string Standing(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
-        // Civ II's players learn to read both of these: what they think of you
-        // decides whether they will deal, and what your word is worth decides
-        // whether the deal will hold. The attitude is named in Civ II's own nine
-        // ranks rather than words of this game's invention, so somebody who knows
-        // the original can read a relationship at a glance.
-        return $"{Describe(other)}. Their court is " +
-               $"{DiplomacyFunctions.AttitudeName(other, us).ToLowerInvariant()}, " +
-               $"and your own reputation is {DiplomacyFunctions.ReputationName(us)}.";
+        // Short deliberately. The dialog lays the leader's portrait out beside the
+        // text, and a long line takes the whole width for itself and leaves the
+        // portrait a column twenty pixels wide -- the image is drawn inside its
+        // slot, so it does not overflow, it simply shrinks to a speck. The full
+        // account of the relationship is in the Foreign Ministry's own list, which
+        // is where the player has just come from.
+        //
+        // Civ II's players read both of these: what they think of you decides
+        // whether they will deal, what your word is worth decides whether the deal
+        // will hold. Both in Civ II's own vocabulary.
+        return $"Their court is {DiplomacyFunctions.AttitudeName(other, us)}. " +
+               $"Your word is {DiplomacyFunctions.ReputationName(us)}.";
     }
 
     private const string Farewell = "Farewell";
@@ -148,25 +300,6 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
         DiplomacyFunctions.Proposal.GiveGold => "Gift of Gold",
         _ => "Give Technology"
     };
-
-    private void Act(DiplomacyFunctions.Proposal proposal, Civilization other)
-    {
-        switch (proposal)
-        {
-            case DiplomacyFunctions.Proposal.DeclareWar:
-                DeclareWar(other);
-                break;
-            case DiplomacyFunctions.Proposal.GiveGold:
-                OfferGold(other);
-                break;
-            case DiplomacyFunctions.Proposal.GiveTechnology:
-                OfferTechnology(other);
-                break;
-            default:
-                Propose(proposal, other);
-                break;
-        }
-    }
 
     /// <summary>
     /// Puts a treaty to them and reports the answer. The answer is theirs to make:
@@ -188,17 +321,19 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
         var accepted = DiplomacyFunctions.Between(us, other).Summary != before;
 
         SessionLog.Record($"proposed {kind} to {other.TribeName}: {(accepted ? "accepted" : "refused")}");
-        gameScreen.ShowPopup(accepted ? "PARLEYACCEPT" : "PARLEYNOTHANKS");
+        Step(accepted ? "PARLEYACCEPT2" : "PARLEYNOTHANKS", (_, _, _, _) => { });
+        ReturnToAudience(other);
         gameScreen.StatusPanel.Update();
     }
 
     private void DeclareWar(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
-        gameScreen.ShowPopup("BREAKTREATY", (button, _, _, _) =>
+        Step("BREAKTREATY", (button, _, _, _) =>
         {
             if (button != Labels.Ok)
             {
+                ReturnToAudience(other);
                 return;
             }
 
@@ -206,7 +341,10 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             SessionLog.Record($"declared war on {other.TribeName}");
             gameScreen.Game.Players[other.Id].ProposalReceived(us,
                 new DiplomaticProposal { Kind = DiplomacyProposals.CeaseFire });
-            gameScreen.ShowPopup("WARDECLARED", replaceStrings: [other.Adjective]);
+
+            // War ends the audience. There is nothing further to say across a
+            // table that no longer exists.
+            Step("WARDECLARED", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
         }, replaceStrings: [other.Adjective]);
     }
 
@@ -215,18 +353,20 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private void OfferGold(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
-        gameScreen.ShowPopup("MONEYGIFT", (button, _, _, textBoxes) =>
+        Step("MONEYGIFT", (button, _, _, textBoxes) =>
         {
             if (button != Labels.Ok || textBoxes == null ||
                 !textBoxes.TryGetValue(GiftAmount, out var entered) ||
                 !int.TryParse(entered, out var gold) || gold <= 0)
             {
+                ReturnToAudience(other);
                 return;
             }
 
             gold = Math.Min(gold, us.Money);
             if (gold <= 0)
             {
+                ReturnToAudience(other);
                 return;
             }
 
@@ -237,7 +377,8 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
 
             SessionLog.Record($"gave {gold} gold to {other.TribeName}");
             gameScreen.StatusPanel.Update();
-            gameScreen.ShowPopup("GIFTSENT", replaceStrings: [other.Adjective]);
+            Step("GIFTSENT", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
+            ReturnToAudience(other);
         },
         replaceStrings: [other.Adjective],
         textBoxes: [new TextBoxDefinition
@@ -260,17 +401,19 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
 
         if (giveable.Count == 0)
         {
-            gameScreen.ShowPopup("PARLEYNOTHANKS");
+            Step("PARLEYNOTHANKS", (_, _, _, _) => { });
+            ReturnToAudience(other);
             return;
         }
 
         var listbox = new ListboxDefinition();
         listbox.Update(giveable.Select(advance => advance.Name).ToList());
 
-        gameScreen.ShowPopup("GIVETECH", (button, index, _, _) =>
+        Step("GIVETECH", (button, index, _, _) =>
         {
             if (button != Labels.Ok || index < 0 || index >= giveable.Count)
             {
+                ReturnToAudience(other);
                 return;
             }
 
@@ -279,7 +422,8 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
                 new DiplomaticProposal { Kind = DiplomacyProposals.GiveTechnology, Advance = giveable[index].Index });
 
             SessionLog.Record($"gave {giveable[index].Name} to {other.TribeName}");
-            gameScreen.ShowPopup("GIFTSENT", replaceStrings: [other.Adjective]);
+            Step("GIFTSENT", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
+            ReturnToAudience(other);
         }, replaceStrings: [other.Adjective], listBox: listbox);
     }
 

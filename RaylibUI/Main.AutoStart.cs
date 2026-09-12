@@ -195,6 +195,20 @@ namespace RaylibUI
                                       $"portrait={(RhyCiv.Engine.Diplomacy.LeaderPortraits.For(other)?.GetKey() ?? "none")}");
                 }
 
+                // RHYCIV_TEST_DIPLOMACY=<tribe> opens the audience with that tribe
+                // directly, rather than the ministry's list, so the parley and its
+                // portrait can be looked at.
+                var wanted = Environment.GetEnvironmentVariable("RHYCIV_TEST_DIPLOMACY");
+                if (!string.Equals(wanted, "1", StringComparison.Ordinal) &&
+                    game.AllCivilizations.FirstOrDefault(c =>
+                        c.TribeName.StartsWith(wanted!, StringComparison.OrdinalIgnoreCase)) is { } target)
+                {
+                    foreach (var other in game.AllCivilizations.Where(c => c != mine && c != target))
+                    {
+                        RhyCiv.Engine.Diplomacy.DiplomacyFunctions.Between(mine, other).Contact = false;
+                    }
+                }
+
                 diploScreen.RunCommand(CommandIds.Diplomacy);
             }
 
@@ -587,6 +601,68 @@ namespace RaylibUI
                 Console.WriteLine($"test-city:   world: {squares.Count(t => t.Improvements.Count > 0)} improved, " +
                                   $"{RhyCiv.Engine.PollutionFunctions.PollutedSquares(game).Count} polluted");
             }
+        }
+
+        // RHYCIV_AUTOCLICK="First Button,Second Button" presses one named button on
+        // whatever window is in front, once per timed screenshot. It is how the
+        // later pages of a nested dialog -- the second and third steps of a parley,
+        // say -- get captured headlessly: each shot records a page, and the click
+        // that follows it moves on to the next one. A name that is not on screen is
+        // reported and skipped, so a run does not silently photograph the same page
+        // several times over.
+        private Queue<string>? _autoClicks;
+
+        private void AutoClickAfterScreenshot()
+        {
+            if (_autoClicks == null)
+            {
+                var wanted = Environment.GetEnvironmentVariable("RHYCIV_AUTOCLICK");
+                _autoClicks = new Queue<string>(string.IsNullOrWhiteSpace(wanted)
+                    ? []
+                    : wanted.Split(',', StringSplitOptions.RemoveEmptyEntries |
+                                        StringSplitOptions.TrimEntries));
+            }
+
+            if (_autoClicks.Count == 0 || _activeScreen is not BaseScreen screen)
+            {
+                return;
+            }
+
+            var wantedButton = _autoClicks.Dequeue();
+            var dialog = screen.TopDialog;
+            var button = dialog is null ? null : FindButton(dialog.Controls, wantedButton);
+            if (button is null)
+            {
+                Console.WriteLine($"autoclick: no button '{wantedButton}' on screen");
+                return;
+            }
+
+            Console.WriteLine($"autoclick: {wantedButton}");
+            button.PerformClick();
+        }
+
+        private static Controls.Button? FindButton(IEnumerable<IControl>? controls, string text)
+        {
+            if (controls is null)
+            {
+                return null;
+            }
+
+            foreach (var control in controls)
+            {
+                if (control is Controls.Button button &&
+                    string.Equals(button.Text, text, StringComparison.OrdinalIgnoreCase))
+                {
+                    return button;
+                }
+
+                if (FindButton(control.Controls, text) is { } nested)
+                {
+                    return nested;
+                }
+            }
+
+            return null;
         }
 
         private static bool CanFoundHere(Model.Core.Mapping.Tile tile, Model.Core.Civilization civ)

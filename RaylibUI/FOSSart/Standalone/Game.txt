@@ -1122,6 +1122,18 @@ Across the table sits another civilization with fears, ambitions, pride, and mem
 ^%STRING1
 Choose the matter to place before the %STRING0.
 
+@DIPLOMACYPROPOSE
+@title=What Do You Propose?
+@width=420
+@button=Ok
+The %STRING0 envoy waits. A treaty binds only as far as both sides mean to keep it, and both sides know it.
+
+@DIPLOMACYGIFT
+@title=A Gift for the %STRING0
+@width=420
+@button=Ok
+A gift costs something now and buys goodwill that may be worth more later. Choose what to send.
+
 @EMISSARYFORCE
 @title=An Audience Is Demanded
 @width=360

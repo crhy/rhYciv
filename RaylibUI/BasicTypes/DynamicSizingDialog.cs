@@ -50,6 +50,14 @@ public class DynamicSizingDialog : BaseDialog
         var imageBox = _innerPanel.Controls.OfType<ImageBox>().FirstOrDefault();
         if (imageBox != null)
         {
+            // The picture occupies row 0, column 0, with the dialog's text in
+            // column 1, and is meant to run down the full height of the dialog
+            // behind the text. Telling the table the box is one pixel high is how
+            // that is arranged -- otherwise row 0 would be as tall as the picture
+            // and the first line of text would sit alone beside it. The height the
+            // table is given is therefore not a limit on the picture, and the
+            // dialog is grown to the picture's own height further down.
+            imageBox.ClampHeight = false;
             imageBox.Height = 1;
         }
         var imageWidth = imageBox?.GetPreferredWidth() ?? 0;

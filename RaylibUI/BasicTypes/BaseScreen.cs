@@ -156,6 +156,13 @@ public abstract class BaseScreen : BaseLayoutController, IScreen
     /// </summary>
     public bool HasOpenDialog => _dialogs.Count > 0;
 
+    /// <summary>
+    /// The window the player is looking at -- the last one opened, which is the one
+    /// drawn over the others and the one taking input. Used by the screenshot
+    /// harness to press a button on whatever is currently in front.
+    /// </summary>
+    public IControlLayout? TopDialog => _dialogs.LastOrDefault();
+
     public void CloseDialog(IControlLayout? dialog)
     {
         if (dialog != null && _dialogs.Remove(dialog))
