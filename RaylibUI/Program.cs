@@ -46,6 +46,15 @@ namespace RaylibUI
             catch (Exception ex)
             {
                 Report(ex, "crash");
+
+                // The session has been accounted for -- there is a report naming
+                // the exception and the stack. Leaving the record behind made the
+                // *next* launch find it and write a second report saying "no
+                // managed exception was recorded, so this was most likely a fault
+                // in a native library or the graphics driver", which was untrue and
+                // actively misleading: one NullReferenceException turned into two
+                // crash reports, the second of them blaming the graphics driver.
+                SessionLog.End();
                 return 1;
             }
         }

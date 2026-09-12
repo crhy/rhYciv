@@ -47,6 +47,23 @@ public class SessionLogTests : IDisposable
     }
 
     [Fact]
+    public void ASessionThatCrashedWithAnException_IsNotAlsoReportedAsANativeFault()
+    {
+        // A managed crash writes its own report, naming the exception and the
+        // stack, and then ends the session. It used to only do the first, so the
+        // next launch found the record still open and wrote a *second* report
+        // saying no managed exception had been recorded and the graphics driver
+        // was the likely cause. One NullReferenceException became two crashes,
+        // the second of them pointing at entirely the wrong thing -- and it was
+        // read that way while a real crash was being chased.
+        SessionLog.Begin("0.0.0-test");
+        SessionLog.Record("something the game was doing");
+        SessionLog.End();   // what the exception handler does after reporting
+
+        Assert.Null(SessionLog.Begin("0.0.0-test"));
+    }
+
+    [Fact]
     public void ASessionThatNeverEnded_IsPromotedToACrashReport()
     {
         SessionLog.Begin("0.0.0-test");
