@@ -48,6 +48,18 @@ namespace Model.ImageSets
         public DitherMap[] DitherMaps { get; set; } = [];
         public IImageSource[] RiverMouth { get; set; } = [];
         public IImageSource[] River { get; set; } = [];
+
+        /// <summary>
+        /// The river connection tiles again, at four gauges: a trickle, a stream, a
+        /// river and an estuary, indexed <c>RiverBands[band][mask]</c>. Which band a
+        /// tile draws comes from <see cref="Model.Core.Mapping.Tile.RiverFlow"/> --
+        /// how far it sits from the sea along its own watercourse.
+        /// </summary>
+        /// <remarks>
+        /// Empty when the banded art is not present, in which case
+        /// <see cref="River"/> is drawn for every tile as it always was.
+        /// </remarks>
+        public IImageSource[][] RiverBands { get; set; } = [];
         public IImageSource[] Forest { get; set; } = [];
         public IImageSource[] Mountains { get; set; } = [];
         public IImageSource[] Hills { get; set; } = [];

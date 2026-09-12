@@ -452,6 +452,40 @@ namespace RhyCiv.UI.Classic.ImageLoader
         /// which is why a river reaching the coast simply stopped.
         /// </para>
         /// </summary>
+        /// <summary>How many gauges the banded river art is painted at.</summary>
+        private const int RiverBandCount = 4;
+
+        /// <summary>
+        /// The river tiles again at each gauge, so a watercourse can be a trickle
+        /// where it rises and an estuary where it reaches the sea. Leaves the bands
+        /// empty if the art is not all there, and the unbanded set is then used for
+        /// every tile exactly as before.
+        /// </summary>
+        private static void LoadRiverBands(TerrainSet terrain)
+        {
+            var bands = new IImageSource[RiverBandCount][];
+            for (var band = 0; band < RiverBandCount; band++)
+            {
+                var tiles = new IImageSource[16];
+                for (var mask = 0; mask < 16; mask++)
+                {
+                    var path = FindFossOverlayPath("Rivers", $"river_mask_{mask:00}_{band}.png");
+                    var composed = path == null ? null : ComposeConnectionTile(terrain, path);
+                    if (composed == null)
+                    {
+                        return;
+                    }
+
+                    tiles[mask] = new MemoryStorage(composed.Value,
+                        $"FossRiver-{band}-{mask}-{terrain.RenderScale}");
+                }
+
+                bands[band] = tiles;
+            }
+
+            terrain.RiverBands = bands;
+        }
+
         private static void ApplyFossRiverArt(TerrainSet terrain)
         {
             for (var mask = 0; mask < terrain.River.Length && mask < 16; mask++)
@@ -469,6 +503,8 @@ namespace RhyCiv.UI.Classic.ImageLoader
                         $"FossRiver-{mask}-{terrain.RenderScale}");
                 }
             }
+
+            LoadRiverBands(terrain);
 
             for (var index = 0;
                  index < terrain.RiverMouth.Length && index < FossRiverDirections.Length;

@@ -186,7 +186,7 @@ public static class MapImage
                 increment *= 2;
             }
 
-            DrawLayer(tilePic, Images.ExtractBitmap(terrainSet.River[index]), TileRec);
+            DrawLayer(tilePic, Images.ExtractBitmap(RiverTile(terrainSet, tile, index)), TileRec);
         }
 
         // Draw shield for grasslands
@@ -343,6 +343,33 @@ public static class MapImage
         if (neighbourType == tileType) return;
         DrawLayer(origImg, ditherMap.Images[(int)neighbourType],
             new Rectangle(ditherMap.X, ditherMap.Y, 32, 16));
+    }
+
+    /// <summary>
+    /// The river picture for this tile: the right connection shape, at the gauge
+    /// its distance from the sea calls for.
+    /// </summary>
+    /// <remarks>
+    /// A river used to be one width from its spring to its mouth, because there
+    /// was one picture per connection shape and nothing to choose between them.
+    /// <see cref="Tile.RiverFlow"/> counts tiles along the watercourse from the
+    /// sea, so the mouth is an estuary, the next stretch a river, then a stream,
+    /// and the far inland end a trickle. Falls back to the unbanded picture when
+    /// the banded art is not installed.
+    /// </remarks>
+    private static IImageSource RiverTile(TerrainSet terrainSet, Tile tile, int mask)
+    {
+        var bands = terrainSet.RiverBands;
+        if (bands.Length == 0)
+        {
+            return terrainSet.River[mask];
+        }
+
+        // Distance 0 is the mouth and takes the widest band; each step inland
+        // narrows it by one until the trickle, which everything beyond keeps.
+        var flow = tile.RiverFlow;
+        var band = flow < 0 ? 1 : Math.Max(0, bands.Length - 1 - flow);
+        return bands[band][mask];
     }
 
     private static void DrawLayer(Image target, Image layer, Rectangle logicalDestination)

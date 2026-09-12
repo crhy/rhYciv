@@ -73,6 +73,7 @@ namespace RhyCiv.Engine
                     mainMap.NormalizeIslands();
                     
                     mainMap.CalculateFertility(terrains[0]);
+                    MapObjects.RiverFlow.Compute(mainMap);
 
                     maps[0] = mainMap;
                 }
@@ -117,6 +118,11 @@ namespace RhyCiv.Engine
 
             mainMap.NormalizeIslands();
             mainMap.CalculateFertility(terrains[0]);
+
+            // Which gauge each river tile is drawn at comes from how far it sits
+            // from the sea along its own watercourse.
+            MapObjects.RiverFlow.Compute(mainMap);
+
             return mainMap;
         }
     }

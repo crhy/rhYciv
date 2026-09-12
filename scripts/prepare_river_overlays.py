@@ -57,6 +57,20 @@ DEFAULT_SOURCE = Path.home() / "rhYcivtextures" / "rivers"
 # noticeably broader than a road.
 RIVER_WIDTH = 44.0
 
+# A river is not one gauge from its spring to the sea. Four bands are painted,
+# each from its own source: a trickle, a stream, a river and an estuary. Which
+# band a tile draws is decided at render time by how far it is from the mouth.
+#
+# The multiplier scales the swept channel; the source supplies the material at
+# that width, which is the point of having four. Scaling one narrow meander up
+# to estuary width stretches its texture and reads as an enlarged creek.
+BANDS = [
+    ("trickle", 0.55, None),        # no wide source: the narrow profile, run thin
+    ("stream", 1.00, None),
+    ("river", 1.65, "riverwide4"),
+    ("estuary", 2.45, "riverwide6"),
+]
+
 # How much wider the channel is where it meets the sea, and how far back from
 # the shore the mouth reaches.
 MOUTH_FLARE = 1.9
@@ -87,7 +101,7 @@ def compose(layers: list[tuple[np.ndarray, np.ndarray]]) -> tuple[np.ndarray, np
     return rgb, alpha
 
 
-def isolated(profile) -> tuple[np.ndarray, np.ndarray]:
+def isolated(profile, width: float = RIVER_WIDTH) -> tuple[np.ndarray, np.ndarray]:
     """A river tile whose neighbours carry none: a short stretch through it.
 
     This is rare -- a river normally reaches the sea or another river tile --
@@ -96,7 +110,7 @@ def isolated(profile) -> tuple[np.ndarray, np.ndarray]:
     reach = 0.20 * CANVAS[0]
     start = (CENTRE[0] - reach, CENTRE[1] - reach / 2.0)
     end = (CENTRE[0] + reach, CENTRE[1] + reach / 2.0)
-    return isotile.sweep(profile, start, end, RIVER_WIDTH * 0.85, seed=77, wobble=0.10)
+    return isotile.sweep(profile, start, end, width * 0.85, seed=77, wobble=0.10)
 
 
 def build(source_directory: Path, check: bool) -> int:
@@ -107,33 +121,59 @@ def build(source_directory: Path, check: bool) -> int:
         print(f"no source art in {source_directory}", file=sys.stderr)
         return 1
 
-    # The straightest meander gives the cleanest cross-section: the profile is
-    # measured along the stroke's own centreline, but a source that doubles back
-    # on itself still mixes two passes of the channel into one slice.
-    profile = isotile.cross_section(min(sources, key=straightness))
+    # The narrow bands come from the straightest meander: the profile is measured
+    # along the stroke's own centreline, but a source that doubles back on itself
+    # still mixes two passes of the channel into one slice.
+    narrow = [path for path in sources if not path.stem.lower().startswith("riverwide")]
+    profile = isotile.cross_section(min(narrow or sources, key=straightness))
+
+    # And the wide bands from their own paintings, when they are there. A missing
+    # one falls back to the narrow profile rather than failing: the band is then
+    # a scaled-up stream, which is what every band was before these existed.
+    def profile_for(stem: str | None):
+        if stem is None:
+            return profile
+        for path in sources:
+            if path.stem.lower() == stem:
+                return isotile.cross_section(path)
+        print(f"note: no {stem}.png; that band uses the narrow profile")
+        return profile
 
     OUT.mkdir(parents=True, exist_ok=True)
     written = []
 
     # Each spoke is generated once and reused across every mask that includes it,
     # so a river crossing two adjacent tiles is drawn with the same channel.
-    spokes = {}
-    for index, direction in enumerate(FOUR):
-        start, end = isotile.spoke_path(direction)
-        spokes[direction] = isotile.sweep(profile, start, end, RIVER_WIDTH,
-                                          seed=2000 + index, wobble=0.06)
+    for band, (name, scale, stem) in enumerate(BANDS):
+        band_profile = profile_for(stem)
+        width = RIVER_WIDTH * scale
 
-    for mask in range(16):
-        connected = [FOUR[bit] for bit in range(4) if mask & (1 << bit)]
-        if connected:
-            rgb, alpha = compose([spokes[direction] for direction in connected])
-        else:
-            rgb, alpha = isolated(profile)
-        rgb, alpha = isotile.fill_holes(rgb, alpha)
-        target = OUT / f"river_mask_{mask:02d}.png"
-        if not check:
-            isotile.to_image(rgb, alpha).save(target, optimize=True)
-        written.append(target)
+        spokes = {}
+        for index, direction in enumerate(FOUR):
+            start, end = isotile.spoke_path(direction)
+            spokes[direction] = isotile.sweep(band_profile, start, end, width,
+                                              seed=2000 + index + 100 * band,
+                                              wobble=0.06)
+
+        for mask in range(16):
+            connected = [FOUR[bit] for bit in range(4) if mask & (1 << bit)]
+            if connected:
+                rgb, alpha = compose([spokes[direction] for direction in connected])
+            else:
+                rgb, alpha = isolated(band_profile, width)
+            rgb, alpha = isotile.fill_holes(rgb, alpha)
+            target = OUT / f"river_mask_{mask:02d}_{band}.png"
+            if not check:
+                isotile.to_image(rgb, alpha).save(target, optimize=True)
+            written.append(target)
+
+            # Band 1 is also written under the old unbanded name, so anything
+            # that has not learned about bands still finds a river to draw.
+            if band == 1:
+                legacy = OUT / f"river_mask_{mask:02d}.png"
+                if not check:
+                    isotile.to_image(rgb, alpha).save(legacy, optimize=True)
+                written.append(legacy)
 
     # River mouths are drawn on the *ocean* tile, pointing back at the land
     # neighbour whose river arrives there. The channel is swept from the shore

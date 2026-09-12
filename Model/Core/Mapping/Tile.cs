@@ -171,6 +171,19 @@ namespace Model.Core.Mapping
         
         public bool Resource { get; set; }
         public bool River { get; set; }
+
+        /// <summary>
+        /// How far this river tile is from the sea, counted along the river: 0 where
+        /// it meets the ocean, rising with every tile inland. -1 where there is no
+        /// river.
+        /// </summary>
+        /// <remarks>
+        /// A river is not one gauge from its spring to its mouth, and this is what
+        /// decides which gauge a tile is drawn at. It is worked out once for the
+        /// whole map -- by <c>RiverFlow.Compute</c> -- rather than per tile, because
+        /// it is a property of the watercourse and not of the square.
+        /// </remarks>
+        public int RiverFlow { get; set; } = -1;
         public bool IsUnitPresent => UnitsHere.Count > 0;
         public bool IsCityPresent => CityHere != null;
         public int Island { get; set; }

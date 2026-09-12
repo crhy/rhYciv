@@ -72,6 +72,11 @@ public class MapSerializer
                 }
             }
 
+            // The gauge each river tile is drawn at comes from how far it is from
+            // the sea, which is a property of the whole watercourse and is worked
+            // out once here rather than per tile while drawing.
+            MapObjects.RiverFlow.Compute(map);
+
             maps.Add(map);
         }
         return maps;
