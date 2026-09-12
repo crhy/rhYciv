@@ -236,6 +236,13 @@ public class GameScreen : BaseScreen
 
     private Dictionary<Shortcut, IList<IGameCommand>> GameCommands { get; }
 
+    /// <summary>
+    /// Runs a menu command by name, for the autostart harness: a screen that can
+    /// only be reached by playing to it cannot be looked at otherwise.
+    /// </summary>
+    internal void RunCommand(string commandId) =>
+        _commands.FirstOrDefault(command => command.Id == commandId)?.Action();
+
     private void TryExecuteCommand(IList<IGameCommand> commands)
     {
         foreach (var command in commands)

@@ -80,17 +80,21 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private string Describe(Civilization civ)
     {
         var us = gameScreen.Player.Civilization;
-        var relation = DiplomacyFunctions.Between(us, civ);
-        var standing = relation switch
-        {
-            { Alliance: true } => "allied",
-            { Peace: true } => "at peace",
-            { CeaseFire: true } => "cease-fire",
-            { War: true } => "at war",
-            _ => "no treaty"
-        };
 
-        return $"{civ.TribeName} ({standing})";
+        // Civ II's Foreign Minister gives each civilisation one line carrying
+        // three facts -- what they think of us, the treaty in force, and whether
+        // we have an embassy -- behind the leader's name and title:
+        //
+        //   Consul Ishmael of the Babylonians (Worshipful, Alliance, No Embassy)
+        //
+        // This listed the tribe and the treaty and nothing else, so the two things
+        // that decide whether a proposal will be accepted, and whether their
+        // affairs can be seen at all, were both invisible from the one screen that
+        // exists to show them.
+        var embassy = DiplomacyFunctions.HasEmbassyWith(us, civ) ? "Embassy" : "No Embassy";
+        return $"{civ.LeaderTitle} {civ.LeaderName} of the {civ.TribeName} " +
+               $"({DiplomacyFunctions.AttitudeName(civ, us)}, " +
+               $"{DiplomacyFunctions.StandingName(us, civ)}, {embassy})";
     }
 
     private void Parley(Civilization other)
@@ -98,6 +102,13 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
         var us = gameScreen.Player.Civilization;
         var proposals = DiplomacyFunctions.AvailableProposals(us, other).ToList();
         var buttons = proposals.Select(ButtonFor).Append(Farewell).ToList();
+
+        // The other leader is across the table. Civ II holds a parley in a throne
+        // room with their portrait on the wall and speaks in their voice; this was
+        // a panel of buttons with nobody on the other side of it. A tribe whose
+        // portrait has not been drawn yet simply has none, which is what every
+        // parley looked like before.
+        var portrait = LeaderPortraits.For(other);
 
         gameScreen.ShowPopup("DIPLOMACYMENU", (button, _, _, _) =>
         {
@@ -108,27 +119,21 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             }
 
             gameScreen.QueueAfterCurrentPopup(() => Act(chosen, other));
-        }, replaceStrings: [other.Adjective, Standing(other)], buttons: buttons);
+        }, replaceStrings: [other.Adjective, Standing(other)], buttons: buttons,
+            dialogImage: portrait is null ? null : new DialogImageElements(portrait));
     }
 
     /// <summary>The one line of context the parley opens with.</summary>
     private string Standing(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
-        var attitude = DiplomacyFunctions.Attitude(other, us);
-        var opinion = attitude switch
-        {
-            >= 80 => "worshipful",
-            >= 65 => "friendly",
-            >= 45 => "cordial",
-            >= 25 => "uneasy",
-            _ => "hostile"
-        };
-
-        // Civ II's players learn to read both of these numbers: what they think of
-        // you decides whether they will deal, and what your word is worth decides
-        // whether the deal will hold.
-        return $"{Describe(other)}; their court is {opinion}, " +
+        // Civ II's players learn to read both of these: what they think of you
+        // decides whether they will deal, and what your word is worth decides
+        // whether the deal will hold. The attitude is named in Civ II's own nine
+        // ranks rather than words of this game's invention, so somebody who knows
+        // the original can read a relationship at a glance.
+        return $"{Describe(other)}. Their court is " +
+               $"{DiplomacyFunctions.AttitudeName(other, us).ToLowerInvariant()}, " +
                $"and your own reputation is {DiplomacyFunctions.ReputationName(us)}.";
     }
 

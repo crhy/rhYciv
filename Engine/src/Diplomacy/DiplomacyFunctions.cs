@@ -87,6 +87,48 @@ public static class DiplomacyFunctions
         return from.Attitude[to.Id] == 0 ? NeutralAttitude : from.Attitude[to.Id];
     }
 
+    /// <summary>
+    /// What a civilisation's court thinks of another, in Civ II's own words.
+    /// </summary>
+    /// <remarks>
+    /// Civ II scores attitude out of a hundred and reports it as one of nine
+    /// ranks, best to worst: Worshipful, Enthusiastic, Cordial, Receptive,
+    /// Neutral, Uncooperative, Icy, Hostile, Enraged. Its Foreign Minister prints
+    /// the word beside each civilisation, and players read it the way they read a
+    /// weather forecast -- Uncooperative in particular is the warning that an
+    /// attack may be coming.
+    ///
+    /// This game had five words of its own invention, two of which ("friendly",
+    /// "uneasy") do not appear in Civ II at all, so a player who knew the original
+    /// could not read the state of a relationship from it.
+    /// </remarks>
+    public static string AttitudeName(Civilization from, Civilization to) => Attitude(from, to) switch
+    {
+        >= 89 => "Worshipful",
+        >= 78 => "Enthusiastic",
+        >= 67 => "Cordial",
+        >= 56 => "Receptive",
+        >= 45 => "Neutral",
+        >= 34 => "Uncooperative",
+        >= 23 => "Icy",
+        >= 12 => "Hostile",
+        _ => "Enraged"
+    };
+
+    /// <summary>
+    /// The treaty in force between two civilisations, as the Foreign Minister
+    /// names it.
+    /// </summary>
+    public static string StandingName(Civilization us, Civilization them) =>
+        Between(us, them) switch
+        {
+            { Alliance: true } => "Alliance",
+            { Peace: true } => "Peace",
+            { CeaseFire: true } => "Cease-Fire",
+            { War: true } => "War",
+            _ => "No Treaty"
+        };
+
     public static void AdjustAttitude(Civilization from, Civilization to, int change)
     {
         var attitude = Math.Clamp(Attitude(from, to) + change, 1, 100);

@@ -6,6 +6,7 @@ using RhyCiv.UI.Classic;
 using RhyCiv.Engine;
 using RhyCiv.Engine.Advances;
 using RhyCiv.Engine.NewGame;
+using Model.Controls;
 using CivInit = RhyCiv.UI.Classic.Rules.Initialization;
 
 namespace RaylibUI
@@ -172,6 +173,29 @@ namespace RaylibUI
             {
                 var wanted = int.TryParse(testCityValue, out var count) ? Math.Max(1, count) : 1;
                 RunCityFoundingHarness(game, cityScreen, wanted);
+            }
+
+            // RHYCIV_TEST_DIPLOMACY=1 meets every civilisation and opens the
+            // Foreign Ministry, so the parley and its portrait can be looked at
+            // without playing until somebody walks into somebody.
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RHYCIV_TEST_DIPLOMACY"))
+                && _activeScreen is RunGame.GameScreen diploScreen)
+            {
+                var mine = game.GetPlayerCiv;
+                foreach (var other in game.AllCivilizations.Where(c =>
+                             c != mine && c.PlayerType != Model.Core.PlayerType.Barbarians))
+                {
+                    // The contact flag directly, not MakeContact: that announces the
+                    // meeting, and seven announcements queue in front of the screen
+                    // this is here to look at.
+                    RhyCiv.Engine.Diplomacy.DiplomacyFunctions.Between(mine, other).Contact = true;
+                    RhyCiv.Engine.Diplomacy.DiplomacyFunctions.Between(other, mine).Contact = true;
+                    Console.WriteLine($"diplomacy: met {other.TribeName} " +
+                                      $"({RhyCiv.Engine.Diplomacy.DiplomacyFunctions.AttitudeName(other, mine)}) " +
+                                      $"portrait={(RhyCiv.Engine.Diplomacy.LeaderPortraits.For(other)?.GetKey() ?? "none")}");
+                }
+
+                diploScreen.RunCommand(CommandIds.Diplomacy);
             }
 
             // RHYCIV_TEST_POPUP=NAME[,NAME...] pops the named GAME.TXT dialog(s)

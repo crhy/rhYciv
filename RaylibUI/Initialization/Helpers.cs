@@ -96,16 +96,53 @@ public static class Helpers
         return ruleSets.Length > 0 ? interfaces[ruleSets[0].InterfaceIndex] : interfaces[0];
     }
 
+    /// <summary>
+    /// The characters the fonts are built with.
+    /// </summary>
+    /// <remarks>
+    /// Asking raylib for a font without saying which characters gets the default
+    /// ninety-five: printable ASCII and nothing else. Everything above it was
+    /// drawn as a question mark, so Napoléon Bonaparte appeared in the Foreign
+    /// Ministry as "Napol?on" -- and with him every accented name in the leaders
+    /// table, the city name lists and the Civilopedia. The text was never wrong;
+    /// the font simply had no such letter in it.
+    ///
+    /// Latin-1 Supplement covers the western European names, and Latin Extended-A
+    /// covers the central and northern European ones -- the ł of Łódź, the ő of
+    /// Győr -- which city name lists are full of.
+    /// </remarks>
+    private static int[] TextCodepoints()
+    {
+        var codepoints = new List<int>();
+        for (var codepoint = 32; codepoint <= 126; codepoint++)      // printable ASCII
+        {
+            codepoints.Add(codepoint);
+        }
+
+        for (var codepoint = 0xA0; codepoint <= 0xFF; codepoint++)   // Latin-1 Supplement
+        {
+            codepoints.Add(codepoint);
+        }
+
+        for (var codepoint = 0x100; codepoint <= 0x17F; codepoint++) // Latin Extended-A
+        {
+            codepoints.Add(codepoint);
+        }
+
+        return codepoints.ToArray();
+    }
+
     public static void LoadFonts()
     {
+        var codepoints = TextCodepoints();
         var tnr = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSerif-Regular.ttf")) ??
                   throw new FileNotFoundException("Bundled Liberation Serif font was not found.");
-        Fonts.SetTnr(Font.LoadEx(tnr, 96, null));
+        Fonts.SetTnr(Font.LoadEx(tnr, 96, codepoints));
         var bold = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSerif-Bold.ttf")) ??
                    throw new FileNotFoundException("Bundled bold Liberation Serif font was not found.");
-        Fonts.SetBold(Font.LoadEx(bold, 112, null));
+        Fonts.SetBold(Font.LoadEx(bold, 112, codepoints));
         var alternative = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSans-Regular.ttf")) ??
                           throw new FileNotFoundException("Bundled Liberation Sans font was not found.");
-        Fonts.SetArial(Font.LoadEx(alternative, 96, null));
+        Fonts.SetArial(Font.LoadEx(alternative, 96, codepoints));
     }
 }

@@ -1072,7 +1072,7 @@ When the moment came, the promised help did not. The treaty remains on paper, bu
 
 @CHOOSECIV
 @title=Foreign Ministry
-@width=380
+@width=520
 @button=Ok
 @button=Cancel
 Which of the civilizations you have met would you speak with?
