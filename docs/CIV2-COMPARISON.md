@@ -12,6 +12,41 @@ should be.
 
 ---
 
+## Status of every rule, at a glance
+
+Where each part of the game stands. **Verified** means measured against Civ II
+itself, or taken from the Civilopedia, on a real position — not reasoned about,
+and not taken from a forum post alone. Anything not listed here has not been
+looked at.
+
+| Rule | Status | How |
+|---|---|---|
+| Terrain yields (all eleven types) | verified | Civilopedia + city screens |
+| Terrain specials | verified except 7 | Civilopedia pages; Buffalo, Resources, Bonus, Gold, Iron, Furs, Icy Oil still unchecked |
+| City square: free road, auto-irrigate, min 1 shield | verified | Civilopedia, and Maesteg on hills |
+| City square on terrain that can be mined *or* irrigated | verified | Maesteg: irrigated, not mined |
+| Food produced, eaten, surplus, food box | verified | four cities, three governments |
+| Shields, support, production | verified | four cities |
+| Base trade from squares | verified | Cardiff, Kells, Carmarthen |
+| Trade route: standing bonus | verified, one gap | formula from two sources + Cardiff; the +1/+2 asymmetry is open |
+| Trade route: delivery payment | **unverified** | still Civ I's formula |
+| Corruption | **wrong** | Kells 2 vs 0, Carmarthen 4 vs 1; distance term suspect |
+| Waste | **unverified** | never compared |
+| Happiness split and disorder | verified | Kells' Happiness Analysis, after the wonder fix |
+| Martial law, luxuries, difficulty in happiness | **unverified** | only one city, one configuration |
+| Wonders held by cities (import) | verified | Cardiff's Great Library, Kells' Michelangelo's |
+| City improvements (import) | verified | four cities' lists |
+| Defence: fortify, walls, fortress, terrain | verified | combat guide + a second tested source |
+| Diplomat and Spy missions | verified | In-Depth Guide Table 1.1 |
+| Attitude and reputation names | verified | Civ II's own nine ranks |
+| Tax / luxury / science split | partly | matches on two positions; Civ II's displayed figures sum to more than the city's trade, not yet understood |
+| Democracy, and the Republic's Senate | **not implemented** | — |
+| AI-initiated demands | **not implemented** | — |
+
+The detail behind every row is below, and every source is listed at the end.
+
+---
+
 ## How to do it
 
 Civ II's own `.SAV` files load here — `Engine/src/LegacySaves/Read.ClassicSav.cs`
@@ -376,6 +411,43 @@ Coal, Musk Ox/Game and Spice are the three this pass could not confirm from a
 source and should not be changed on recollection. Hovering one square of each in
 Civ II settles each of them in a single screenshot.
 
+### The terrain specials table, checked against the Civilopedia
+
+Civ II's own Civilopedia gives every special's food, shields and trade on its
+page, and that is a primary source: it is the game stating its numbers. Screenshots
+of those pages settle the table without argument.
+
+| Special | Terrain | Civ II | rhYciv | |
+|---|---|---|---|---|
+| Coal | Hills | 1 / 2 / 0 | 1 / 2 / 0 | ✓ |
+| Oasis | Desert | 3 / 1 / 0 | 3 / 1 / 0 | ✓ |
+| Oil | Desert | 0 / 4 / 0 | 0 / 4 / 0 | ✓ |
+| Wheat | Plains | 3 / 1 / 0 | 3 / 1 / 0 | ✓ |
+| Pheasant | Forest | 3 / 2 / 0 | 3 / 2 / 0 | ✓ |
+| Silk | Forest | 1 / 2 / 3 | 1 / 2 / 3 | ✓ |
+| Wine | Hills | 1 / 0 / 4 | 1 / 0 / 4 | ✓ |
+| Gems | Jungle | 1 / 0 / 4 | 1 / 0 / 4 | ✓ |
+| Fruit | Jungle | 4 / 0 / 1 | 4 / 0 / 1 | ✓ |
+| Peat | Swamp | 1 / 4 / 0 | 1 / 4 / 0 | ✓ |
+| Spice | Swamp | 3 / 0 / 4 | 3 / 0 / 4 | ✓ |
+| Game (Musk Ox) | Tundra | 3 / 1 / 0 | 3 / 1 / 0 | ✓ |
+| Ivory | Glacier | 1 / 1 / 4 | 1 / 1 / 4 | ✓ |
+| Fish | Ocean | 3 / 0 / 2 | 3 / 0 / 2 | ✓ |
+| **Whales** | **Ocean** | **2 / 2 / 3** | **was 2 / 1 / 2** | **fixed** |
+
+Terrain itself, from the same pages: Hills 1 / 0 / 0 with irrigation +1 food in
+ten turns and mining +3 shields in ten; Plains 1 / 1 / 0. Both agree.
+
+Whales was the only wrong figure in the table, and worth recording *why* the
+others were left alone. Three of them — Coal, Musk Ox and Spice — were flagged as
+suspect on a previous pass from recollection alone, as 1/4/0, 3/2/0 and 3/1/0.
+**All three recollections were wrong and the ruleset was right.** Had they been
+"corrected" without the Civilopedia to check against, three good numbers would
+have been broken to fix one bad one.
+
+Still unchecked in that table, for want of a screenshot: Buffalo, the grassland
+shield (Resources), Bonus, Gold, Iron, Furs and Icy Oil.
+
 ### Take the save at the same moment as the screenshot
 
 Civ II's `Cu_Auto.SAV` is written at the start of each turn, so anything done
@@ -497,13 +569,11 @@ revolt for 776 gold".
 
 ## Still unverified
 
-- **Happiness.** The happy/content/unhappy split has never been compared against
-  anything. It is the most rule-dense part of the city model — martial law, the
-  Temple, luxuries and the difficulty level all feed it. The `Happy` button on
-  Civ II's city screen is the oracle.
-- **A real trade route.** The route reader was changed on the strength of
-  phantom routes being wrong; no position with a genuine caravan route has been
-  compared.
+- **Happiness beyond one city.** Kells' split now agrees exactly, from its
+  Happiness Analysis panel — but that is one city, under one government, with one
+  Temple and one Cathedral-equivalent wonder. Martial law, luxuries and the
+  difficulty level all feed this and none of them has been varied.
+- **Waste**, the shields counterpart of corruption, has never been compared.
 - **Democracy**, and Republic's Senate, which is not implemented at all.
 - **The tax, luxury and science split** matches on the two positions checked, but
   the figures Civ II displays sum to more than the city's trade, which is not yet
@@ -513,6 +583,82 @@ revolt for 776 gold".
 
 ## Sources
 
-- The Complete Civilization II Combat Guide — <https://civfanatics.com/civ2/strategy/combatguide/>
-- Civilization 2 defence modifier calculations (tested findings) — <https://forums.civfanatics.com/threads/civilization-2-defense-modifier-calculations.683500/>
-- Civilization II In-Depth Guide, Table 1.1 (Diplomat and Spy mission outcomes) — <https://www.supercheats.com/pc/walkthroughs/civilization2-walkthrough01.txt>
+Everything below was actually used to decide something in this document. Each
+entry says what it was used for, so a later reader can tell a source that settled
+a rule from one that merely mentions it.
+
+### Primary — the game itself
+
+The strongest source available here is Civ II running under Bottles, and it is
+used in three ways:
+
+1. **The Civilopedia.** The game stating its own numbers. Used for the terrain
+   specials table, for terrain itself, and for the city square rules quoted under
+   Game Concepts / City Squares.
+2. **The city screen, read closely.** The Citizens header carries the city's
+   totals *and*, at its right-hand end, the yield of the square under the mouse —
+   a per-square oracle. The resource map draws each worked square's yield in
+   wheat, shields and arrows. The citizen faces distinguish workers from
+   entertainers. The Happiness Analysis panel gives the happy/content/unhappy
+   split in three rows: base, after luxuries, after improvements.
+3. **The same save opened in both games.** `Read.ClassicSav.cs` reads Civ II's
+   `.SAV`, so every figure can be put side by side. Take the save *deliberately*
+   (Game → Save Game) at the moment of the screenshot: the autosave is written at
+   the start of a turn and will not contain anything done during it.
+
+### Secondary — written sources
+
+- **Civ II city square rules (Civilopedia quoted verbatim)** —
+  <https://forums.civfanatics.com/threads/rules-for-city-tile-yields.690510/>
+  Used for: the free road, automatic irrigation or mining, and the minimum one
+  shield on a city square.
+- **The Complete Civilization II Combat Guide** —
+  <https://civfanatics.com/civ2/strategy/combatguide/>
+  Used for: fortification, City Walls and fortress not stacking but superseding.
+- **Civilization 2 defence modifier calculations (tested findings)** —
+  <https://forums.civfanatics.com/threads/civilization-2-defense-modifier-calculations.683500/>
+  Used for: cross-checking the defence modifiers above.
+- **Civilization II In-Depth Guide, Table 1.1** —
+  <https://www.supercheats.com/pc/walkthroughs/civilization2-walkthrough01.txt>
+  Used for: Diplomat and Spy mission outcomes, and which missions spend the unit.
+- **Civ2 trade routes, Prof. Garfield's formula** —
+  <https://forums.civfanatics.com/threads/trade-routes.358181/>
+  Used for: the ongoing trade route bonus, `(T1 + T2 + 4)/8`, halved between your
+  own cities, and the transport modifier k. Also states that both cities receive
+  the same amount and that a demanded commodity affects only the delivery — which
+  the measurement at Carmarthen contradicts, so that point is *open*.
+- **Trade Route Formula (Apolyton)** —
+  <https://apolyton.net/forum/civilization-series/civilization-i-and-civilization-ii/130326-trade-route-formula>
+  Used for: the second, independent statement of the same formula.
+- **Whales (Civ2)** — <https://civilization.fandom.com/wiki/Whales_(Civ2)>
+  Used for: confirming whales raise ocean from 1/0/2 to 2/2/3, alongside the
+  in-game measurement.
+- **Corruption and waste (Apolyton)** —
+  <https://apolyton.net/forum/miscellaneous/archives/civ2-strategy-archive/62524-corruption-and-waste>
+  Cited in `CityExtensions.CalculateOutput` for the corruption formula. The
+  formula's shape is taken from here; the distance term it is fed does **not**
+  agree with Civ II and is the open question described above.
+
+### A warning about sources
+
+**Civilization I and Civilization II are constantly confused in forum threads,
+including in threads whose titles say Civ2.** The trade route bug in this game
+came from exactly that: `(distance + 10)(Ta + Tb)/24` is Civ I's one-off caravan
+delivery payment, and it was being charged every turn as though it were Civ II's
+standing route. A thread found by searching for "Civ2 trade route formula" turned
+out, on reading, to be entirely about Civ I.
+
+So: check which game a source is talking about before using it, prefer two
+independent sources for anything that changes established behaviour, and prefer a
+measurement in the running game over both. A plausible search result about a
+city-size defence bonus once turned out to be a thread about Civilization IV.
+
+### Documents in this repository are not sources
+
+`docs/CIV2-PARITY-DEEP-AUDIT.md` asserted that City Walls and the fortification
+bonus stack multiplicatively. A change was written to match that claim. Both were
+wrong, and the change made this game *less* accurate than the code it replaced.
+Treat this repository's own documents — including this one — as claims to verify,
+not as authority. Where this document has been wrong it says so in place rather
+than quietly deleting the error; see the city-square section, which predicted a
+fault that did not exist.
