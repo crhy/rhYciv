@@ -66,6 +66,16 @@ F_caus   = FBM(17, 3)
 F_caus2  = FBM(33, 2)
 F_glint  = FBM(120, 2)
 F_shelf  = FBM(4, 3)
+
+# The open sea is this game's own ocean painting rather than anything generated
+# here. Everything below paints a shoreline well and open water badly: every
+# detail term is tied to distance from the waterline, so a tile with no land in
+# it keeps none of them and comes out as a flat field. The painting is a diamond
+# on the same 2:1 footprint as these tiles, so it lands square on them, and it is
+# blended in only where the water is deep enough for the shoreline ramp to have
+# finished -- the coast keeps the calm it was tuned for.
+OCEAN_PAINTING = (Path(__file__).resolve().parents[1]
+                  / "RaylibUI" / "FOSSart" / "Terrain" / "ocean.png")
 F_swellw = FBM(7, 3)
 F_spray  = FBM(150, 2)
 F_tone   = FBM(13, 3)
@@ -88,9 +98,18 @@ G_shell  = grid(150)
 # saturated turquoise from 48 pixels out and put a wide cream beach behind it,
 # which drew a glowing outline around every island -- the single loudest thing
 # on the map, and nothing like a coast.
+#
+# That reading was taken too far. A fjord is nearly black because it is in
+# shadow under rock; open sea in daylight is not, and every water tile on the map
+# had been painted to the fjord's darkest note. Measured against this game's own
+# ocean painting, `FOSSart/Terrain/ocean.png`, whose median is (6, 62, 123) and
+# whose upper quartile reaches (30, 104, 176), the deep end here was both far too
+# dark and, worse, almost perfectly flat: its colour varied by about 3 levels
+# where the painting varies by 40. So deep water now carries the painting's tone,
+# and the shelf still lightens towards the shore without the surf line glowing.
 STOPS = [
-    (-420, (  6,  24,  50)), (-150, (  7,  27,  55)), (-110, (  8,  32,  62)),
-    ( -80, ( 10,  38,  71)), ( -56, ( 13,  47,  83)), ( -38, ( 18,  60,  98)),
+    (-420, ( 12,  58, 112)), (-150, ( 13,  60, 114)), (-110, ( 14,  61, 113)),
+    ( -80, ( 15,  60, 110)), ( -56, ( 16,  58, 104)), ( -38, ( 19,  61,  99)),
     ( -24, ( 22,  68, 102)), ( -14, ( 27,  78, 110)), (  -8, ( 33,  88, 118)),
     (  -3, ( 42,  98, 124)),
     (  -1, (116, 112,  90)), (   3, (146, 136, 108)), (   9, (174, 162, 128)),
@@ -166,6 +185,18 @@ CENTRE_IRREGULARITY = 0.55
 # Most surf the shoreline may ever be covered by.
 FOAM_CEILING = 0.34
 
+def _load_painting():
+    """The ocean painting, resampled onto the supersampled canvas."""
+    if not OCEAN_PAINTING.exists():
+        print(f"note: {OCEAN_PAINTING.name} not found; open water stays procedural")
+        return None
+    art = Image.open(OCEAN_PAINTING).convert("RGB").resize((sw, sh), Image.LANCZOS)
+    return np.asarray(art, dtype=float)
+
+
+_painting = _load_painting()
+
+
 def build(N, E, Sc, Wc):
     """Corners in world order TL,TR,BR,BL == screen N,E,S,W."""
     TL, TR, BR, BL = N, E, Sc, Wc
@@ -237,19 +268,22 @@ def build(N, E, Sc, Wc):
     sea = 1 - smoothstep(-4, 2, d)
     patch = smoothstep(0.56, 0.86, n_bed) * sea * smoothstep(-120, -30, d_col)
     img[..., 0] -= patch * 30; img[..., 1] -= patch * 8; img[..., 2] -= patch * 14
-    img += ((F_tone(U, V) - 0.5) * 19 * sea)[..., None] * np.array([0.5, 0.9, 1.0])
-    img += ((n_bed - 0.5) * 9 * sea)[..., None] * np.array([0.5, 0.9, 1.0])
+    img += ((F_tone(U, V) - 0.5) * 34 * sea)[..., None] * np.array([0.5, 0.9, 1.0])
+    img += ((n_bed - 0.5) * 20 * sea)[..., None] * np.array([0.5, 0.9, 1.0])
+    # The ripple used to be gated to within seventy pixels of the shore, along
+    # with the crest and the caustics below, so an open-water tile had none of
+    # them and came out as a flat field. Deep water keeps a floor of it.
     sr = (np.sin(TAU * (7 * U + 2 * V) + (n_ripple - 0.5) * 9.0)
-          * smoothstep(-70, -16, d_col) * sea * 5)
+          * (0.45 + 0.55 * smoothstep(-70, -16, d_col)) * sea * 6)
     img += sr[..., None]
 
     sww = (F_swellw(U, V) - 0.5) * 5.0
     swell = np.sin(TAU * (3 * U + 5 * V) + sww)
-    img += (swell * 2.4 * sea)[..., None] * np.array([0.7, 1.0, 1.0])
+    img += (swell * 6.5 * sea)[..., None] * np.array([0.7, 1.0, 1.0])
     swell2 = np.sin(TAU * (-5 * U + 3 * V) - sww)
-    img += (swell2 * 2.0 * sea)[..., None] * np.array([0.7, 1.0, 1.0])
-    crest = np.clip(swell, 0, 1) ** 3 * smoothstep(-150, -60, d_col) * sea
-    img += (crest * 6)[..., None]
+    img += (swell2 * 5.0 * sea)[..., None] * np.array([0.7, 1.0, 1.0])
+    crest = np.clip(swell, 0, 1) ** 3 * (0.5 + 0.5 * smoothstep(-150, -60, d_col)) * sea
+    img += (crest * 11)[..., None]
 
     cw = (F_caus(U, V) * 2 - 1) * 2.4 + (F_caus2(U, V) * 2 - 1) * 1.1
     c = np.clip(np.sin(TAU * 11 * U + cw) * np.sin(TAU * 10 * V - cw), 0, 1) ** 2
@@ -259,6 +293,16 @@ def build(N, E, Sc, Wc):
     sw_ = (smoothstep(0.48, 0.82, n_foam)
            * (1 - smoothstep(-58, -44, d)) * smoothstep(-76, -62, d))
     img += (sw_ * 9)[..., None]
+
+    # ---- the painted sea ----------------------------------------------------
+    # Deep water takes its colour and its swell from the painting. The weight
+    # goes to nothing by thirty pixels from the waterline, so the shelf, the
+    # surf and the beach below are untouched and the coast still reads as the
+    # quiet one it was tuned to be.
+    if _painting is not None:
+        deep = (1 - smoothstep(-130, -30, d_col)) * sea
+        w = (0.88 * deep)[..., None]
+        img = img * (1 - w) + _painting * w
 
     # ---- surf ---------------------------------------------------------------
     # Surf is a broken thread along the waterline, and it is off-white rather than

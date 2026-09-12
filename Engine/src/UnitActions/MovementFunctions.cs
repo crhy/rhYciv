@@ -307,6 +307,17 @@ namespace RhyCiv.Engine.UnitActions
             {
                 if (!AttackAtTile(unit, game, tileTo)) return;
             }
+            else if (HasNonCombatBusinessAt(unit, tileTo))
+            {
+                // A Diplomat or a Caravan has business in somebody else's city
+                // whether or not anybody is standing in it. This choice was made on
+                // the units present alone, so an *undefended* city was an ordinary
+                // move: the Diplomat walked in and took it the way a warrior would,
+                // and a city of size one is destroyed by that. Which is how a
+                // Diplomat sent to buy an empty city of one ended with no city, no
+                // price offered, and nothing said about it.
+                if (!AttackAtTile(unit, game, tileTo)) return;
+            }
             else
             {
                 Moveto(game, unit, destX, destY);
@@ -316,6 +327,23 @@ namespace RhyCiv.Engine.UnitActions
             {
                 //TODO: Air unit out of fuel check
             }
+        }
+
+        /// <summary>
+        /// Whether this unit has an errand on a square rather than a fight: a
+        /// Diplomat or Spy at somebody else's city, or a Caravan at a foreign
+        /// market. Both are offered through <see cref="AttackAtTile"/>, which is
+        /// where the missions live.
+        /// </summary>
+        private static bool HasNonCombatBusinessAt(Unit unit, Tile tileTo)
+        {
+            if (DiplomatActions.HasTarget(unit, tileTo))
+            {
+                return true;
+            }
+
+            return CaravanActions.IsCaravan(unit) && tileTo.CityHere is { } market &&
+                   market.Owner != unit.Owner;
         }
 
         internal static bool AttackAtTile(Unit unit, IGame game, Tile tileTo)
