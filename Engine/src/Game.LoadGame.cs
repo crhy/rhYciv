@@ -85,7 +85,10 @@ namespace RhyCiv.Engine
                 }
             }
 
-            _scenarioData = objects.Scenario;
+            // Never null, whatever a loader hands over: a game with no scenario
+            // is a game with every scenario restriction off, and the alternative
+            // is a crash the first time a city changes hands.
+            _scenarioData = objects.Scenario ?? new Scenario();
 
             var gameData = objects.GameData;
             TurnNumber = gameData.TurnNumber;
