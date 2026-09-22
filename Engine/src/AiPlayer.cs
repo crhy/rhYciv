@@ -39,7 +39,7 @@ namespace RhyCiv.Engine
         {
         }
 
-        public Tile ActiveTile { get; set; } = civilization.Units.FirstOrDefault()?.CurrentLocation ??
+        public Tile ActiveTile { get; set; } = civilization.Units.FirstOrDefault()?.CurrentLocationOrNull ??
                                                civilization.Cities.FirstOrDefault()?.Location ?? tile0;
 
         public Unit? ActiveUnit { get; private set; }
@@ -254,7 +254,7 @@ namespace RhyCiv.Engine
         private static IProductionOrder? Cheapest(IEnumerable<IProductionOrder> orders) =>
             orders.MinBy(o => o.Cost);
 
-        public IInterfaceCommands Ui { get; } = null!;
+        public IInterfaceCommands Ui { get; } = NullInterfaceCommands.Instance;
         public string AIScript { get; set; } = civilization.PlayerType == PlayerType.Barbarians ? "barbarian.ai" : "default.ai";
 
         public void NotifyImprovementEnabled(TerrainImprovement improvement, int level)

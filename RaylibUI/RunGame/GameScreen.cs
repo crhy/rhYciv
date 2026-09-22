@@ -455,7 +455,7 @@ public class GameScreen : BaseScreen
     }
 
     private static List<string> DefaultCityStrings(City city) =>
-        [city.Name, city.ItemInProduction.GetDescription(), city.Owner.Adjective, Labels.For(LabelIndex.builds)];
+        [city.Name, city.ItemInProduction?.GetDescription() ?? string.Empty, city.Owner.Adjective, Labels.For(LabelIndex.builds)];
 
     /// <summary>
     /// One city message's body, as a single run of prose: the dialog's own lines

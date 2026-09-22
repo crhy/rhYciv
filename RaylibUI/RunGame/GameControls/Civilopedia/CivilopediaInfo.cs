@@ -584,7 +584,7 @@ public sealed class CivilopediaInfo : BaseControl
                         offsetY += effectsLabel.Height + 1;
                         var spec = t.Specials[i];
                         var name = spec.Name;
-                        if (t.Specials[0].Name == t.Specials[1].Name)
+                        if (t.Specials.Length > 1 && t.Specials[0].Name == t.Specials[1].Name)
                             name += $" ({Labels.For(LabelIndex.Shield)}s)";
                         var specLabel = new PediaLinkLabel(window, name, (int)offsetX + 20, (int)offsetY);
                         specLabel.Click += (_, _) =>
@@ -595,7 +595,7 @@ public sealed class CivilopediaInfo : BaseControl
                         };
                         Controls.Add(specLabel);
 
-                        if (t.Specials[0].Name == t.Specials[1].Name)
+                        if (t.Specials.Length > 1 && t.Specials[0].Name == t.Specials[1].Name)
                             break;
                     }
                 }
@@ -603,7 +603,7 @@ public sealed class CivilopediaInfo : BaseControl
                 {
                     var icons = new IImageSource[2];
                     var s = (Special)terrain;
-                    var baseTerrain = rules.Terrains[0].FirstOrDefault(tr => tr.Specials[0] == s);
+                    var baseTerrain = rules.Terrains[0].FirstOrDefault(tr => tr.Specials.Length > 0 && tr.Specials[0] == s);
                     if (baseTerrain != null)
                     {
                         icons[0] = active.PicSources["base1"][(int)baseTerrain.Type];
@@ -611,9 +611,12 @@ public sealed class CivilopediaInfo : BaseControl
                     }
                     else
                     {
-                        baseTerrain = rules.Terrains[0].FirstOrDefault(t => t.Specials[1] == s);
-                        icons[0] = active.PicSources["base1"][(int)baseTerrain.Type];
-                        icons[1] = active.PicSources["special2"][(int)baseTerrain.Type];
+                        baseTerrain = rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 1 && t.Specials[1] == s);
+                        if (baseTerrain != null)
+                        {
+                            icons[0] = active.PicSources["base1"][(int)baseTerrain.Type];
+                            icons[1] = active.PicSources["special2"][(int)baseTerrain.Type];
+                        }
                     }
 
                     // Give grassland's special a custom name and icon
@@ -624,20 +627,34 @@ public sealed class CivilopediaInfo : BaseControl
                         icons[1] = active.PicSources["shield"][0];
                     }
 
-                    icon = new ImageBox(window, new(icons, 2f), true)
+                    ImageBox? terrainIcon = null;
+                    if (icons[0] != null && icons[1] != null)
                     {
-                        Location = new(12, 7)
-                    };
-                    Controls.Add(icon);
+                        terrainIcon = new ImageBox(window, new(icons, 2f), true)
+                        {
+                            Location = new(12, 7)
+                        };
+                        Controls.Add(terrainIcon);
+                    }
 
-                    prereqLabel = new PediaLabel(window, Labels.For(LabelIndex.TerrainType) + ":  ",
-                        (int)icon.Location.X + icon.Width + 54, 0);
-                    prereqLabel.Location = new(prereqLabel.Location.X, icon.Location.Y + (icon.Height - prereqLabel.Height) / 2f);
-                    Controls.Add(prereqLabel);
+                    if (baseTerrain != null && terrainIcon != null)
+                    {
+                        prereqLabel = new PediaLabel(window, Labels.For(LabelIndex.TerrainType) + ":  ",
+                            (int)terrainIcon.Location.X + terrainIcon.Width + 54, 0);
+                        prereqLabel.Location = new(prereqLabel.Location.X, terrainIcon.Location.Y + (terrainIcon.Height - prereqLabel.Height) / 2f);
+                        Controls.Add(prereqLabel);
 
-                    var preqLabel = new PediaLinkLabel(window, baseTerrain.Name, (int)prereqLabel.Location.X + prereqLabel.Width,
-                        (int)prereqLabel.Location.Y);
-                    Controls.Add(preqLabel);
+                        var preqLabel = new PediaLinkLabel(window, baseTerrain.Name,
+                            (int)prereqLabel.Location.X + prereqLabel.Width,
+                            (int)prereqLabel.Location.Y);
+                        Controls.Add(preqLabel);
+                        preqLabel.Click += (_, _) =>
+                        {
+                            pedia.InfoType = CivilopediaInfoType.Terrains;
+                            pedia.Id = terrains.IndexOf(baseTerrain);
+                            window.UpdateControls();
+                        };
+                    }
 
                     // Food, shield, trade
                     offsetY = 105;
@@ -671,62 +688,58 @@ public sealed class CivilopediaInfo : BaseControl
                     Controls.Add(trdIcon);
 
                     // Bottom texts
-                    offsetY = 200;
-                    if (s.Food < baseTerrain.Food)
+                    if (baseTerrain != null)
                     {
-                        Controls.Add(new PediaLabel(window, $"Decrease the amount of {Labels.For(LabelIndex.Food)} produced in " +
-                            $"{baseTerrain.Name} Terrain from {baseTerrain.Food} to {s.Food}.", 11, (int)offsetY));
-                    }
-                    else if (s.Food > baseTerrain.Food)
-                    {
-                        Controls.Add(new PediaLabel(window, $"Increase the amount of {Labels.For(LabelIndex.Food)} produced in " +
-                            $"{baseTerrain.Name} Terrain from {baseTerrain.Food} to {s.Food}.", 11, (int)offsetY));
-                    }
-                    else
-                    {
-                        Controls.Add(new PediaLabel(window, $"There is no increase in {Labels.For(LabelIndex.Food)} production.", 11, (int)offsetY));
-                    }
+                        offsetY = 200;
+                        if (s.Food < baseTerrain.Food)
+                        {
+                            Controls.Add(new PediaLabel(window, $"Decrease the amount of {Labels.For(LabelIndex.Food)} produced in " +
+                                $"{baseTerrain.Name} Terrain from {baseTerrain.Food} to {s.Food}.", 11, (int)offsetY));
+                        }
+                        else if (s.Food > baseTerrain.Food)
+                        {
+                            Controls.Add(new PediaLabel(window, $"Increase the amount of {Labels.For(LabelIndex.Food)} produced in " +
+                                $"{baseTerrain.Name} Terrain from {baseTerrain.Food} to {s.Food}.", 11, (int)offsetY));
+                        }
+                        else
+                        {
+                            Controls.Add(new PediaLabel(window, $"There is no increase in {Labels.For(LabelIndex.Food)} production.", 11, (int)offsetY));
+                        }
 
-                    offsetY += tradeLabel.Height + 1;
-                    if (s.Shields < baseTerrain.Shields)
-                    {
-                        Controls.Add(new PediaLabel(window, $"Decrease {Labels.For(LabelIndex.Shield)}s from " +
-                            $"{baseTerrain.Shields} to {s.Shields}, and", 11, (int)offsetY));
-                    }
-                    else if (s.Shields > baseTerrain.Shields)
-                    {
-                        Controls.Add(new PediaLabel(window, $"Increase {Labels.For(LabelIndex.Shield)}s from " +
-                            $"{baseTerrain.Shields} to {s.Shields}, and", 11, (int)offsetY));
-                    }
-                    else
-                    {
-                        Controls.Add(new PediaLabel(window, $"There is no increase in {Labels.For(LabelIndex.Shield)}s, and",
-                            11, (int)offsetY));
-                    }
+                        offsetY += tradeLabel.Height + 1;
+                        if (s.Shields < baseTerrain.Shields)
+                        {
+                            Controls.Add(new PediaLabel(window, $"Decrease {Labels.For(LabelIndex.Shield)}s from " +
+                                $"{baseTerrain.Shields} to {s.Shields}, and", 11, (int)offsetY));
+                        }
+                        else if (s.Shields > baseTerrain.Shields)
+                        {
+                            Controls.Add(new PediaLabel(window, $"Increase {Labels.For(LabelIndex.Shield)}s from " +
+                                $"{baseTerrain.Shields} to {s.Shields}, and", 11, (int)offsetY));
+                        }
+                        else
+                        {
+                            Controls.Add(new PediaLabel(window, $"There is no increase in {Labels.For(LabelIndex.Shield)}s, and",
+                                11, (int)offsetY));
+                        }
 
-                    offsetY += tradeLabel.Height + 1;
-                    if (s.Trade < baseTerrain.Trade)
-                    {
-                        Controls.Add(new PediaLabel(window, $"decreases {Labels.For(LabelIndex.Trade)} from " +
-                            $"{baseTerrain.Trade} to {s.Trade}.", 11, (int)offsetY));
+                        offsetY += tradeLabel.Height + 1;
+                        if (s.Trade < baseTerrain.Trade)
+                        {
+                            Controls.Add(new PediaLabel(window, $"decreases {Labels.For(LabelIndex.Trade)} from " +
+                                $"{baseTerrain.Trade} to {s.Trade}.", 11, (int)offsetY));
+                        }
+                        else if (s.Trade > baseTerrain.Trade)
+                        {
+                            Controls.Add(new PediaLabel(window, $"increases {Labels.For(LabelIndex.Trade)} from " +
+                                $"{baseTerrain.Trade} to {s.Trade}.", 11, (int)offsetY));
+                        }
+                        else
+                        {
+                            Controls.Add(new PediaLabel(window, $"no increase in {Labels.For(LabelIndex.Trade)}.",
+                                11, (int)offsetY));
+                        }
                     }
-                    else if (s.Trade > baseTerrain.Trade)
-                    {
-                        Controls.Add(new PediaLabel(window, $"increases {Labels.For(LabelIndex.Trade)} from " +
-                            $"{baseTerrain.Trade} to {s.Trade}.", 11, (int)offsetY));
-                    }
-                    else
-                    {
-                        Controls.Add(new PediaLabel(window, $"no increase in {Labels.For(LabelIndex.Trade)}.",
-                            11, (int)offsetY));
-                    }
-
-                    preqLabel.Click += (_, _) =>
-                    {
-                        pedia.InfoType = CivilopediaInfoType.Terrains;
-                        pedia.Id = terrains.IndexOf(baseTerrain);
-                        window.UpdateControls();
-                    };
                 }
 
                 break;

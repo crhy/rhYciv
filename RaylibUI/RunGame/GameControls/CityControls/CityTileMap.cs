@@ -169,6 +169,18 @@ public class CityTileMap : BaseControl
 
     public override void Draw(bool pulse)
     {
+        // ReleaseTextures can leave this control without a composed picture (the
+        // window is closed, or a redraw has not run yet). Drawing then used to
+        // throw on Texture2D?.Value; skip until the next Redraw builds one.
+        if (!_texture.HasValue || _viewElements == null)
+        {
+            Redraw();
+            if (!_texture.HasValue || _viewElements == null)
+            {
+                return;
+            }
+        }
+
         var adjustedLocation = new Vector2(Parent.Bounds.X, Parent.Bounds.Y) + Location + _offset;
         Graphics.DrawTextureEx(_texture.Value, adjustedLocation, 0, _scaleFactor, Color.White);
 

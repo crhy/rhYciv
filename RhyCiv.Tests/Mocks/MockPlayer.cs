@@ -60,7 +60,7 @@ public class MockPlayer : IPlayer
     {
     }
 
-    public IInterfaceCommands Ui { get; set; }
+    public IInterfaceCommands Ui { get; set; } = NullInterfaceCommands.Instance;
 
     public void NotifyImprovementEnabled(TerrainImprovement improvement, int level)
     {

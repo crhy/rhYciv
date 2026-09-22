@@ -227,9 +227,14 @@ public class CivDialog : DynamicSizingDialog
         {
             _textBoxes = new List<LabeledTextBox>();
             List<string> textBoxLabels;
-            if (dialog.TextBoxes.Any(t => string.IsNullOrWhiteSpace(t.Description)) && dialog.Options != null && dialog.Options.Texts.Count == dialog.TextBoxes.Count)
+            // A local flag rather than nulling dialog.Options: the definition is
+            // shared, so writing back broke every later showing of the same dialog.
+            var optionsAsLabels = dialog.Options != null
+                && dialog.Options.Texts != null
+                && dialog.Options.Texts.Count == dialog.TextBoxes.Count;
+            if (dialog.TextBoxes.Any(t => string.IsNullOrWhiteSpace(t.Description)) && optionsAsLabels)
             {
-                textBoxLabels = new List<string>(dialog.Options.Texts);
+                textBoxLabels = new List<string>(dialog.Options!.Texts!);
                 dialog.Options = null;
             }
             else
@@ -272,7 +277,7 @@ public class CivDialog : DynamicSizingDialog
         Controls.Add(_innerPanel);
 
         var menuBar = new ControlGroup(this);
-        foreach (var button in dialog.Button)
+        foreach (var button in dialog.Button ?? []) // Button is optional; a null list used to NRE
         {
             var actionButton = new Button(this, button);
 

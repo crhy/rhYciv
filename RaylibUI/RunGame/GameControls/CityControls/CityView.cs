@@ -29,87 +29,94 @@ public class CityView : FullscreenView
         var tiles = _active.GetCityViewTiles();
         var altTiles = _active.GetCityViewAltTiles();
 
-        for (var id = 0; id < 56; id++)
+        // The standalone ruleset ships no scenery layer (the legacy table reads
+        // cv.dll, which this build never loads), so the panorama is just its
+        // background. Guard every index so an empty table shows that background
+        // instead of taking the game down on the View button (#145).
+        if (tiles.Count > 0)
         {
-            if (_city.IsNextToOcean() && id > 49) continue;
-            if (_city.IsNextToRiver() && id > 49 && id < 54) continue;
+            for (var id = 0; id < Math.Min(56, tiles.Count); id++)
+            {
+                if (_city.IsNextToOcean() && id > 49) continue;
+                if (_city.IsNextToRiver() && id > 49 && id < 54) continue;
 
-            if (_city.ImprovementExists(tiles[id].RulesId))
-            {
-                _drawTiles.Add(new(tiles[id].Source, tiles[id].Position));
+                if (_city.ImprovementExists(tiles[id].RulesId))
+                {
+                    _drawTiles.Add(new(tiles[id].Source, tiles[id].Position));
+                }
+                else if (tiles[id].AlternativeTileId >= 0 && tiles[id].AlternativeTileId < altTiles.Count)
+                {
+                    _drawTiles.Add(new(altTiles[tiles[id].AlternativeTileId], tiles[id].Position));
+                }
             }
-            else
-            {
-                _drawTiles.Add(new(altTiles[tiles[id].AlternativeTileId], tiles[id].Position));
-            }
-        }
 
-        // City walls & Offshore platrofrm
-        foreach (var id in new int[] { 8, 31 })
-        {
-            if (_city.ImprovementExists(id))
+            // City walls & Offshore platrofrm
+            foreach (var id in new int[] { 8, 31 })
             {
-                var tile = tiles.FirstOrDefault(t => t.RulesId == id);
-                if (tile is null) continue;
-                _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                if (_city.ImprovementExists(id))
+                {
+                    var tile = tiles.FirstOrDefault(t => t.RulesId == id);
+                    if (tile is null || tile.Id < 0 || tile.Id >= tiles.Count) continue;
+                    _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                }
             }
-        }
 
-        // Harbor/port fac.
-        if (_city.ImprovementExists(34))    // port fac.
-        {
-            var tile = tiles.FirstOrDefault(t => t.RulesId == 34);
-            if (tile is not null)
+            // Harbor/port fac.
+            if (_city.ImprovementExists(34))    // port fac.
             {
-                _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                var tile = tiles.FirstOrDefault(t => t.RulesId == 34);
+                if (tile is not null && tile.Id >= 0 && tile.Id < tiles.Count)
+                {
+                    _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                }
             }
-        }
-        else if (_city.ImprovementExists(30))    // harbor
-        {
-            var tile = tiles.FirstOrDefault(t => t.RulesId == 30);
-            if (tile is not null)
+            else if (_city.ImprovementExists(30))    // harbor
             {
-                _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                var tile = tiles.FirstOrDefault(t => t.RulesId == 30);
+                if (tile is not null && tile.Id >= 0 && tile.Id < tiles.Count)
+                {
+                    _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                }
             }
-        }
 
-        // Colossus
-        if (_city.ImprovementExists(41))
-        {
-            if (_city.IsNextToRiver())
+            // Colossus
+            if (_city.ImprovementExists(41) && tiles.Count > 61)
             {
-                _drawTiles.Add(new(tiles[61].Source, tiles[61].Position));
+                if (_city.IsNextToRiver())
+                {
+                    _drawTiles.Add(new(tiles[61].Source, tiles[61].Position));
+                }
+                else
+                {
+                    _drawTiles.Add(new(tiles[60].Source, tiles[60].Position));
+                }
             }
-            else
-            {
-                _drawTiles.Add(new(tiles[60].Source, tiles[60].Position));
-            }
-        }
 
-        // Lighthouse
-        if (_city.ImprovementExists(42))
-        {
-            if (_city.IsNextToRiver())
+            // Lighthouse
+            if (_city.ImprovementExists(42) && tiles.Count > 63)
             {
-                _drawTiles.Add(new(tiles[63].Source, tiles[63].Position));
+                if (_city.IsNextToRiver())
+                {
+                    _drawTiles.Add(new(tiles[63].Source, tiles[63].Position));
+                }
+                else
+                {
+                    _drawTiles.Add(new(tiles[62].Source, tiles[62].Position));
+                }
             }
-            else
-            {
-                _drawTiles.Add(new(tiles[62].Source, tiles[62].Position));
-            }
-        }
 
-        // Statue liberty
-        // TODO: find out where to draw statue of liberty in city view
+            // Statue liberty
+            // TODO: find out where to draw statue of liberty in city view
 
-        // Great wall
-        var _id = 45;
-        if (_city.ImprovementExists(_id))
-        {
-            var tile = tiles.FirstOrDefault(t => t.RulesId == _id);
-            if (tile is not null)
+            // Great wall
+            var _id = 45;
+            if (_city.ImprovementExists(_id))
             {
-                _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                var tile = tiles.FirstOrDefault(t => t.RulesId == _id);
+                if (tile is not null && tile.Id >= 0 && tile.Id < tiles.Count)
+                {
+                    _drawTiles.Add(new(tiles[tile.Id].Source, tiles[tile.Id].Position));
+                }
             }
         }
 

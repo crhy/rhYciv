@@ -564,7 +564,7 @@ public class LocalPlayer : IPlayer
         _gameScreen.ShowCityDialog("BUILT", city);
     }
 
-    public IInterfaceCommands Ui { get; }
+    public IInterfaceCommands Ui { get; } = NullInterfaceCommands.Instance;
     public List<Unit> WaitingList { get; } = new();
 
     /// <summary>
@@ -1655,6 +1655,10 @@ public class LocalPlayer : IPlayer
     {
         SessionLog.Record($"captured {city.Name} (size {city.Size})");
         _capturedCityName = city.Name;
+        // The city's flag on the map is still the old owner's colour until the
+        // map is redrawn; without this the popup can cover a city that looks
+        // unchanged.
+        _gameScreen.ForceRedraw();
         _gameScreen.ShowPopup("CITYCAPTURE",
             handleButtonClick: (_, _, _, _) => _gameScreen.ShowCityWindow(city),
             replaceStrings: [city.Name]);

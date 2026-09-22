@@ -43,9 +43,9 @@ namespace RhyCiv.Engine.Scripting
             set => _log.AppendLine("Warning: Attempted to set height to " +value +" on dialog -> not supported");
         }
 
-        public Dialog(IInterfaceCommands uInterfaceCommands, StringBuilder log)
+        public Dialog(IInterfaceCommands? uInterfaceCommands, StringBuilder log)
         {
-            _uInterfaceCommands = uInterfaceCommands;
+            _uInterfaceCommands = uInterfaceCommands ?? Model.Core.Player.NullInterfaceCommands.Instance;
             _log = log;
             _popup = new PopupBox();
         }

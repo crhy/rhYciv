@@ -565,7 +565,7 @@ namespace RaylibUI
                 if (int.TryParse(Environment.GetEnvironmentVariable("RHYCIV_TEST_CITY_SHIELDS"), out var sh))
                 {
                     last.ShieldsProgress = sh;
-                    Console.WriteLine($"test-city: shields set to {last.ShieldsProgress}/{last.ItemInProduction.Cost}");
+                    Console.WriteLine($"test-city: shields set to {last.ShieldsProgress}/{last.ItemInProduction?.Cost ?? 0}");
                 }
 
                 // RHYCIV_TEST_FORTIFY=1 fortifies the garrison, which is the state
@@ -662,7 +662,7 @@ namespace RaylibUI
                 foreach (var c in civ.Cities)
                 {
                     Console.WriteLine($"test-city:   {c.Name} size {c.Size} shields {c.ShieldsProgress}" +
-                                      $"/{c.ItemInProduction.Cost} producing {c.ItemInProduction.GetDescription()}" +
+                                      $"/{c.ItemInProduction?.Cost ?? 0} producing {c.ItemInProduction?.GetDescription() ?? string.Empty}" +
                                       $" (+{c.Production}/turn) disorder={c.CivilDisorder}");
                 }
 

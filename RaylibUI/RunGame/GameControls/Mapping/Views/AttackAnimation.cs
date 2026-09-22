@@ -13,8 +13,8 @@ namespace RaylibUI.RunGame.GameControls.Mapping.Views;
 internal class AttackAnimation : BaseGameView
 {
     public AttackAnimation(GameScreen gameScreen, CombatEventArgs args, IGameView? previousView, int viewHeight,
-        int viewWidth, bool forceRedraw) : base(gameScreen, args.Location.First(), previousView, viewHeight, viewWidth,
-        false, 70, args.Location, forceRedraw)
+        int viewWidth, bool forceRedraw) : base(gameScreen, args.Location.FirstOrDefault(l => l != null) ?? gameScreen.Game.ActivePlayer.ActiveTile, previousView, viewHeight, viewWidth,
+        false, 70, args.Location.Where(l => l != null).ToList(), forceRedraw)
     {
         var active = gameScreen.Main.ActiveInterface;
         var game = gameScreen.Game;
@@ -22,29 +22,32 @@ internal class AttackAnimation : BaseGameView
         var unitAnimations = new List<IViewElement>();
         var attackerPos  = ActivePos with{ Y = ActivePos.Y + Dimensions.TileHeight - active.UnitImages.UnitRectangle.Height.ZoomScale(gameScreen.Zoom) };
         ImageUtils.GetUnitTextures(args.Attacker, active, game, unitAnimations, attackerPos, useMapArt: true);
-        var defPos = GetPosForTile(args.Defender.CurrentLocation);
+        var defPos = args.Defender.CurrentLocation != null ? GetPosForTile(args.Defender.CurrentLocation) : ActivePos;
         var defenderPos = defPos with { Y = defPos.Y + Dimensions.TileHeight - active.UnitImages.UnitRectangle.Height.ZoomScale(gameScreen.Zoom) };
         ImageUtils.GetUnitTextures(args.Defender, active, game, unitAnimations,
             defenderPos, useMapArt: true);
         var explosion = 0;
         //SetAnimation(unitAnimations);
         var battleAnimation = active.UnitImages.BattleAnim.Select(a => TextureCache.GetImage(a)).ToArray();
-        var attackPos = ActivePos  + new Vector2(Dimensions.HalfWidth - battleAnimation[0].Width/2f, Dimensions.HalfHeight - battleAnimation[0].Height /2f);
-        
-        defPos += new Vector2(Dimensions.HalfWidth - battleAnimation[0].Width / 2f, Dimensions.HalfHeight - battleAnimation[0].Height /2f);
-        do
+        if (battleAnimation.Length > 0)
+        {
+            var attackPos = ActivePos  + new Vector2(Dimensions.HalfWidth - battleAnimation[0].Width/2f, Dimensions.HalfHeight - battleAnimation[0].Height /2f);
+
+            defPos += new Vector2(Dimensions.HalfWidth - battleAnimation[0].Width / 2f, Dimensions.HalfHeight - battleAnimation[0].Height /2f);
+        }
+        while (explosion < args.CombatRoundsAttackerWins.Count)
         {
             var attackerWins = args.CombatRoundsAttackerWins[explosion];
             unitAnimations = AddJustAnimations(unitAnimations, active.UnitShield((int)args.Attacker.Type), args.Attacker.Hitpoints[explosion], args.Defender.Hitpoints[explosion]);
-            var expPos = attackerWins ? defPos : attackPos;
             foreach (var battleTexture in battleAnimation)
             {
-                SetAnimation(unitAnimations.Concat([new TextureElement(battleTexture, expPos, Location)])
+                var target = attackerWins ? defPos : ActivePos;
+                SetAnimation(unitAnimations.Concat([new TextureElement(battleTexture, target, Location)])
                     .ToList());
             }
 
             explosion += 5;
-        } while (explosion < args.CombatRoundsAttackerWins.Count);
+        }
 
         ShowTheFallen(gameScreen, args, active, game);
     }
@@ -89,16 +92,19 @@ internal class AttackAnimation : BaseGameView
         // Only the winner is still on the map, so the aftermath is drawn from
         // scratch rather than from the frames the exchange was animated with.
         var aftermath = new List<IViewElement>();
-        var survivorPos = GetPosForTile(survivor.CurrentLocation);
-        ImageUtils.GetUnitTextures(survivor, active, game, aftermath,
-            survivorPos with
-            {
-                Y = survivorPos.Y + Dimensions.TileHeight -
-                    active.UnitImages.UnitRectangle.Height.ZoomScale(gameScreen.Zoom)
-            }, useMapArt: true);
+        if (survivor.CurrentLocation != null)
+        {
+            var survivorPos = GetPosForTile(survivor.CurrentLocation);
+            ImageUtils.GetUnitTextures(survivor, active, game, aftermath,
+                survivorPos with
+                {
+                    Y = survivorPos.Y + Dimensions.TileHeight -
+                        active.UnitImages.UnitRectangle.Height.ZoomScale(gameScreen.Zoom)
+                }, useMapArt: true);
+        }
 
         var marker = FossArt.GetTexture(Path.Combine("Other", "deadtroop.png"));
-        if (marker.HasValue)
+        if (marker.HasValue && fallen.CurrentLocation != null)
         {
             var texture = marker.Value;
             // Fit the marker to the same box a unit occupies, so it reads as

@@ -82,7 +82,11 @@ public class MovingPieces : IGameMode
         }
 
         _gameScreen.StatusPanel.Update();
-        return new UnitReadyView(gameScreen, currentView, viewHeight, viewWidth, gameScreen.Player.ActiveUnit!, forceRedraw, offsets);
+        if (gameScreen.Player.ActiveUnit is not { } activeUnit)
+        {
+            return new WaitingView(gameScreen, currentView, viewHeight, viewWidth, forceRedraw, offsets);
+        }
+        return new UnitReadyView(gameScreen, currentView, viewHeight, viewWidth, activeUnit, forceRedraw, offsets);
     }
 
     /// <summary>
@@ -120,7 +124,10 @@ public class MovingPieces : IGameMode
             // GOTO support
             if (_downTime.HasValue && DateTime.Now - _downTime.Value > _holdTime && !(Input.IsKeyDown(KeyboardKey.LeftControl) || Input.IsKeyDown(KeyboardKey.RightControl)))
             {
-                var unit = _gameScreen.Player.ActiveUnit!;
+                if (_gameScreen.Player.ActiveUnit is not { } unit)
+                {
+                    return true;
+                }
                 var path = Path.CalculatePathBetween(_gameScreen.Game, _gameScreen.Player.ActiveTile, tile, unit.Domain, unit.MaxMovePoints,
                     unit.Owner, unit.Alpine, unit.IgnoreZonesOfControl);
                 if (path != null)
@@ -238,8 +245,12 @@ public class MovingPieces : IGameMode
         var currentX = bounds.X;
         var currentY = bounds.Y + _title.Height;
 
-        // Active unit
-        var activeUnit = _gameScreen.Player.ActiveUnit!;
+        // Active unit. Moving mode is only supposed to run with one; if the
+        // setter refused the unit it was handed, fall back rather than NRE.
+        if (_gameScreen.Player.ActiveUnit is not { } activeUnit)
+        {
+            return controls;
+        }
         var unitDisplay = new UnitDisplay(_gameScreen, activeUnit, _gameScreen.Game,
             new Vector2(currentX, currentY), _gameScreen.Main.ActiveInterface, ImageUtils.ZoomScale(unitZoom));
         controls.Add(unitDisplay);

@@ -54,12 +54,15 @@ public class CivilopediaWindow : BaseDialog
             _terrains.Add(t);
             if (i == 2) // Grassland has duplicate specials, skip one
             {
-                _terrains.Add(t.Specials[0]);
+                if (t.Specials.Length > 0)
+                    _terrains.Add(t.Specials[0]);
             }
             else
             {
-                _terrains.Add(t.Specials[0]);
-                _terrains.Add(t.Specials[1]);
+                if (t.Specials.Length > 0)
+                    _terrains.Add(t.Specials[0]);
+                if (t.Specials.Length > 1)
+                    _terrains.Add(t.Specials[1]);
             }
         }
         _terrains = _terrains.OrderBy(x => x.Name).ToList();
@@ -169,7 +172,7 @@ public class CivilopediaWindow : BaseDialog
                             {
                                 icons[i] = new IImageSource[2];
                                 var s = (Special)t;
-                                var baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials[0] == s);
+                                var baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 0 && t.Specials[0] == s);
                                 if (baseTerrain != null)
                                 {
                                     icons[i][0] = _active.PicSources["base1"][(int)baseTerrain.Type];
@@ -177,7 +180,7 @@ public class CivilopediaWindow : BaseDialog
                                 }
                                 else
                                 {
-                                    baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials[1] == s)
+                                    baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 1 && t.Specials[1] == s)
                                         ?? throw new InvalidOperationException("Unable to find base terrain for special.");
                                     icons[i][0] = _active.PicSources["base1"][(int)baseTerrain.Type];
                                     icons[i][1] = _active.PicSources["special2"][(int)baseTerrain.Type];
@@ -324,7 +327,7 @@ public class CivilopediaWindow : BaseDialog
                     else if (_terrains[_pedia.Id] is Special)
                     {
                         var s = (Special)_terrains[_pedia.Id];
-                        var baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials[0] == s);
+                        var baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 0 && t.Specials[0] == s);
                         if (baseTerrain != null)
                         {
                             terrainsId = Array.FindIndex(_rules.Terrains[0], row => row == baseTerrain)
@@ -332,7 +335,7 @@ public class CivilopediaWindow : BaseDialog
                         }
                         else
                         {
-                            baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials[1] == s);
+                            baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 1 && t.Specials[1] == s);
                             terrainsId = Array.FindIndex(_rules.Terrains[0], row => row == baseTerrain)
                                 + 2 * _rules.Terrains[0].Length;
                         }

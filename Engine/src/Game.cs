@@ -163,7 +163,7 @@ namespace RhyCiv.Engine
             player.ActiveTile = currentPlayer.ActiveTile;
             player.SetUnitActive(currentPlayer.ActiveUnit, false);
             Players[id] = player;
-            Script.Connect(player.Ui);
+            Script.Connect(player.Ui ?? Model.Core.Player.NullInterfaceCommands.Instance);
         }
 
         public string GetRealmName(int governmentLevel)

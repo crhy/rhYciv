@@ -10,7 +10,7 @@ namespace RhyCiv.Engine.Scripting.UI
 {
     public class UIScripts
     {
-        private IInterfaceCommands _uInterfaceCommands;
+        private IInterfaceCommands _uInterfaceCommands = NullInterfaceCommands.Instance;
         private readonly StringBuilder _log;
 
         public UIScripts( StringBuilder log)
@@ -18,9 +18,9 @@ namespace RhyCiv.Engine.Scripting.UI
             _log = log;
         }
 
-        internal void Connect(IInterfaceCommands interfaceCommands)
+        internal void Connect(IInterfaceCommands? interfaceCommands)
         {
-            _uInterfaceCommands = interfaceCommands;
+            _uInterfaceCommands = interfaceCommands ?? NullInterfaceCommands.Instance;
         }
 
         public void text(string text)

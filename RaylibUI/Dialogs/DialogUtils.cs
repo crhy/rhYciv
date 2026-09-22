@@ -57,9 +57,29 @@ public static class DialogUtils
             var index = text.IndexOf("%STRING", StringComparison.Ordinal);
             while (index != -1)
             {
+                // A token at the very end of the text has no digit after it, and
+                // a non-digit index would index the list at -1. Either took the
+                // game down while trying to fill in a message.
+                if (index + 7 >= text.Length)
+                {
+                    break;
+                }
+
                 var numericChar = text[index + 7];
-                text = text.Replace("%STRING" + numericChar,
-                    replacementStrings[(int)char.GetNumericValue(numericChar)]);
+                var slot = (int)char.GetNumericValue(numericChar);
+                if (slot < 0 || slot >= replacementStrings.Count)
+                {
+                    // Leave the malformed token as literal text and move past it.
+                    var next = text.IndexOf("%STRING", index + 7, StringComparison.Ordinal);
+                    if (next == index)
+                    {
+                        next = text.IndexOf("%STRING", index + 1, StringComparison.Ordinal);
+                    }
+                    index = next;
+                    continue;
+                }
+
+                text = text.Replace("%STRING" + numericChar, replacementStrings[slot]);
                 index = text.IndexOf("%STRING", StringComparison.Ordinal);
             }
         }
@@ -69,9 +89,25 @@ public static class DialogUtils
             var index = text.IndexOf("%NUMBER", StringComparison.Ordinal);
             while (index != -1)
             {
+                if (index + 7 >= text.Length)
+                {
+                    break;
+                }
+
                 var numericChar = text[index + 7];
-                text = text.Replace("%NUMBER" + numericChar,
-                    replacementNumbers[(int)char.GetNumericValue(numericChar)].ToString());
+                var slot = (int)char.GetNumericValue(numericChar);
+                if (slot < 0 || slot >= replacementNumbers.Count)
+                {
+                    var next = text.IndexOf("%NUMBER", index + 7, StringComparison.Ordinal);
+                    if (next == index)
+                    {
+                        next = text.IndexOf("%NUMBER", index + 1, StringComparison.Ordinal);
+                    }
+                    index = next;
+                    continue;
+                }
+
+                text = text.Replace("%NUMBER" + numericChar, replacementNumbers[slot].ToString());
                 index = text.IndexOf("%NUMBER", StringComparison.Ordinal);
             }
         }
