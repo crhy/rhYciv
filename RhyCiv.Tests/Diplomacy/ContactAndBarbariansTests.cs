@@ -56,7 +56,22 @@ public class ContactAndBarbariansTests
         // No treaty state with the barbarians at all, in either direction, and
         // nothing for the player to be told about.
         Assert.False(DiplomacyFunctions.HaveMet(mine, horde));
-        Assert.False(DiplomacyFunctions.AtWar(mine, horde));
+    }
+
+    [Fact]
+    public void TheBarbariansAreAlwaysAtWar()
+    {
+        // Always, and without anybody declaring it: an attack checks whether the
+        // two are at war before announcing one, and the barbarians' first attack
+        // used to find them "at peace" and put "the Barbarian have declared war"
+        // in front of the player (#181).
+        var (game, _, _) = CleanRoomGameFactory.CreateGame();
+        game.ConnectPlayer(new MockPlayer(game.GetPlayerCiv));
+        var mine = game.GetPlayerCiv;
+        var horde = game.AllCivilizations.First(civ => civ.PlayerType == PlayerType.Barbarians);
+
+        Assert.True(DiplomacyFunctions.AtWar(mine, horde));
+        Assert.True(DiplomacyFunctions.AtWar(horde, mine));
     }
 
     private static Civilization Stranger(Model.Core.IGame game, Civilization mine) =>
