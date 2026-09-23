@@ -980,9 +980,9 @@ namespace RhyCiv.UI.Classic.ImageLoader
         }
 
         /// <summary>
-        /// The painted scenes live beside the repo in rhYcivtextures/rivers, not
-        /// inside FOSSart, so a texture pass there does not need a rebuild of the
-        /// art pack to show up.
+        /// The painted scenes are authored beside the repo in rhYcivtextures/rivers,
+        /// which wins when present so a texture pass there shows up without a
+        /// rebuild. Releases carry a copy in FOSSart/Terrain/Overlays/Rivers/Painted.
         /// </summary>
         internal static string? FindPaintedRiverDirectory()
         {
@@ -1004,6 +1004,9 @@ namespace RhyCiv.UI.Classic.ImageLoader
                              Path.Combine(root, "rhYcivtextures", "rivers"),
                              Path.Combine(root, "..", "rhYcivtextures", "rivers"),
                              Path.Combine(root, "rivers"),
+                             // The copy that ships with the game, so a release
+                             // build draws the painted rivers too.
+                             Path.Combine(root, "FOSSart", "Terrain", "Overlays", "Rivers", "Painted"),
                          })
                 {
                     var full = Path.GetFullPath(candidate);
