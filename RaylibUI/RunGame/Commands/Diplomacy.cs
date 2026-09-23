@@ -278,6 +278,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private const string GiftButton = "We Offer a Gift";
     private const string BreakAllianceButton = "Cancel This Alliance";
     private const string DeclareWarButton = "Declare War";
+    private const string CowerButton = "Cower in Fear";
     private const string GiftGoldButton = "Gold";
     private const string GiftTechButton = "Knowledge";
     private const string NeverMind = "Never Mind";
@@ -340,9 +341,10 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private void DeclareWar(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
+        // The buttons say what each choice is: go to war, or back down.
         Step("BREAKTREATY", (button, _, _, _) =>
         {
-            if (button != Labels.Ok)
+            if (button != DeclareWarButton)
             {
                 ReturnToAudience(other);
                 return;
@@ -355,8 +357,9 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
 
             // War ends the audience. There is nothing further to say across a
             // table that no longer exists.
-            Step("WARDECLARED", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
-        }, replaceStrings: [other.Adjective]);
+            // "the Indians", not "the Indian": both messages name the people.
+            Step("WARDECLARED", (_, _, _, _) => { }, replaceStrings: [other.TribeName]);
+        }, replaceStrings: [other.TribeName], buttons: [DeclareWarButton, CowerButton]);
     }
 
     private const string GiftAmount = "Gift";
