@@ -251,6 +251,7 @@ namespace RhyCiv.UI.Classic.ImageLoader
             if (fossTerrainApplied)
             {
                 terrain.CoastMarch = LoadCoastMarch(terrain);
+                LoadShore(terrain);
 
                 // The procedural shorelines are the fallback for when the
                 // marching-squares tileset is not on disk.
@@ -436,22 +437,6 @@ namespace RhyCiv.UI.Classic.ImageLoader
         /// </summary>
         private static readonly string[] FossRiverDirections = ["ne", "se", "sw", "nw"];
 
-        /// <summary>
-        /// Installs the river tiles and river mouths.
-        /// <para>
-        /// A river is one picture per tile, chosen by which of the four
-        /// edge-sharing neighbours also carry a river -- sixteen distinct
-        /// pictures. The bundled art was eight free-hand meanders, and the
-        /// general overlay path assigned them as <c>index % 8</c>, so the picture
-        /// drawn bore no relation to where the river actually ran and no two
-        /// adjacent tiles lined up. The art is now composed per mask from
-        /// half-spokes that meet on the tile boundary, so a river is continuous.
-        /// </para>
-        /// <para>
-        /// River mouths were never replaced at all and stayed on the legacy sheet,
-        /// which is why a river reaching the coast simply stopped.
-        /// </para>
-        /// </summary>
         /// <summary>How many gauges the banded river art is painted at.</summary>
         private const int RiverBandCount = 4;
 
@@ -487,27 +472,13 @@ namespace RhyCiv.UI.Classic.ImageLoader
         }
 
         /// <summary>
-        /// Installs the river tiles and river mouths.
-        /// <para>
-        /// The painted set in rhYcivtextures is preferred when it is on disk:
-        /// each free scene is chroma-keyed, classified by which diamond edges its
-        /// water crosses, and installed under that mask (flipped or turned where
-        /// a mask has no painting of its own). The FOSSart half-spoke masks are
-        /// the fallback, and also fill any mask the painted set cannot reach.
-        /// </para>
+        /// Installs the river tiles, their four gauges and the river mouths, all
+        /// drawn from the painted river by scripts/prepare_river_overlays.py.
         /// </summary>
         internal static void ApplyFossRiverArt(TerrainSet terrain)
         {
-            var painted = TryLoadPaintedRiverArt(terrain);
-
-            for (var mask = 0; mask < terrain.River.Length && mask < RiverMask.Count; mask++)
+            for (var mask = 0; mask < terrain.River.Length && mask < 16; mask++)
             {
-                if (painted != null && painted.Rivers.TryGetValue(mask, out var paintedTile))
-                {
-                    terrain.River[mask] = paintedTile;
-                    continue;
-                }
-
                 var path = FindFossOverlayPath("Rivers", $"river_mask_{mask:00}.png");
                 if (path == null)
                 {
@@ -522,691 +493,26 @@ namespace RhyCiv.UI.Classic.ImageLoader
                 }
             }
 
-            // Gauges only load from the spoke art: the painted scenes are one
-            // width per mask, and mixing a painted base with spoke gauges would
-            // flip the picture the moment a river reached the coast.
-            if (painted == null)
+            LoadRiverBands(terrain);
+
+            for (var index = 0;
+                 index < terrain.RiverMouth.Length && index < FossRiverDirections.Length;
+                 index++)
             {
-                LoadRiverBands(terrain);
-            }
-
-            var mouthsPainted = false;
-            if (painted?.Mouths != null)
-            {
-                for (var index = 0;
-                     index < terrain.RiverMouth.Length && index < FossRiverDirections.Length;
-                     index++)
-                {
-                    if (painted.Mouths.TryGetValue(index, out var mouth))
-                    {
-                        terrain.RiverMouth[index] = mouth;
-                        mouthsPainted = true;
-                    }
-                }
-            }
-
-            if (!mouthsPainted)
-            {
-                for (var index = 0;
-                     index < terrain.RiverMouth.Length && index < FossRiverDirections.Length;
-                     index++)
-                {
-                    var path = FindFossOverlayPath("Rivers",
-                        $"river_mouth_{FossRiverDirections[index]}.png");
-                    if (path == null)
-                    {
-                        continue;
-                    }
-
-                    var composed = ComposeConnectionTile(terrain, path);
-                    if (composed != null)
-                    {
-                        terrain.RiverMouth[index] = new MemoryStorage(composed.Value,
-                            $"FossRiverMouth-{index}-{terrain.RenderScale}");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// The painted river set, or null when rhYcivtextures is not on disk or
-        /// held no usable scene. Keyed by connection mask for the sixteen tiles
-        /// and by neighbour index for the four mouths.
-        /// </summary>
-        internal static PaintedRiverSet? TryLoadPaintedRiverArt(TerrainSet terrain)
-        {
-            var directory = FindPaintedRiverDirectory();
-            if (directory == null)
-            {
-                return null;
-            }
-
-            // Collect (mask, score, path) for every scene. Score is total edge
-            // coverage: a painting that clearly crosses its edges wins over one
-            // that barely grazes them, so the common shapes get the best art.
-            var candidates = new List<(int Mask, float Score, string Path)>();
-            foreach (var path in Directory.EnumerateFiles(directory, "*.png"))
-            {
-                var name = Path.GetFileName(path);
-                if (name.StartsWith("river_mask_", StringComparison.OrdinalIgnoreCase) ||
-                    name.StartsWith("river_mouth_", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Spoke-mask exports sitting beside the paintings: leave
-                    // them to the FOSSart path, they are not free scenes.
-                    continue;
-                }
-
-                var loaded = Images.LoadImageFromFile(path).Image;
-                if (loaded.Width <= 8 || loaded.Height <= 8)
+                var path = FindFossOverlayPath("Rivers",
+                    $"river_mouth_{FossRiverDirections[index]}.png");
+                if (path == null)
                 {
                     continue;
                 }
 
-                KeyApproximateMagenta(ref loaded);
-                var composed = ComposePaintedTile(terrain, loaded);
-                loaded.Unload();
-                if (composed == null)
+                var composed = ComposeConnectionTile(terrain, path);
+                if (composed != null)
                 {
-                    continue;
-                }
-
-                var (mask, score) = ClassifyRiverMask(composed.Value);
-                // Isolated blobs (mask 0) are rarely what a scene is for; keep
-                // them only when nothing else claims the shape.
-                candidates.Add((mask, mask == 0 ? score * 0.25f : score, path));
-                composed.Value.Unload();
-            }
-
-            if (candidates.Count == 0)
-            {
-                return null;
-            }
-
-            // Best painting per seed mask.
-            var seeds = new Dictionary<int, (float Score, string Path)>();
-            foreach (var candidate in candidates)
-            {
-                if (!seeds.TryGetValue(candidate.Mask, out var best) || candidate.Score > best.Score)
-                {
-                    seeds[candidate.Mask] = (candidate.Score, candidate.Path);
+                    terrain.RiverMouth[index] = new MemoryStorage(composed.Value,
+                        $"FossRiverMouth-{index}-{terrain.RenderScale}");
                 }
             }
-
-            var reachable = RiverMask.Closure(seeds.Keys);
-            var bestPlan = new Dictionary<int, (int Seed, IReadOnlyList<RiverTransform> Steps)>();
-            var unionPlans = new Dictionary<int, IReadOnlyList<int>>();
-            for (var wanted = 0; wanted < RiverMask.Count; wanted++)
-            {
-                if (!reachable.Contains(wanted))
-                {
-                    continue;
-                }
-
-                // Prefer a seed that needs no transform, then fewer steps, then
-                // higher score — so a dedicated painting is never displaced by a
-                // flipped stand-in when the real one exists.
-                var found = false;
-                var bestSeed = 0;
-                IReadOnlyList<RiverTransform> bestSteps = [];
-                var bestCost = 0;
-                var bestScore = 0f;
-                foreach (var seed in seeds.Keys)
-                {
-                    var steps = RiverMask.Plan(seed, wanted);
-                    if (steps == null)
-                    {
-                        continue;
-                    }
-
-                    var cost = steps.Count;
-                    var score = seeds[seed].Score;
-                    if (!found || cost < bestCost || (cost == bestCost && score > bestScore))
-                    {
-                        bestSeed = seed;
-                        bestSteps = steps;
-                        bestCost = cost;
-                        bestScore = score;
-                        found = true;
-                    }
-                }
-
-                if (found)
-                {
-                    bestPlan[wanted] = (bestSeed, bestSteps);
-                }
-            }
-
-            // A mask whose bit-count no single painting carries (the four-way
-            // crossing, when the set only has through-diagonals) is built by
-            // drawing one reachable scene on top of another whose edges fill
-            // the gaps — two rivers crossing, not a spoke gauge.
-            for (var wanted = 0; wanted < RiverMask.Count; wanted++)
-            {
-                if (bestPlan.ContainsKey(wanted) || wanted == 0)
-                {
-                    continue;
-                }
-
-                var parts = CoverMaskByUnion(wanted, reachable);
-                if (parts != null)
-                {
-                    bestPlan[wanted] = (-1, []);
-                    unionPlans[wanted] = parts;
-                }
-            }
-
-            if (bestPlan.Count == 0)
-            {
-                return null;
-            }
-
-            var rivers = new Dictionary<int, MemoryStorage>();
-            foreach (var (wanted, (seed, steps)) in bestPlan)
-            {
-                if (seed < 0)
-                {
-                    var composedUnion = ComposeUnionTile(terrain, seeds, unionPlans[wanted]);
-                    if (composedUnion != null)
-                    {
-                        rivers[wanted] = new MemoryStorage(composedUnion.Value,
-                            $"PaintedRiverUnion-{wanted}-{terrain.RenderScale}");
-                    }
-
-                    continue;
-                }
-
-                var loaded = Images.LoadImageFromFile(seeds[seed].Path).Image;
-                if (loaded.Width <= 8 || loaded.Height <= 8)
-                {
-                    continue;
-                }
-
-                KeyApproximateMagenta(ref loaded);
-                foreach (var step in steps)
-                {
-                    switch (step)
-                    {
-                        case RiverTransform.FlipHorizontal:
-                            loaded.FlipHorizontal();
-                            break;
-                        case RiverTransform.FlipVertical:
-                            loaded.FlipVertical();
-                            break;
-                        case RiverTransform.QuarterTurn:
-                            loaded = RotateQuarterTurn(loaded);
-                            break;
-                    }
-                }
-
-                var tile = ComposePaintedTile(terrain, loaded);
-                loaded.Unload();
-                if (tile == null)
-                {
-                    continue;
-                }
-
-                rivers[wanted] = new MemoryStorage(tile.Value,
-                    $"PaintedRiver-{wanted}-{terrain.RenderScale}");
-            }
-
-            // Mouths: a scene whose water opens across a single diamond edge is
-            // an estuary. Score by how strongly that one edge is crossed while
-            // the opposite stays closed; the winning scene fills that direction.
-            var mouthScores = new float[FossRiverDirections.Length];
-            var mouthPaths = new string?[FossRiverDirections.Length];
-            foreach (var (mask, score, path) in candidates)
-            {
-                for (var bit = 0; bit < 4; bit++)
-                {
-                    if ((mask & (1 << bit)) == 0)
-                    {
-                        continue;
-                    }
-
-                    // Single-edge or three-edge shapes read as a mouth; a clean
-                    // through-diagonal does not.
-                    var bits = System.Numerics.BitOperations.PopCount((uint)mask);
-                    if (bits != 1 && bits != 3)
-                    {
-                        continue;
-                    }
-
-                    var weight = bits == 1 ? score * 2f : score;
-                    if (weight > mouthScores[bit])
-                    {
-                        mouthScores[bit] = weight;
-                        mouthPaths[bit] = path;
-                    }
-                }
-            }
-
-            Dictionary<int, MemoryStorage>? mouths = null;
-            for (var bit = 0; bit < 4; bit++)
-            {
-                if (mouthPaths[bit] == null)
-                {
-                    continue;
-                }
-
-                var loaded = Images.LoadImageFromFile(mouthPaths[bit]!).Image;
-                if (loaded.Width <= 8 || loaded.Height <= 8)
-                {
-                    continue;
-                }
-
-                KeyApproximateMagenta(ref loaded);
-                var tile = ComposePaintedTile(terrain, loaded);
-                loaded.Unload();
-                if (tile == null)
-                {
-                    continue;
-                }
-
-                mouths ??= new Dictionary<int, MemoryStorage>();
-                mouths[bit] = new MemoryStorage(tile.Value,
-                    $"PaintedRiverMouth-{bit}-{terrain.RenderScale}");
-            }
-
-            return new PaintedRiverSet(rivers, mouths);
-        }
-
-        /// <summary>
-        /// Smallest set of reachable masks whose bitwise OR is <paramref name="wanted"/>:
-        /// scenes that, drawn on top of each other, cross every edge the wanted
-        /// mask needs. Returns null when the reachable set cannot cover it.
-        /// </summary>
-        private static IReadOnlyList<int>? CoverMaskByUnion(int wanted, HashSet<int> reachable)
-        {
-            var options = reachable.Where(m => m != 0 && (m & wanted) == m)
-                .OrderByDescending(m => System.Numerics.BitOperations.PopCount((uint)m))
-                .ToArray();
-
-            foreach (var first in options)
-            {
-                if (first == wanted)
-                {
-                    return [first];
-                }
-
-                var rest = wanted & ~first;
-                foreach (var second in options)
-                {
-                    if (second == first)
-                    {
-                        continue;
-                    }
-
-                    var after = rest & ~second;
-                    if (after == 0)
-                    {
-                        return [first, second];
-                    }
-
-                    foreach (var third in options)
-                    {
-                        if (third == first || third == second)
-                        {
-                            continue;
-                        }
-
-                        if ((third & after) == after)
-                        {
-                            return [first, second, third];
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Loads each union part, transforms it onto its own mask, composes it
-        /// to tile size, and stacks the opaque pixels into one crossing tile.
-        /// </summary>
-        private static Image? ComposeUnionTile(
-            TerrainSet terrain,
-            Dictionary<int, (float Score, string Path)> seeds,
-            IReadOnlyList<int> parts)
-        {
-            Image? stack = null;
-            foreach (var part in parts)
-            {
-                var seed = BestSeedFor(seeds, part);
-                if (seed == null)
-                {
-                    continue;
-                }
-
-                var steps = RiverMask.Plan(seed.Value, part);
-                if (steps == null)
-                {
-                    continue;
-                }
-
-                var loaded = Images.LoadImageFromFile(seeds[seed.Value].Path).Image;
-                if (loaded.Width <= 8 || loaded.Height <= 8)
-                {
-                    continue;
-                }
-
-                KeyApproximateMagenta(ref loaded);
-                foreach (var step in steps)
-                {
-                    switch (step)
-                    {
-                        case RiverTransform.FlipHorizontal:
-                            loaded.FlipHorizontal();
-                            break;
-                        case RiverTransform.FlipVertical:
-                            loaded.FlipVertical();
-                            break;
-                        case RiverTransform.QuarterTurn:
-                            loaded = RotateQuarterTurn(loaded);
-                            break;
-                    }
-                }
-
-                var tile = ComposePaintedTile(terrain, loaded);
-                loaded.Unload();
-                if (tile == null)
-                {
-                    continue;
-                }
-
-                if (stack == null)
-                {
-                    stack = tile.Value;
-                    continue;
-                }
-
-                // Draw only where the lower layer is still transparent so the
-                // first scene's banks keep the join.
-                var width = stack.Value.Width;
-                var height = stack.Value.Height;
-                var upper = tile.Value;
-                unsafe
-                {
-                    var lowerPixels = stack.Value.LoadColors();
-                    var upperPixels = upper.LoadColors();
-                    for (var y = 0; y < height; y++)
-                    for (var x = 0; x < width; x++)
-                    {
-                        var i = y * width + x;
-                        if (lowerPixels[i].A == 0 && upperPixels[i].A != 0)
-                        {
-                            stack.Value.DrawPixel(x, y, upperPixels[i]);
-                        }
-                    }
-
-                    Image.UnloadColors(lowerPixels);
-                    Image.UnloadColors(upperPixels);
-                }
-
-                upper.Unload();
-            }
-
-            return stack;
-        }
-
-        /// <summary>The highest-scoring seed that can reach <paramref name="wanted"/>.</summary>
-        private static int? BestSeedFor(Dictionary<int, (float Score, string Path)> seeds, int wanted)
-        {
-            int? best = null;
-            var bestScore = -1f;
-            foreach (var seed in seeds.Keys)
-            {
-                if (RiverMask.Plan(seed, wanted) == null)
-                {
-                    continue;
-                }
-
-                if (best == null || seeds[seed].Score > bestScore)
-                {
-                    best = seed;
-                    bestScore = seeds[seed].Score;
-                }
-            }
-
-            return best;
-        }
-
-        internal sealed class PaintedRiverSet(
-            Dictionary<int, MemoryStorage> rivers,
-            Dictionary<int, MemoryStorage>? mouths)
-        {
-            public Dictionary<int, MemoryStorage> Rivers { get; } = rivers;
-            public Dictionary<int, MemoryStorage>? Mouths { get; } = mouths;
-        }
-
-        /// <summary>
-        /// The painted scenes are authored beside the repo in rhYcivtextures/rivers,
-        /// which wins when present so a texture pass there shows up without a
-        /// rebuild. Releases carry a copy in FOSSart/Terrain/Overlays/Rivers/Painted.
-        /// </summary>
-        internal static string? FindPaintedRiverDirectory()
-        {
-            var roots = Settings.SearchPaths
-                .Concat([
-                    Environment.CurrentDirectory,
-                    AppContext.BaseDirectory,
-                    Path.Combine(Environment.CurrentDirectory, "RaylibUI"),
-                    Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..")),
-                    Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")),
-                ])
-                .Where(root => !string.IsNullOrWhiteSpace(root))
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var root in roots)
-            {
-                foreach (var candidate in new[]
-                         {
-                             Path.Combine(root, "rhYcivtextures", "rivers"),
-                             Path.Combine(root, "..", "rhYcivtextures", "rivers"),
-                             Path.Combine(root, "rivers"),
-                             // The copy that ships with the game, so a release
-                             // build draws the painted rivers too.
-                             Path.Combine(root, "FOSSart", "Terrain", "Overlays", "Rivers", "Painted"),
-                         })
-                {
-                    var full = Path.GetFullPath(candidate);
-                    if (Directory.Exists(full) &&
-                        Directory.EnumerateFiles(full, "*.png").Any())
-                    {
-                        return full;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Clears the chroma-key background the paintings were exported with.
-        /// The magenta is hand-mixed, not pure 255,0,255, so the exact-match
-        /// key in the PNG loader leaves a solid pink field.
-        /// </summary>
-        /// <summary>
-        /// Clears the chroma-key background the paintings were exported with.
-        /// The magenta is hand-mixed, not pure 255,0,255, so the exact-match
-        /// key in the PNG loader leaves a solid pink field.
-        /// </summary>
-        /// <remarks>
-        /// Takes the image by ref: converting an RGB buffer to RGBA reallocates
-        /// the pixel data, and a struct copy would leave the caller pointing at
-        /// the freed buffer.
-        /// </remarks>
-        internal static void KeyApproximateMagenta(ref Image image)
-        {
-            // Paintings are RGB PNGs: DrawPixel cannot store alpha until the
-            // buffer carries a channel for it.
-            if (image.Format != PixelFormat.UncompressedR8G8B8A8)
-            {
-                image.FromFormat(PixelFormat.UncompressedR8G8B8A8);
-            }
-
-            unsafe
-            {
-                var pixels = image.LoadColors();
-                for (var y = 0; y < image.Height; y++)
-                for (var x = 0; x < image.Width; x++)
-                {
-                    var c = pixels[y * image.Width + x];
-                    // Magenta family: strong red, weak green, strong blue.
-                    if (c.R > 160 && c.G < 100 && c.B > 140)
-                    {
-                        image.DrawPixel(x, y, new Color(c.R, c.G, c.B, 0));
-                    }
-                }
-
-                Image.UnloadColors(pixels);
-            }
-        }
-
-        /// <summary>
-        /// Fits a keyed painting into the tile rectangle. Connection art must
-        /// fill the whole diamond: letterboxing or bottom-aligning would move the
-        /// points where two halves meet. Anything the painter left outside the
-        /// diamond is cleared — isometric tiles overlap at the corners, so a
-        /// rectangular painting would stamp scenery into its neighbours.
-        /// </summary>
-        internal static Image? ComposePaintedTile(TerrainSet terrain, Image art)
-        {
-            if (art.Width <= 1 || art.Height <= 1)
-            {
-                return null;
-            }
-
-            var copy = art.Copy();
-            copy.Resize(terrain.TileWidth * terrain.RenderScale, terrain.TileHeight * terrain.RenderScale);
-            ClipToDiamond(ref copy);
-            return copy;
-        }
-
-        /// <summary>
-        /// Sets alpha to zero on every pixel outside |dx| + |dy| <= 1 of the
-        /// tile rectangle, the same diamond the classic sheet uses.
-        /// </summary>
-        internal static void ClipToDiamond(ref Image image)
-        {
-            if (image.Format != PixelFormat.UncompressedR8G8B8A8)
-            {
-                image.FromFormat(PixelFormat.UncompressedR8G8B8A8);
-            }
-
-            unsafe
-            {
-                var pixels = image.LoadColors();
-                var width = image.Width;
-                var height = image.Height;
-                for (var y = 0; y < height; y++)
-                for (var x = 0; x < width; x++)
-                {
-                    // Inset half a pixel so the diamond edge itself stays opaque.
-                    var dx = Math.Abs((x + 0.5f) / width - 0.5f) * 2f;
-                    var dy = Math.Abs((y + 0.5f) / height - 0.5f) * 2f;
-                    if (dx + dy > 1.0f)
-                    {
-                        var i = y * width + x;
-                        var c = pixels[i];
-                        if (c.A != 0)
-                        {
-                            image.DrawPixel(x, y, new Color(c.R, c.G, c.B, 0));
-                        }
-                    }
-                }
-
-                Image.UnloadColors(pixels);
-            }
-        }
-
-        /// <summary>
-        /// Rotates square source art a quarter-turn clockwise, so a scene that
-        /// crosses the ne/s edges can serve the se/sw masks without redrawing.
-        /// </summary>
-        internal static Image RotateQuarterTurn(Image art)
-        {
-            var rotated = Image.GenColor(art.Height, art.Width, Color.Blank);
-            // Draw the source rotated: dest(x,y) = source(y, H-1-x) is CCW;
-            // CW is dest(x,y) = source(W-1-y, x).
-            for (var y = 0; y < art.Height; y++)
-            for (var x = 0; x < art.Width; x++)
-            {
-                var src = art.GetColor(art.Width - 1 - y, x);
-                if (src.A != 0)
-                {
-                    rotated.DrawPixel(x, y, src);
-                }
-            }
-
-            art.Unload();
-            return rotated;
-        }
-
-        /// <summary>
-        /// Which diamond edges the painted water crosses, and how strongly.
-        /// Edges are sampled at the midpoints of the ne/se/sw/nw diamond sides —
-        /// the points <c>MapImage</c> connects through — with a window wide
-        /// enough to catch a bank that stops a few pixels short.
-        /// </summary>
-        internal static (int Mask, float Score) ClassifyRiverMask(Image composed)
-        {
-            var width = composed.Width;
-            var height = composed.Height;
-            if (width < 8 || height < 8)
-            {
-                return (0, 0);
-            }
-
-            // Diamond vertices: N(top-centre), E(right), S(bottom), W(left).
-            // Edge midpoints sit halfway along each side.
-            Span<(float X, float Y)> midpoints = stackalloc (float, float)[]
-            {
-                (width * 0.75f, height * 0.25f), // ne
-                (width * 0.75f, height * 0.75f), // se
-                (width * 0.25f, height * 0.75f), // sw
-                (width * 0.25f, height * 0.25f), // nw
-            };
-
-            var window = Math.Max(4, Math.Min(width, height) / 16);
-            var mask = 0;
-            var score = 0f;
-            for (var bit = 0; bit < 4; bit++)
-            {
-                var (cx, cy) = midpoints[bit];
-                var hits = 0;
-                var samples = 0;
-                for (var dy = -window; dy <= window; dy++)
-                for (var dx = -window; dx <= window; dx++)
-                {
-                    var x = (int)cx + dx;
-                    var y = (int)cy + dy;
-                    if (x < 0 || y < 0 || x >= width || y >= height)
-                    {
-                        continue;
-                    }
-
-                    samples++;
-                    if (composed.GetColor(x, y).A > 40)
-                    {
-                        hits++;
-                    }
-                }
-
-                if (samples == 0)
-                {
-                    continue;
-                }
-
-                var coverage = (float)hits / samples;
-                if (coverage >= 0.08f)
-                {
-                    mask |= 1 << bit;
-                    score += coverage;
-                }
-            }
-
-            return (mask, score);
         }
 
         /// <summary>
@@ -1513,6 +819,97 @@ namespace RhyCiv.UI.Classic.ImageLoader
             }
 
             return tiles;
+        }
+
+        /// <summary>
+        /// Loads the sea and the edge-and-corner shore (see
+        /// scripts/prepare_coast_tiles.py), scaled to the working tile size. Leaves
+        /// both empty if any file is missing, and the map falls back to
+        /// <see cref="TerrainSet.CoastMarch"/>.
+        /// </summary>
+        private static void LoadShore(TerrainSet terrain)
+        {
+            var width = terrain.TileWidth * terrain.RenderScale;
+            var height = terrain.TileHeight * terrain.RenderScale;
+
+            MemoryStorage? Load(string fileName, string key)
+            {
+                var path = FindCoastPath(fileName);
+                if (path == null)
+                {
+                    return null;
+                }
+
+                var img = Images.LoadImageFromFile(path).Image;
+                if (img.Width <= 1 || img.Height <= 1)
+                {
+                    return null;
+                }
+
+                img.Resize(width, height);
+                return new MemoryStorage(img, $"{key}-{terrain.RenderScale}");
+            }
+
+            var sea = new IImageSource[16];
+            for (var i = 0; i < 4; i++)
+            {
+                for (var j = 0; j < 4; j++)
+                {
+                    var tile = Load($"sea_{i}_{j}.png", $"Sea-{i}-{j}");
+                    if (tile == null)
+                    {
+                        return;
+                    }
+
+                    sea[i * 4 + j] = tile;
+                }
+            }
+
+            var shore = new IImageSource[256];
+            var land = new IImageSource[256];
+            var loaded = new Dictionary<int, (IImageSource Shore, IImageSource Land)>();
+            for (var mask = 0; mask < 256; mask++)
+            {
+                var key = CanonicalShoreMask(mask);
+                if (!loaded.TryGetValue(key, out var pair))
+                {
+                    var overlay = Load($"shore_{key:000}.png", $"Shore-{key}");
+                    var landMask = Load($"shoreland_{key:000}.png", $"ShoreLand-{key}");
+                    if (overlay == null || landMask == null)
+                    {
+                        return;
+                    }
+
+                    pair = (overlay, landMask);
+                    loaded[key] = pair;
+                }
+
+                shore[mask] = pair.Shore;
+                land[mask] = pair.Land;
+            }
+
+            terrain.Sea = sea;
+            terrain.Shore = shore;
+            terrain.ShoreLand = land;
+        }
+
+        /// <summary>
+        /// A corner only matters when both edges beside it are sea; otherwise the
+        /// land along that edge already reaches the corner.
+        /// </summary>
+        internal static int CanonicalShoreMask(int mask)
+        {
+            // Corner N sits between edges NW and NE, E between NE and SE, and so on.
+            int[][] cornerEdges = [[3, 0], [0, 1], [1, 2], [2, 3]];
+            for (var corner = 0; corner < 4; corner++)
+            {
+                if ((mask & (1 << cornerEdges[corner][0])) != 0 || (mask & (1 << cornerEdges[corner][1])) != 0)
+                {
+                    mask &= ~(1 << (4 + corner));
+                }
+            }
+
+            return mask;
         }
 
         private static string? FindCoastPath(string fileName)

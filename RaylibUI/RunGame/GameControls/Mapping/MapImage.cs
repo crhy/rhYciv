@@ -41,11 +41,20 @@ public static class MapImage
         // state of its four vertices (N=8, E=4, S=2, W=1). Each vertex is land
         // if any of the three tiles that meet there is land. neighbours are in
         // NE, E, SE, S, SW, W, NW, N order.
-        var useMarchCoast = tile.Type == TerrainType.Ocean
+        var useShore = tile.Type == TerrainType.Ocean
+                       && terrainSet.HighResBaseTiles
+                       && terrainSet.Sea.Length == 16
+                       && terrainSet.Shore.Length == 256;
+        var useMarchCoast = !useShore
+                            && tile.Type == TerrainType.Ocean
                             && terrainSet.HighResBaseTiles
                             && terrainSet.CoastMarch.Length == 16;
         Image tilePic;
-        if (useMarchCoast)
+        if (useShore)
+        {
+            tilePic = ShoreTile(tile, map, terrainSet, directNeighbours, neighbours, civilizationId);
+        }
+        else if (useMarchCoast)
         {
             bool Land(int i) => neighbours[i] is { Type: not TerrainType.Ocean } n
                                 && (n.IsVisible(civilizationId) || map.MapRevealed);
@@ -69,14 +78,18 @@ public static class MapImage
                 var neighbour = directNeighbours[index];
                 if (neighbour != null)
                 {
-                    if (neighbour.IsVisible(civilizationId) || map.MapRevealed)
+                    // The shore draws this tile's own terrain into the sea tile,
+                    // so land no longer takes on a band of grass towards the sea
+                    // (a desert coast used to have one).
+                    var shoreDrawn = neighbour.Type == TerrainType.Ocean && terrainSet.Shore.Length == 256;
+                    if ((neighbour.IsVisible(civilizationId) || map.MapRevealed) && !shoreDrawn)
                     {
                         ApplyDither(tilePic, neighbour.Type, tile.Type, terrainSet.DitherMaps[index]);
                     }
                 }
             }
         }
-        else if (useMarchCoast)
+        else if (useShore || useMarchCoast)
         {
             // The coastline sprite already carries sand, surf and open water;
             // nothing else is composited on the water body.
@@ -343,6 +356,71 @@ public static class MapImage
         if (neighbourType == tileType) return;
         DrawLayer(origImg, ditherMap.Images[(int)neighbourType],
             new Rectangle(ditherMap.X, ditherMap.Y, 32, 16));
+    }
+
+    /// <summary>
+    /// A sea tile: the open sea for its place in the 4x4 block the sea repeats
+    /// over, then the land it touches -- that land's own terrain, cut to the
+    /// shape of the shore -- and the beach, surf and shallows over both.
+    /// </summary>
+    /// <remarks>
+    /// Land comes in along each edge whose neighbour is land, and as a rounded
+    /// point where land only touches a corner; see scripts/prepare_coast_tiles.py
+    /// for why neighbouring sea tiles' shores then meet exactly.
+    /// </remarks>
+    private static Image ShoreTile(Tile tile, Map map, TerrainSet terrainSet,
+        Tile?[] directNeighbours, Tile?[] neighbours, int civilizationId)
+    {
+        var i = (((tile.X + tile.Y) / 2) % 4 + 4) % 4;
+        var j = (((tile.X - tile.Y) / 2) % 4 + 4) % 4;
+        var tilePic = Images.ExtractBitmap(terrainSet.Sea[i * 4 + j]).Copy();
+
+        bool IsLand(Tile? neighbour) => neighbour is { Type: not TerrainType.Ocean }
+                                        && (neighbour.IsVisible(civilizationId) || map.MapRevealed);
+
+        var mask = 0;
+        Tile? landTile = null;
+        for (var edge = 0; edge < 4 && edge < directNeighbours.Length; edge++)
+        {
+            if (IsLand(directNeighbours[edge]))
+            {
+                mask |= 1 << edge;
+                landTile ??= directNeighbours[edge];
+            }
+        }
+
+        // Neighbours run NE, E, SE, S, SW, W, NW, N: the corners are N, E, S, W.
+        int[] cornerIndex = [7, 1, 3, 5];
+        for (var corner = 0; corner < 4; corner++)
+        {
+            if (cornerIndex[corner] < neighbours.Length && IsLand(neighbours[cornerIndex[corner]]))
+            {
+                mask |= 1 << (4 + corner);
+                landTile ??= neighbours[cornerIndex[corner]];
+            }
+        }
+
+        if (mask == 0 || landTile == null)
+        {
+            return tilePic;
+        }
+
+        var landType = landTile.Type;
+        var land = Images.ExtractBitmap(terrainSet.BaseTiles[(int)landType]).Copy();
+        for (var edge = 0; edge < 4 && edge < directNeighbours.Length; edge++)
+        {
+            var neighbour = directNeighbours[edge];
+            if (IsLand(neighbour) && neighbour!.Type != landType && edge < terrainSet.DitherMaps.Length)
+            {
+                ApplyDither(land, neighbour.Type, landType, terrainSet.DitherMaps[edge]);
+            }
+        }
+
+        land.AlphaMask(Images.ExtractBitmap(terrainSet.ShoreLand[mask]));
+        DrawLayer(tilePic, land, TileRec);
+        land.Unload();
+        DrawLayer(tilePic, Images.ExtractBitmap(terrainSet.Shore[mask]), TileRec);
+        return tilePic;
     }
 
     /// <summary>

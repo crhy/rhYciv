@@ -90,6 +90,12 @@ def attribution(relative: str) -> tuple[str, str, str, str, str]:
             # Connection spokes are cut from the straight-through road and rail
             # pieces by their own script, not the general texture cleaner.
             generator = "scripts/prepare_road_overlays.py"
+        elif "/Overlays/Rivers/" in f"/{relative}":
+            # Bent from the straight painted river in rhYcivtextures.
+            generator = "scripts/prepare_river_overlays.py"
+        elif "/Terrain/Coast/" in f"/{relative}" and (
+                "/sea_" in f"/{relative}" or "/shore" in f"/{relative}"):
+            generator = "scripts/prepare_coast_tiles.py"
         elif "/Units/" in f"/{relative}" or "/Cities/" in f"/{relative}" or "/Flags/" in f"/{relative}" or "/Overlays/" in f"/{relative}":
             generator = "scripts/prepare_custom_textures.py"
         elif "/Terrain/Specials/" in f"/{relative}":

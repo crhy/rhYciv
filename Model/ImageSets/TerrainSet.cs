@@ -75,6 +75,27 @@ namespace Model.ImageSets
         public IImageSource[] CoastMarch { get; set; } = [];
 
         /// <summary>
+        /// The open sea, seamless over a 4x4 block of tiles and cut into the
+        /// sixteen tiles of that block, indexed <c>i * 4 + j</c> where i and j are
+        /// the tile's position along the two diagonals, (X + Y) / 2 and (X - Y) / 2,
+        /// each modulo 4.
+        /// </summary>
+        public IImageSource[] Sea { get; set; } = [];
+
+        /// <summary>
+        /// The shore drawn over a sea tile, indexed by a mask of what land it
+        /// touches: bits 0-3 for land across its NE, SE, SW, NW edge, bits 4-7 for
+        /// land touching only its N, E, S, W corner. Transparent where the land is:
+        /// <see cref="ShoreLand"/> is the matching land mask, and the land's own
+        /// terrain is drawn through it first. All 256 masks are filled; masks that
+        /// draw alike share an image.
+        /// </summary>
+        public IImageSource[] Shore { get; set; } = [];
+
+        /// <summary>The land part of each <see cref="Shore"/> image, white on black.</summary>
+        public IImageSource[] ShoreLand { get; set; } = [];
+
+        /// <summary>
         /// Procedurally painted shorelines, indexed [edge][variant]. Edge is the
         /// diagonal of the tile the shore runs along (0 NE, 1 SE, 2 SW, 3 NW);
         /// each edge carries several interchangeable variants so a long coast
