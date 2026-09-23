@@ -5,7 +5,7 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
-## [Unreleased]
+## [0.2.2] — 2026-09-23
 
 ### Fixed
 
