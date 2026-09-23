@@ -189,7 +189,19 @@ namespace RhyCiv.Engine
 
                         GrantWonderCompletionAdvances(game, city, player);
 
+                        var completed = city.ItemInProduction;
                         player.CityProductionComplete(city);
+
+                        // A building cannot be built twice. Leaving it in production
+                        // meant next turn found it invalid, said so, and swapped in
+                        // something the player never chose (#185). The player
+                        // hears it was built and can change what follows; a
+                        // computer player has already chosen for itself above.
+                        if (ReferenceEquals(city.ItemInProduction, completed) &&
+                            !ProductionPossibilities.ProductionValid(city))
+                        {
+                            city.ItemInProduction = ProductionPossibilities.DefaultNext(city) ?? completed;
+                        }
 
                         // A wonder is the world's business, not just its owner's:
                         // everybody hears about it, nobody can build it again, and
