@@ -690,14 +690,18 @@ public class LocalPlayer : IPlayer
             return;
         }
 
+        // "Revolt!" or "Keep Despotism", not Ok and Cancel: the choice is between
+        // two governments, and the buttons say which (#184).
+        var current = rules[Math.Clamp(Civilization.Government, 0, rules.Length - 1)].Name;
+        var keep = $"Keep {current}";
         _gameScreen.ShowPopup("GOVERNMENTLEARNED", handleButtonClick: (button, _, _, _) =>
         {
-            if (button == Labels.Ok)
+            if (button != keep && button != Labels.Cancel)
             {
                 GovernmentFunctions.BeginRevolution(_gameScreen.Game, Civilization);
                 _gameScreen.StatusPanel.Update();
             }
-        }, replaceStrings: [rules[government].Name]);
+        }, replaceStrings: [rules[government].Name, current]);
     }
 
     public void FoodShortage(City city)
