@@ -62,11 +62,50 @@ namespace RhyCiv.Engine.Production
             return _availableProducts[city.OwnerId].Contains(city.ItemInProduction) && city.ItemInProduction.IsValidBuild(city);
         }
 
+        /// <summary>
+        /// What a city builds when it can no longer build what it was building.
+        /// </summary>
+        /// <remarks>
+        /// An item made obsolete by an advance is replaced by what that advance
+        /// brings of the same kind -- Phalanx by Pikemen. This used to match on the
+        /// expiry advance even for items that never expire, whose "expiry" is the
+        /// no-advance marker: that matched everything needing no advance, and the
+        /// cheapest of those was Barracks, so a city that finished its Temple
+        /// announced it could not build Barracks and then built them (#185).
+        /// Anything else falls back to the city's best defender.
+        /// </remarks>
         public static IProductionOrder? AutoNext(City city)
         {
-            return _availableProducts[city.OwnerId]
-                .Where(p => p.RequiredTech == city.ItemInProduction.ExpiresTech && p.Type == city.ItemInProduction.Type)
-                .MinBy(p => p.Cost);
+            var current = city.ItemInProduction;
+            if (current != null && current.ExpiresTech >= 0)
+            {
+                var successor = _availableProducts[city.OwnerId]
+                    .Where(p => p.RequiredTech == current.ExpiresTech && p.Type == current.Type && p.IsValidBuild(city))
+                    .MinBy(p => p.Cost);
+                if (successor != null)
+                {
+                    return successor;
+                }
+            }
+
+            return DefaultNext(city);
+        }
+
+        /// <summary>
+        /// The city's strongest defender it can build, cheapest first among equals;
+        /// failing that anything it can build.
+        /// </summary>
+        public static IProductionOrder? DefaultNext(City city)
+        {
+            var allowed = GetAllowedProductionOrders(city);
+            var defender = allowed.OfType<UnitProductionOrder>()
+                .Where(u => u.UnitDefinition.AIrole == AiRoleType.Defend)
+                .OrderByDescending(u => u.UnitDefinition.Defense)
+                .ThenBy(u => u.Cost)
+                .FirstOrDefault();
+            return defender
+                   ?? allowed.OfType<UnitProductionOrder>().MinBy(u => u.Cost)
+                   ?? allowed.FirstOrDefault();
         }
 
         public static Improvement? FindByEffect(int targetCiv, Effects effect)
