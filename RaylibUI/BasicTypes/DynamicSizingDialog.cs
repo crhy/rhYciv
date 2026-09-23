@@ -36,6 +36,9 @@ public class DynamicSizingDialog : BaseDialog
     }
 
 
+    /// <summary>The widest a deliberately sized side picture, such as a portrait, is drawn.</summary>
+    public const int MaxPortraitWidth = 480;
+
     public override void Resize(int width, int height)
     {
         var innerPanel = Controls.OfType<TableLayoutPanel>().FirstOrDefault();
@@ -64,7 +67,10 @@ public class DynamicSizingDialog : BaseDialog
         // map the key to a full wallpaper would otherwise reserve ~1280px for the
         // picture and crush the text; cap the column and let ImageBox scale the art
         // down into it.
-        const int maxSideImageWidth = 256;
+        // A picture the caller has sized on purpose -- a leader's portrait in an
+        // audience (#183) -- is drawn at that size, up to a bound that still
+        // leaves the text a column of its own.
+        var maxSideImageWidth = imageBox is { Scale: not 1f } ? MaxPortraitWidth : 256;
         var imageWidth = imageBox?.GetPreferredWidth() ?? 0;
         if (imageBox != null && imageWidth > maxSideImageWidth)
         {
@@ -78,6 +84,17 @@ public class DynamicSizingDialog : BaseDialog
             maxTextWidth = labels.Max(c => c.Width);
         }
         _innerPanel.Width = Math.Max(_headerLabel?.Width ?? 0 - PaddingSide, imageWidth + Math.Max(maxTextWidth, _requestedWidth));
+
+        // Beside a portrait the text is centred in whatever the right-hand side
+        // has come to, not in the column it was wrapped for (#183).
+        if (imageBox is { Scale: not 1f })
+        {
+            var rightSide = _innerPanel.Width - imageWidth;
+            foreach (var cell in _innerPanel.TableLayout.Cells.Where(c => c is { Column: 1, Control: LabelControl }))
+            {
+                cell.Control!.Width = rightSide;
+            }
+        }
 
         var options = _innerPanel.Controls.OfType<OptionsPanel>().FirstOrDefault();
         if (options is not null)
