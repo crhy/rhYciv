@@ -277,8 +277,14 @@ public class CivDialog : DynamicSizingDialog
         Controls.Add(_innerPanel);
 
         var menuBar = new ControlGroup(this);
-        foreach (var button in dialog.Button ?? []) // Button is optional; a null list used to NRE
+        _buttonTexts = [];
+        foreach (var buttonTemplate in dialog.Button ?? []) // Button is optional; a null list used to NRE
         {
+            // A button can name what it does ("Keep Despotism"), so its label is
+            // filled in like the rest of the dialog's text.
+            var button = DialogUtils.ReplacePlaceholders(buttonTemplate, dialog.ReplaceStrings, dialog.ReplaceNumbers)
+                         ?? buttonTemplate;
+            _buttonTexts.Add(button);
             var actionButton = new Button(this, button);
 
             actionButton.Click += OnActionButtonOnClick;
@@ -313,10 +319,21 @@ public class CivDialog : DynamicSizingDialog
             case KeyboardKey.Escape when ButtonExists(Labels.Cancel):
                 CloseDialog(Labels.Cancel);
                 return;
+            // A dialog whose buttons say what they do ("Revolt!", "Keep
+            // Despotism") has no Ok or Cancel: Enter takes the first, the
+            // affirmative one, and Escape the last.
+            case KeyboardKey.Enter or KeyboardKey.KpEnter when _buttonTexts.Count > 0:
+                CloseDialog(_buttonTexts[0]);
+                return;
+            case KeyboardKey.Escape when _buttonTexts.Count > 1:
+                CloseDialog(_buttonTexts[^1]);
+                return;
         }
 
         base.OnKeyPress(key);
     }
+
+    private List<string> _buttonTexts = [];
 
     private void OnActionButtonOnClick(object? sender, MouseEventArgs mouseEventArgs)
     {
