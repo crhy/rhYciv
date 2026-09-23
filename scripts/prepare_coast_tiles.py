@@ -99,8 +99,13 @@ def ground_grid() -> tuple[np.ndarray, np.ndarray]:
 
 
 def diamond(gx: np.ndarray, gy: np.ndarray) -> np.ndarray:
+    """The tile's diamond, pushed out a few pixels.
+
+    Neighbouring tiles then overlap along their shared edge instead of each
+    fading to half there, which left a dark hairline on every edge.
+    """
     edge = (np.abs(gx - 256.0) + np.abs(gy - 256.0)) / 256.0
-    return np.clip((1.0 + 1.0 / 256.0 - edge) * 128.0, 0.0, 1.0)
+    return (edge <= 1.0 + 6.0 / 256.0).astype(np.float64)
 
 
 def smoothstep(e0: float, e1: float, x: np.ndarray) -> np.ndarray:
@@ -255,8 +260,9 @@ class Sea:
         ox = (i + j) * 256.0
         oy = (i - j) * 128.0
         rgb = self.colour(ox + xs + 0.5, oy + ys + 0.5)
-        gx, gy = ground_grid()
-        return to_rgba(rgb, diamond(gx, gy))
+        # Opaque to the corners: the game cuts the diamond itself, as it does
+        # for every land tile, at the size it draws the tile.
+        return to_rgba(rgb, np.ones(rgb.shape[:2]))
 
 
 def build(preview: Path | None) -> int:
@@ -319,6 +325,8 @@ def write_preview(images, seas, target: Path) -> None:
     edge_offsets = [(1, -1), (1, 1), (-1, 1), (-1, -1)]       # NE SE SW NW
     corner_offsets = [(0, -2), (2, 0), (0, 2), (-2, 0)]        # N E S W
     canvas = Image.new("RGBA", (WIDTH * 11, HEIGHT * 6), (0, 0, 0, 255))
+    gx, gy = ground_grid()
+    shape = Image.fromarray((diamond(gx, gy) * 255).astype(np.uint8), "L")
     for r in range(len(rows)):
         for c in range(len(rows[0])):
             x, y = 2 * c + r % 2, r
@@ -338,6 +346,7 @@ def write_preview(images, seas, target: Path) -> None:
                     neighbour_land = neighbour_land or land[(x + dx, y + dy)]
             mask = canonical(mask)
             tile = seas[((x + y) // 2 % SEA_PERIOD, (x - y) // 2 % SEA_PERIOD)].copy()
+            tile.putalpha(shape)
             if mask:
                 overlay, land_mask = images[mask]
                 under = neighbour_land.copy()

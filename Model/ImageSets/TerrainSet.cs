@@ -36,6 +36,38 @@ namespace Model.ImageSets
         public IImageSource[] BaseTiles { get; set; } = [];
 
         /// <summary>
+        /// Every painting of each terrain, <c>[variant][terrain]</c>; variant 0 is
+        /// <see cref="BaseTiles"/>. The map picks one per tile from its position
+        /// so a field of one terrain is not a grid of identical tiles. Empty when
+        /// only the classic sheet is loaded.
+        /// </summary>
+        public IImageSource[][] BaseTileVariants { get; set; } = [];
+
+        /// <summary>
+        /// <see cref="DitherMaps"/> built from each of <see cref="BaseTileVariants"/>,
+        /// <c>[variant][edge]</c>.
+        /// </summary>
+        public DitherMap[][] DitherMapVariants { get; set; } = [];
+
+        /// <summary>
+        /// Which of <see cref="BaseTileVariants"/> this tile draws: a hash of its
+        /// position, so neighbours rarely match and nothing lines up in rows.
+        /// </summary>
+        public int VariantOf(Tile tile)
+        {
+            if (BaseTileVariants.Length <= 1)
+            {
+                return 0;
+            }
+
+            var hash = (uint)(tile.X * 73856093 ^ tile.Y * 19349663 ^ tile.Z * 83492791);
+            hash ^= hash >> 13;
+            hash *= 0x5bd1e995;
+            hash ^= hash >> 15;
+            return (int)(hash % (uint)BaseTileVariants.Length);
+        }
+
+        /// <summary>
         /// True once <see cref="BaseTiles"/> hold the bundled high-resolution
         /// photographic diamonds rather than the classic 8-bit sheet cells. The
         /// tile compositor softens terrain dithering and skips the legacy coast

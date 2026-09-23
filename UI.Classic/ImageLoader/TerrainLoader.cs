@@ -148,6 +148,28 @@ namespace RhyCiv.UI.Classic.ImageLoader
                 BuildDitherMaps(terrain.DitherMask[3], terrain.BaseTiles, 0, 0, terrain.Blank, fossTerrainApplied),
             };
 
+            // And for every other painting of each terrain, so that where two
+            // tiles of one terrain carry different paintings the join between
+            // them wanders just as a join between two terrains does.
+            if (terrain.BaseTileVariants.Length > 1)
+            {
+                var variantMaps = new DitherMap[terrain.BaseTileVariants.Length][];
+                variantMaps[0] = terrain.DitherMaps;
+                for (var variant = 1; variant < variantMaps.Length; variant++)
+                {
+                    var tiles = terrain.BaseTileVariants[variant];
+                    variantMaps[variant] = new[]
+                    {
+                        BuildDitherMaps(terrain.DitherMask[0], tiles, 32, 0, terrain.Blank, true),
+                        BuildDitherMaps(terrain.DitherMask[1], tiles, 32, 16, terrain.Blank, true),
+                        BuildDitherMaps(terrain.DitherMask[2], tiles, 0, 16, terrain.Blank, true),
+                        BuildDitherMaps(terrain.DitherMask[3], tiles, 0, 0, terrain.Blank, true),
+                    };
+                }
+
+                terrain.DitherMapVariants = variantMaps;
+            }
+
             terrain.River = active.PicSources["river"].Select(r => MapIndexChange((BitmapStorage)r, index, active)).ToArray();
             terrain.Forest = active.PicSources["forest"].Select(r => MapIndexChange((BitmapStorage)r, index, active)).ToArray();
             terrain.Mountains = active.PicSources["mountain"].Select(r => MapIndexChange((BitmapStorage)r, index, active)).ToArray();
@@ -301,32 +323,72 @@ namespace RhyCiv.UI.Classic.ImageLoader
                     continue;
                 }
 
-                var replacement = Images.LoadImageFromFile(artPath).Image;
-                if (replacement.Width <= 1 || replacement.Height <= 1)
+                var tile = LoadFossTerrainTile(terrain, artPath, terrainIndex, 0);
+                if (tile == null)
                 {
                     continue;
                 }
 
-                // The bundled terrain diamonds are rendered as turf slabs with a
-                // dark soil rim around the edge. Zoom a little past that rim
-                // before fitting the art to the tile, otherwise every tile shows
-                // its own border and the map reads as a grid of separate slabs.
-                const float keep = 0.82f;
-                replacement.Crop(new Rectangle(
-                    replacement.Width * (1f - keep) / 2f,
-                    replacement.Height * (1f - keep) / 2f,
-                    replacement.Width * keep,
-                    replacement.Height * keep));
-
-                replacement.Resize(terrain.TileWidth * terrain.RenderScale,
-                    terrain.TileHeight * terrain.RenderScale);
-                ApplyDiamondAlpha(replacement);
-                terrain.BaseTiles[terrainIndex] = new MemoryStorage(replacement,
-                    $"FossTerrain-{terrainIndex}-{terrain.RenderScale}-{artPath}");
+                terrain.BaseTiles[terrainIndex] = tile;
                 applied = true;
             }
 
+            // Every terrain's variants (see scripts/prepare_terrain_variants.py);
+            // a terrain with none repeats its own painting in every slot.
+            if (applied)
+            {
+                var variants = new IImageSource[TerrainVariantCount][];
+                variants[0] = terrain.BaseTiles;
+                for (var variant = 1; variant < TerrainVariantCount; variant++)
+                {
+                    variants[variant] = (IImageSource[])terrain.BaseTiles.Clone();
+                    for (var terrainIndex = 0;
+                         terrainIndex < terrain.BaseTiles.Length && terrainIndex < FossTerrainNames.Length;
+                         terrainIndex++)
+                    {
+                        var path = FindFossTerrainPath($"{FossTerrainNames[terrainIndex]}_{variant}");
+                        var tile = path == null ? null : LoadFossTerrainTile(terrain, path, terrainIndex, variant);
+                        if (tile != null)
+                        {
+                            variants[variant][terrainIndex] = tile;
+                        }
+                    }
+                }
+
+                terrain.BaseTileVariants = variants;
+            }
+
             return applied;
+        }
+
+        /// <summary>How many paintings each terrain has; see <see cref="TerrainSet.BaseTileVariants"/>.</summary>
+        private const int TerrainVariantCount = 4;
+
+        private static MemoryStorage? LoadFossTerrainTile(TerrainSet terrain, string artPath,
+            int terrainIndex, int variant)
+        {
+            var replacement = Images.LoadImageFromFile(artPath).Image;
+            if (replacement.Width <= 1 || replacement.Height <= 1)
+            {
+                return null;
+            }
+
+            // The bundled terrain diamonds are rendered as turf slabs with a
+            // dark soil rim around the edge. Zoom a little past that rim
+            // before fitting the art to the tile, otherwise every tile shows
+            // its own border and the map reads as a grid of separate slabs.
+            const float keep = 0.82f;
+            replacement.Crop(new Rectangle(
+                replacement.Width * (1f - keep) / 2f,
+                replacement.Height * (1f - keep) / 2f,
+                replacement.Width * keep,
+                replacement.Height * keep));
+
+            replacement.Resize(terrain.TileWidth * terrain.RenderScale,
+                terrain.TileHeight * terrain.RenderScale);
+            ApplyDiamondAlpha(replacement);
+            return new MemoryStorage(replacement,
+                $"FossTerrain-{terrainIndex}-{variant}-{terrain.RenderScale}-{artPath}");
         }
 
         /// <summary>
@@ -861,6 +923,10 @@ namespace RhyCiv.UI.Classic.ImageLoader
                         return;
                     }
 
+                    // The sea is painted to the corners; cut the diamond here, at
+                    // the size it is drawn, exactly as every land tile is cut.
+                    ApplyDiamondAlpha(tile.Image);
+
                     sea[i * 4 + j] = tile;
                 }
             }
@@ -1016,6 +1082,90 @@ namespace RhyCiv.UI.Classic.ImageLoader
         /// </summary>
         private const float SpecialLift = 0.20f;
 
+        /// <summary>
+        /// The scale (at most <paramref name="largest"/>) and lift at which every
+        /// visible pixel of <paramref name="art"/>, centred in the tile and raised
+        /// by lift times the tile height, lies inside the tile's diamond.
+        /// </summary>
+        private static (float Scale, float Lift) FitInsideDiamond(Image art, int targetWidth, int targetHeight,
+            float largest)
+        {
+            var colours = art.LoadColors();
+            var points = new List<(float X, float Y)>();
+            var step = Math.Max(1, Math.Min(art.Width, art.Height) / 96);
+            for (var y = 0; y < art.Height; y += step)
+            {
+                for (var x = 0; x < art.Width; x += step)
+                {
+                    if (colours[y * art.Width + x].A > 24)
+                    {
+                        points.Add((x + 0.5f, y + 0.5f));
+                    }
+                }
+            }
+
+            Image.UnloadColors(colours);
+            if (points.Count == 0)
+            {
+                return (largest, SpecialLift);
+            }
+
+            bool Fits(float scale, float lift)
+            {
+                var drawWidth = art.Width * scale;
+                var drawHeight = art.Height * scale;
+                var offsetX = (targetWidth - drawWidth) / 2f;
+                var offsetY = (targetHeight - drawHeight) / 2f - targetHeight * lift;
+                var cx = targetWidth / 2f;
+                var cy = targetHeight / 2f;
+                foreach (var (px, py) in points)
+                {
+                    var dx = Math.Abs(offsetX + px * scale - cx) / cx;
+                    var dy = Math.Abs(offsetY + py * scale - cy) / cy;
+                    if (dx + dy > 0.98f)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            var best = (Scale: 0f, Lift: SpecialLift);
+            foreach (var lift in new[] { SpecialLift, SpecialLift * 0.66f, SpecialLift * 0.33f, 0f })
+            {
+                float low = 0f, high = largest;
+                if (Fits(high, lift))
+                {
+                    low = high;
+                }
+                else
+                {
+                    for (var iteration = 0; iteration < 14; iteration++)
+                    {
+                        var middle = (low + high) / 2f;
+                        if (Fits(middle, lift))
+                        {
+                            low = middle;
+                        }
+                        else
+                        {
+                            high = middle;
+                        }
+                    }
+                }
+
+                // Prefer the higher position unless a lower one lets the art be
+                // noticeably bigger.
+                if (low > best.Scale * 1.08f)
+                {
+                    best = (low, lift);
+                }
+            }
+
+            return best.Scale > 0f ? best : (largest * 0.5f, 0f);
+        }
+
         private static Image? ComposeSpecialTile(TerrainSet terrain, string path, float widthFrac, float heightFrac)
         {
             var art = Images.LoadImageFromFile(path).Image;
@@ -1027,20 +1177,24 @@ namespace RhyCiv.UI.Classic.ImageLoader
             var targetWidth = terrain.TileWidth * terrain.RenderScale;
             var targetHeight = terrain.TileHeight * terrain.RenderScale;
 
-            var scale = MathF.Min(targetWidth * widthFrac / art.Width, targetHeight * heightFrac / art.Height);
+            // The largest size, and the height in the diamond, at which every
+            // visible pixel of the cutout is inside the tile. Clipping it instead
+            // took the whale's head and tail off; letting it overhang put it over
+            // a neighbour's pixels, where a click on it went to the wrong square
+            // (#168). Fitting it does neither.
+            var largest = MathF.Min(targetWidth * widthFrac / art.Width, targetHeight * heightFrac / art.Height);
+            var (scale, lift) = FitInsideDiamond(art, targetWidth, targetHeight, largest);
             var drawWidth = Math.Max(1, (int)MathF.Round(art.Width * scale));
             var drawHeight = Math.Max(1, (int)MathF.Round(art.Height * scale));
             art.Resize(drawWidth, drawHeight);
 
             var canvas = Image.GenColor(targetWidth, targetHeight, Color.Blank);
             var offsetX = (targetWidth - drawWidth) / 2f;
-            // Sit the cutout high in the diamond. A tile's lower half is the part
-            // nearest the viewer, which for an ocean square is where its shore is
-            // drawn; a whale centred in the tile came up out of the sand. Lifting
-            // it puts it over open water. The tile image cannot overhang its
-            // neighbours, so the art is composed a little smaller to make room
-            // rather than being clipped at the top.
-            var offsetY = (targetHeight - drawHeight) / 2f - targetHeight * SpecialLift;
+            // Sit the cutout high in the diamond where it fits there. A tile's
+            // lower half is the part nearest the viewer, which for an ocean square
+            // is where its shore is drawn; a whale centred in the tile came up out
+            // of the sand.
+            var offsetY = (targetHeight - drawHeight) / 2f - targetHeight * lift;
             canvas.Draw(art,
                 new Rectangle(0, 0, drawWidth, drawHeight),
                 new Rectangle(offsetX, offsetY, drawWidth, drawHeight),
@@ -1473,6 +1627,38 @@ namespace RhyCiv.UI.Classic.ImageLoader
             return img;
         }
 
+        /// <summary>How far, in ground units, a terrain border strays either side of the tile edge.</summary>
+        private const double BlendAmplitude = 58.0;
+
+        /// <summary>How soft that border is, in ground units at a 256-wide map quadrant.</summary>
+        private const double BlendSoftness = 9.0;
+
+        /// <summary>
+        /// Noise in ground space (x, 2y at 8x the 64x32 tile) that repeats with the
+        /// tile lattice: neighbouring tiles sit (±256, ±256) apart, and a wave
+        /// with integer (a, b) of equal parity over 512 has the same value at all
+        /// of them. So both tiles either side of an edge read the same value at
+        /// every point along it. Scaled to about -1..1.
+        /// </summary>
+        internal static double TerrainBlendNoise(double gx, double gy)
+        {
+            ReadOnlySpan<(int A, int B, double Phase, double Weight)> terms =
+            [
+                (1, 1, 0.3, 1.0), (3, -1, 1.7, 0.8), (2, 4, 4.1, 0.6), (-5, 3, 2.6, 0.45),
+                (7, 5, 0.9, 0.32), (-6, 8, 5.3, 0.24), (11, -9, 3.4, 0.16), (13, 15, 1.2, 0.11),
+                (-19, 17, 4.7, 0.07),
+            ];
+            var total = 0.0;
+            var norm = 0.0;
+            foreach (var (a, b, phase, weight) in terms)
+            {
+                total += weight * Math.Sin(2.0 * Math.PI * (a * gx + b * gy) / 512.0 + phase);
+                norm += weight;
+            }
+
+            return total / norm * 2.2;
+        }
+
         private static DitherMap BuildDitherMaps(Image mask, IImageSource[] baseTiles, int offsetX, int offsetY,
             IImageSource terrainBlank, bool feather)
         {
@@ -1489,18 +1675,22 @@ namespace RhyCiv.UI.Classic.ImageLoader
 
                 if (feather)
                 {
-                    // Multiply the quadrant's own alpha by a soft ramp that is
-                    // strongest along the shared diamond edge and gone by
-                    // roughly half way to the centre, so the neighbouring
-                    // terrain blends across the join instead of the classic
-                    // hard checkerboard stipple. Multiplying (rather than
-                    // AlphaMask, which replaces) keeps the diamond cut, so the
-                    // darker pixels just outside the neighbour's diamond are
-                    // not resurrected into an outline.
-                    const double band = 0.55;
-                    const double maxStrength = 0.72;
+                    // Where two terrains meet, the border between them wanders
+                    // across the diamond edge instead of following it, so the
+                    // map reads as land rather than a quilt of diamonds.
+                    //
+                    // A point this far inside the tile shows the neighbour's
+                    // terrain where a noise value is greater than its distance
+                    // from the edge. The neighbour's own map for the same edge
+                    // uses the opposite sign (NE/SE here, SW/NW there), and the
+                    // noise repeats with the tile lattice, so the two tiles
+                    // agree on one border line: each shows the other exactly
+                    // where it does not show itself. A faint ramp either side
+                    // softens the colour change.
+                    var sign = offsetX == 32 ? 1.0 : -1.0;
                     var mw = ditherMaps[i].Width;
                     var mh = ditherMaps[i].Height;
+                    var softness = BlendSoftness * mw / 256.0;
                     for (var py = 0; py < mh; py++)
                     {
                         var tileY = offsetY + (py + 0.5) / mh * 16.0;
@@ -1511,15 +1701,20 @@ namespace RhyCiv.UI.Classic.ImageLoader
                             var nx = tileX / 32.0 - 1.0;
 
                             var d = Math.Abs(nx) + Math.Abs(ny);
-                            var ramp = 0.0;
+                            var alpha = 0.0;
                             if (d < 1.0)
                             {
-                                var t = Math.Clamp((d - (1.0 - band)) / band, 0.0, 1.0);
-                                ramp = t * t * maxStrength;
+                                // Ground space: the tile unsquashed to a square,
+                                // 181 units from each edge to the centre.
+                                var inside = (1.0 - d) * 181.0;
+                                var border = sign * BlendAmplitude * TerrainBlendNoise(tileX * 8.0, tileY * 16.0);
+                                var hard = Math.Clamp((border - inside) / Math.Max(softness, 1.0) + 0.5, 0.0, 1.0);
+                                var ramp = Math.Clamp(1.0 - inside / 60.0, 0.0, 1.0);
+                                alpha = Math.Max(hard, 0.3 * ramp * ramp);
                             }
 
                             var src = ditherMaps[i].GetColor(px, py);
-                            var a = (byte)Math.Clamp((int)Math.Round(src.A * ramp), 0, 255);
+                            var a = (byte)Math.Clamp((int)Math.Round(src.A * alpha), 0, 255);
                             ditherMaps[i].DrawPixel(px, py, new Color(src.R, src.G, src.B, a));
                         }
                     }

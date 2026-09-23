@@ -93,8 +93,13 @@ def ground_grid() -> tuple[np.ndarray, np.ndarray]:
 
 
 def diamond(gx: np.ndarray, gy: np.ndarray) -> np.ndarray:
+    """The tile's diamond, pushed out a few pixels.
+
+    Neighbouring tiles then overlap along their shared edge instead of each
+    fading to half there, which left a dark hairline on every edge.
+    """
     edge = (np.abs(gx - 256.0) + np.abs(gy - 256.0)) / 256.0
-    return np.clip((1.0 + 1.0 / 256.0 - edge) * 128.0, 0.0, 1.0)
+    return (edge <= 1.0 + 6.0 / 256.0).astype(np.float64)
 
 
 class Texture:

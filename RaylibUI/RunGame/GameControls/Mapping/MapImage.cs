@@ -67,7 +67,11 @@ public static class MapImage
         }
         else
         {
-            tilePic = Images.ExtractBitmap(terrainSet.BaseTiles[(int)tile.Type]).Copy();
+            var variant = terrainSet.VariantOf(tile);
+            var paintings = terrainSet.BaseTileVariants.Length > variant
+                ? terrainSet.BaseTileVariants[variant]
+                : terrainSet.BaseTiles;
+            tilePic = Images.ExtractBitmap(paintings[(int)tile.Type]).Copy();
         }
 
         // Dither
@@ -84,7 +88,21 @@ public static class MapImage
                     var shoreDrawn = neighbour.Type == TerrainType.Ocean && terrainSet.Shore.Length == 256;
                     if ((neighbour.IsVisible(civilizationId) || map.MapRevealed) && !shoreDrawn)
                     {
-                        ApplyDither(tilePic, neighbour.Type, tile.Type, terrainSet.DitherMaps[index]);
+                        var theirVariant = terrainSet.VariantOf(neighbour);
+                        var theirMaps = terrainSet.DitherMapVariants.Length > theirVariant
+                            ? terrainSet.DitherMapVariants[theirVariant]
+                            : terrainSet.DitherMaps;
+                        if (neighbour.Type == tile.Type && theirVariant != terrainSet.VariantOf(tile)
+                                                        && neighbour.Type != TerrainType.Ocean)
+                        {
+                            // The same terrain, painted differently: blend the join
+                            // just as a join between two terrains is blended.
+                            DrawLayer(tilePic, theirMaps[index].Images[(int)neighbour.Type],
+                                new Rectangle(theirMaps[index].X, theirMaps[index].Y, 32, 16));
+                            continue;
+                        }
+
+                        ApplyDither(tilePic, neighbour.Type, tile.Type, theirMaps[index]);
                     }
                 }
             }
