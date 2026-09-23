@@ -120,12 +120,14 @@ public class CityView : FullscreenView
             }
         }
 
+        // Epoch 4/5 are Industrial/Modern in the engine; map them to the
+        // last panorama (same as Civ II) instead of throwing (#145).
         _backId = city.Owner.Epoch switch
         {
             0 or 1 => 0,
             2 => 1,
-            3 => 2,
-            _ => throw new ArgumentOutOfRangeException($"Out of range epoch={city.Owner.Epoch}.")
+            3 or 4 or 5 => 2,
+            _ => 2
         };
 
         if (city.Improvements.Any(i => i.Type == (int)ImprovementType.Superhighways))
@@ -146,10 +148,22 @@ public class CityView : FullscreenView
             _backBase = "cvContinent";
         }
 
-        _picWidth = Images.GetImageWidth(_active.PicSources[_backBase][0], _active);
-        _picHeight = Images.GetImageHeight(_active.PicSources[_backBase][0], _active);
-        _offsetX = (Width - _picWidth) / 2;
-        _offsetY = (Height - _picHeight) / 2;
+        // Standalone/ToT rulesets may not ship the cv* panoramas at all.
+        // Guard the lookup so the View button shows at least the black
+        // background instead of throwing KeyNotFound (#145).
+        if (_active.PicSources.TryGetValue(_backBase, out var backSources) && backSources.Length > 0)
+        {
+            var idx = Math.Clamp(_backId, 0, backSources.Length - 1);
+            _picWidth = Images.GetImageWidth(backSources[idx], _active);
+            _picHeight = Images.GetImageHeight(backSources[idx], _active);
+        }
+        else
+        {
+            _picWidth = gameScreen.Width;
+            _picHeight = gameScreen.Height;
+        }
+        _offsetX = (gameScreen.Width - _picWidth) / 2;
+        _offsetY = (gameScreen.Height - _picHeight) / 2;
     }
 
     public override void OnKeyPress(KeyboardKey key)
@@ -170,8 +184,12 @@ public class CityView : FullscreenView
     {
         Graphics.DrawRectangle(0, 0, Width, Height, Color.Black);
 
-        Graphics.DrawTexture(TextureCache.GetImage(_active.PicSources[_backBase][_backId]),
-            _offsetX, _offsetY, Color.White);
+        if (_active.PicSources.TryGetValue(_backBase, out var backSources) && backSources.Length > 0)
+        {
+            var idx = Math.Clamp(_backId, 0, backSources.Length - 1);
+            Graphics.DrawTexture(TextureCache.GetImage(backSources[idx]),
+                _offsetX, _offsetY, Color.White);
+        }
 
         foreach (var (Source, Pos) in _drawTiles)
         {

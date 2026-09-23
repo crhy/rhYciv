@@ -156,6 +156,7 @@ namespace RhyCiv.Engine.UnitActions
                 Size = 1,
                 ItemInProduction = initialProduction!,
                 WhoBuiltIt = unit.Owner,
+                FirstTurnProductionDue = true,
             };
             // A city replaces whatever village/hut marker was on this tile.  Settlers can start
             // on a goody hut, and Civ2 allows founding there; if the hut is not cleared the map

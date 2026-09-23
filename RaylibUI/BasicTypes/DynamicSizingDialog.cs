@@ -60,7 +60,17 @@ public class DynamicSizingDialog : BaseDialog
             imageBox.ClampHeight = false;
             imageBox.Height = 1;
         }
+        // A side-image column is for an icon (Civ2 tiles are 64px). Interfaces that
+        // map the key to a full wallpaper would otherwise reserve ~1280px for the
+        // picture and crush the text; cap the column and let ImageBox scale the art
+        // down into it.
+        const int maxSideImageWidth = 256;
         var imageWidth = imageBox?.GetPreferredWidth() ?? 0;
+        if (imageBox != null && imageWidth > maxSideImageWidth)
+        {
+            imageBox.Width = maxSideImageWidth;
+            imageWidth = maxSideImageWidth;
+        }
         int maxTextWidth = 0;
         var labels = _innerPanel.Controls.OfType<LabelControl>();
         if (labels.Any())

@@ -23,6 +23,21 @@ namespace Model.Core.Cities
         public bool ProductionChanged { get; set; }
         public bool WeLoveKingDay { get; set; }
         public bool CivilDisorder { get; set; }
+
+        /// <summary>
+        /// Whether this city is still owed the production of its founding turn.
+        /// <para>
+        /// A city founded directly into civil disorder used to lose its very first
+        /// turn of shields to the riot, because the disorder check skipped the rest
+        /// of the city's turn before any shields were banked. The founding turn is
+        /// granted regardless; every turn after it stops as usual (#166).
+        /// </para>
+        /// <para>
+        /// Defaults to false so cities loaded from a save, a classic .sav or a
+        /// scenario never pick up a stray free turn; only <c>BuildCity</c> sets it.
+        /// </para>
+        /// </summary>
+        public bool FirstTurnProductionDue { get; set; }
         public bool CanBuildHydro { get; set; }
         public bool CanBuildShips { get; set; }
         public int Objective { get; set; }

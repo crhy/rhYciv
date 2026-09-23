@@ -245,6 +245,23 @@ public class MovingPieces : IGameMode
         var currentX = bounds.X;
         var currentY = bounds.Y + _title.Height;
 
+        // The flashing "End of Turn (Press ENTER)" banner. ViewPiece shows it, but
+        // the game can be left in Moving mode with no active unit while it is
+        // waiting (the re-entrancy guard in ChooseNextUnit defers the ViewPiece
+        // switch to the next frame), so show it here too — otherwise the
+        // notification is missing entirely (#154 regression).
+        if (_gameScreen.Player.IsWaitingAtEndOfTurn)
+        {
+            var banner = BuildEndOfTurnBanner(bounds, fontSize);
+            banner.Width = (int)bounds.Width;
+            banner.Height = (int)labelHeight;
+            banner.Location = new(bounds.X,
+                bounds.Y + bounds.Height - labelHeight - (_gameScreen.ToTPanelLayout ? 4 : 40));
+            controls.Add(banner);
+            controls.ForEach(c => c.OnResize());
+            return controls;
+        }
+
         // Active unit. Moving mode is only supposed to run with one; if the
         // setter refused the unit it was handed, fall back rather than NRE.
         if (_gameScreen.Player.ActiveUnit is not { } activeUnit)
@@ -507,11 +524,44 @@ public class MovingPieces : IGameMode
             }
         }
 
+        // Also show the banner when waiting but an active unit is still present
+        // (defensive — ViewPiece is the normal host, but the banner must not be
+        // lost if the mode has not yet switched).
+        if (_gameScreen.Player.IsWaitingAtEndOfTurn)
+        {
+            var banner = BuildEndOfTurnBanner(bounds, fontSize);
+            banner.Width = (int)bounds.Width;
+            banner.Height = (int)labelHeight;
+            banner.Location = new(bounds.X,
+                bounds.Y + bounds.Height - labelHeight - (_gameScreen.ToTPanelLayout ? 4 : 40));
+            controls.Add(banner);
+        }
+
         controls.ForEach(c => c.OnResize());
         return controls;
     }
 
-    
+    private LabelControl BuildEndOfTurnBanner(Rectangle bounds, int fontSize)
+    {
+        var look = _gameScreen.MainWindow.ActiveInterface.Look;
+        return new LabelControl(_gameScreen,
+            $"{Labels.For(LabelIndex.EndOfTurn)} ({Labels.For(LabelIndex.PressEnter)})",
+            eventTransparent: true,
+            horizontalAlignment: HorizontalAlignment.Center,
+            font: look.StatusPanelLabelFont,
+            fontSize: fontSize,
+            spacing: 0,
+            colorFront: look.MovingUnitsViewingPiecesLabelColor,
+            colorShadow: look.MovingUnitsViewingPiecesLabelColorShadow,
+            shadowOffset: new Vector2(1, 0),
+            switchColors:
+            [
+                look.MovingUnitsViewingPiecesLabelColor,
+                look.MovingUnitsViewingPiecesLabelColorShadow
+            ],
+            switchTime: 500);
+    }
+
     private const string GotoCursor = "GOTO_TO";
     public void MouseDown(Tile tile)
     {

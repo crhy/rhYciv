@@ -492,8 +492,15 @@ public static class ImageUtils
         var sourceImage = GetUnitSourceImage(unit, active, unitImage, useMapArt);
         var unitTexture = TextureCache.GetImage(sourceImage);
         var shield = active.UnitShield((int)unit.Type);
-        var baseShieldTexture = TextureCache.GetImage(active.UnitImages.Shields, active, unit.Owner.Id);
-        var shieldTexture = GetHighResolutionUnitShieldTexture(active, unit.Owner.Id, baseShieldTexture,
+        // #165: Viking settler was brown because the shield was keyed on
+        // `Owner.Id` (civ slot) rather than the tribe colour. Use the
+        // civilization's `NormalColour` (tribe.Color) which matches
+        // `PlayerColours` / `Shields` indexing — Id==Colour for new games but
+        // not for loaded saves/scenarios where the slot order differs.
+        var shieldColour = unit.Owner.NormalColour >= 0 && unit.Owner.NormalColour < active.PlayerColours.Length
+            ? unit.Owner.NormalColour : unit.Owner.Id;
+        var baseShieldTexture = TextureCache.GetImage(active.UnitImages.Shields, active, shieldColour);
+        var shieldTexture = GetHighResolutionUnitShieldTexture(active, shieldColour, baseShieldTexture,
             shield, ShieldLayer.Front);
         var shieldRenderScale = GetHighResolutionShieldRenderScale(baseShieldTexture, shieldTexture);
         var shieldLogicalSize = new Vector2(baseShieldTexture.Width, baseShieldTexture.Height);
@@ -520,14 +527,14 @@ public static class ImageUtils
                 var stackShadowOffset = shield.StackingOffset + shield.ShadowOffset;
                 viewElements.Add(new TextureElement(
                     location: loc,
-                    texture: GetHighResolutionUnitShieldTexture(active, unit.Owner.Id, baseShieldTexture,
+                    texture: GetHighResolutionUnitShieldTexture(active, shieldColour, baseShieldTexture,
                         shield, ShieldLayer.Shadow),
                     tile: tile, offset: shield.Offset + stackShadowOffset,
                     renderScale: shieldRenderScale, maxDrawSize: shieldLogicalSize));
             }
             viewElements.Add(new TextureElement(
                 location: loc,
-                texture: GetHighResolutionUnitShieldTexture(active, unit.Owner.Id, baseShieldTexture,
+                texture: GetHighResolutionUnitShieldTexture(active, shieldColour, baseShieldTexture,
                     shield, ShieldLayer.Back),
                 tile: tile, offset: shield.Offset + shield.StackingOffset,
                 renderScale: shieldRenderScale, maxDrawSize: shieldLogicalSize));
@@ -537,7 +544,7 @@ public static class ImageUtils
         if (shield.DrawShadow)
         {
             viewElements.Add(new TextureElement(location: loc,
-                texture: GetHighResolutionUnitShieldTexture(active, unit.Owner.Id, baseShieldTexture,
+                texture: GetHighResolutionUnitShieldTexture(active, shieldColour, baseShieldTexture,
                     shield, ShieldLayer.Shadow),
                 tile: tile, offset: shield.Offset + shield.ShadowOffset,
                 renderScale: shieldRenderScale, maxDrawSize: shieldLogicalSize));
@@ -844,10 +851,12 @@ public static class ImageUtils
 
     /// <summary>
     /// How much of the unit's drawn size a fortification marker takes up where
-    /// there is no map tile to fit it to. Slightly over one so it reads as a work
-    /// the unit is standing in rather than a box drawn on top of it.
+    /// there is no map tile to fit it to. It is a backdrop the unit stands in
+    /// front of: fitted to the whole footprint (#82, then still "too large" at
+    /// 0.8 in the city window, #121) it read as a box around the unit rather
+    /// than something the unit is standing in.
     /// </summary>
-    private const float FortifyMarkerOfUnit = 0.8f;
+    private const float FortifyMarkerOfUnit = 0.65f;
 
     private static float GetUnitRenderScale(UnitImage unitImage, Texture2D unitTexture, Vector2 logicalSize)
     {

@@ -30,7 +30,7 @@ public class Revolution(GameScreen gameScreen) : IGameCommand
     {
         // Greyed out rather than hidden when there is nothing to change to, so the
         // entry is where it will be once something has been researched.
-        Status = GovernmentFunctions.CanRevolt(gameScreen.Player.Civilization)
+        Status = GovernmentFunctions.CanRevolt(gameScreen.Player.Civilization, gameScreen.Game.Rules)
             ? CommandStatus.Normal
             : CommandStatus.Disabled;
         return Status != CommandStatus.Disabled;
@@ -39,7 +39,7 @@ public class Revolution(GameScreen gameScreen) : IGameCommand
     public void Action()
     {
         var civilization = gameScreen.Player.Civilization;
-        if (!GovernmentFunctions.CanRevolt(civilization))
+        if (!GovernmentFunctions.CanRevolt(civilization, gameScreen.Game.Rules))
         {
             return;
         }

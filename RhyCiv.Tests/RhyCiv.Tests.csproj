@@ -17,6 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Model\Model.csproj" />
     <ProjectReference Include="..\Engine\RhyCiv.Engine.csproj" />
+    <ProjectReference Include="..\UI.Classic\UI.Classic.csproj" />
+    <ProjectReference Include="..\RaylibUtils\RaylibUtils.csproj" />
   </ItemGroup>
 
   <ItemGroup>

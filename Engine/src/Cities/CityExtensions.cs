@@ -116,6 +116,19 @@ namespace RhyCiv.Engine
 
         private static int CalculatePollution(City city)
         {
+            // #167: tiny cities in 225 BC were fouling squares. In Civ II a
+            // size-1..3 city with no factory and no polluting techs has no
+            // population or industrial pollution — the Population modifier is 0
+            // until Industrialization etc., and Industrial is (Production/1)-20.
+            // A guard here keeps the early game clean even if a modifier is
+            // present from the ruleset.
+            if (city.Size <= 3)
+            {
+                // Industrial part is already 0 for Production<20, but be explicit
+                // for the early game so a stray modifier cannot pollute a hamlet.
+                return 0;
+            }
+
             var smokestackPoints = 0;
 
             if (!city.Improvements.Any(i => i.Effects.ContainsKey(Effects.EliminateIndustrialPollution)))
@@ -422,6 +435,82 @@ namespace RhyCiv.Engine
             city.GetSpecialistTypes();
             city.AutoAddDistributionWorkers(gameRules);
             return true;
+        }
+
+        /// <summary>
+        /// Apply one resource-map click: move a citizen onto or off
+        /// <paramref name="tile"/> (or, on the city's own square, re-run the
+        /// automatic assignment). Returns why the click was refused when it was.
+        /// <para>
+        /// Clicking a free square with no spare specialist used to do nothing at
+        /// all -- a size-one city with both citizens on the land had to promote
+        /// one to entertainer and then demote them onto the wanted square, and
+        /// nothing on screen explained the dead click. Now the worst non-centre
+        /// square gives up its worker to the square the player asked for.
+        /// </para>
+        /// </summary>
+        public static WorkTileResult TryWorkTile(this City city, Tile tile, Rules gameRules)
+        {
+            if (tile.UnitsHere.Any(u => u.Owner != city.Owner))
+            {
+                return WorkTileResult.ForeignUnits;
+            }
+
+            if (tile.CityHere != null)
+            {
+                if (tile.CityHere != city)
+                {
+                    return WorkTileResult.ForeignCity;
+                }
+
+                foreach (var wt in city.WorkedTiles.ToArray())
+                {
+                    wt.WorkedBy = null;
+                }
+
+                city.AutoAddDistributionWorkers(gameRules);
+                return WorkTileResult.ClearedAndReassigned;
+            }
+
+            if (tile.WorkedBy != null)
+            {
+                if (tile.WorkedBy != city)
+                {
+                    return WorkTileResult.ForeignWorked;
+                }
+
+                if (city.NoOfSpecialistsx4 / 4 >= city.Size)
+                {
+                    return WorkTileResult.NoSlotForSpecialist;
+                }
+
+                // The citizen comes off the land and becomes a specialist rather
+                // than vanishing.
+                tile.WorkedBy = null;
+                city.NoOfSpecialistsx4 += 4;
+                city.GetSpecialistTypes();
+                return WorkTileResult.Released;
+            }
+
+            if (city.NoOfSpecialistsx4 >= 4)
+            {
+                city.NoOfSpecialistsx4 -= 4;
+                city.GetSpecialistTypes();
+                tile.WorkedBy = city;
+                return WorkTileResult.Assigned;
+            }
+
+            // No free specialist: take the citizen off the least productive
+            // non-centre square and put them on the one that was clicked.
+            if (!city.MakeSpecialist(gameRules))
+            {
+                return WorkTileResult.NoSpecialistAvailable;
+            }
+
+            city.NoOfSpecialistsx4 -= 4;
+            city.GetSpecialistTypes();
+            tile.WorkedBy = city;
+            return WorkTileResult.Reassigned;
         }
 
         /// <summary>

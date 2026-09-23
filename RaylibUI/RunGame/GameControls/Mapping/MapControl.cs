@@ -373,8 +373,11 @@ public class MapControl : BaseControl
     //
     // So they grow only over the first few steps of zoom, where the tiles are small
     // enough that a fixed label would crowd them, and hold from there.
-    private const int CityNameFontBase = 28;
-    private const int CitySizeFontBase = 23;
+    //
+    // 28/23 was reported as too big (#120) after 22/18 with a floor of 16 had been
+    // reported as unreadable (#38); 24/19 on the same floors sits between the two.
+    private const int CityNameFontBase = 24;
+    private const int CitySizeFontBase = 19;
     private const int MapLabelZoomCap = 2;
 
     private Rectangle _currentBounds;
@@ -563,11 +566,13 @@ public class MapControl : BaseControl
             onTheMap.Y * nextDimensions.HalfHeight / Math.Max(1f, currentDimensions.HalfHeight));
         _zoomOffsets = afterZoom - pointer;
 
-        // And stop the view chasing the active unit while the player is looking
-        // somewhere else. Zooming back out past normal lets it go again.
-        _gameScreen.SetViewAnchor(nextZoom > 0
-            ? TileAtViewPosition(pointer) ?? _gameScreen.ViewAnchor
-            : null);
+        // #144: zooming must not stop the active troop blinking. The old
+        // anchoring stopped the view chasing the active unit, which left the
+        // unit off-screen and appeared to make it stop blinking/being active.
+        // Keep the current anchor (usually null = follow active unit) on zoom
+        // so the troop stays visible and blinking; the player can still pan
+        // manually if they want to look elsewhere.
+        // _gameScreen.SetViewAnchor(nextZoom > 0 ? TileAtViewPosition(pointer) ?? _gameScreen.ViewAnchor : null);
 
         _gameScreen.TriggerMapEvent(new MapEventArgs(MapEventType.ZoomChange) { Zoom = nextZoom });
     }

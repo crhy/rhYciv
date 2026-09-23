@@ -1,6 +1,7 @@
 using Model.Core.Cities;
 using RhyCiv.Engine;
 using RhyCiv.Engine.Enums;
+using RhyCiv.Engine.IO;
 using RhyCiv.Engine.MapObjects;
 using Model;
 using Model.Controls;
@@ -108,63 +109,63 @@ public class CityTileMap : BaseControl
             return;
         }
 
-        // if there are foreign units here can't use this square
-        if (tile.UnitsHere.Any(u => u.Owner != city.Owner))
+        var result = city.TryWorkTile(tile, gameScreen.Game.Rules);
+        if (!result.IsSuccess())
         {
-            // play bad action sound??
+            ReportRefusedClick(result, tile, city);
             return;
         }
-        if (tile.CityHere != null)
-        {
-            if (tile.CityHere != city)
-            {
-                //play bad action sound?
-                return;
-            }
 
-            foreach (var wt in city.WorkedTiles.ToArray())
-            {
-                wt.WorkedBy = null;
-            }
-            city.AutoAddDistributionWorkers(gameScreen.Game.Rules);
-                    
-        }
-        else if (tile.WorkedBy != null)
-        {
-            if (tile.WorkedBy != city)
-            {
-                //Play bad action sound?
-                return;
-            }
-
-            // The citizen comes off the land and becomes a specialist rather than
-            // vanishing. Without this the city quietly lost a worker's output and
-            // gained nothing, and the specialist count could never rise.
-            if (city.NoOfSpecialistsx4 / 4 >= city.Size)
-            {
-                return;
-            }
-
-            tile.WorkedBy = null;
-            city.NoOfSpecialistsx4 += 4;
-            city.GetSpecialistTypes();
-        }
-        else
-        {
-            // Putting a citizen back on the land takes one off the specialists.
-            if (city.NoOfSpecialistsx4 < 4)
-            {
-                // Play bad action?
-                return;
-            }
-
-            city.NoOfSpecialistsx4 -= 4;
-            city.GetSpecialistTypes();
-            tile.WorkedBy = city;
-        }
-
+        _lastRefused = WorkTileResult.ClearedAndReassigned;
         _cityWindow.UpdateProduction();
         Redraw();
+    }
+
+    /// <summary>
+    /// The last refusal already shown, so bumping the same square twice does not
+    /// stack popups (same idea as LocalPlayer.ReportBlockedMove).
+    /// </summary>
+    private WorkTileResult? _lastRefused;
+
+    private void ReportRefusedClick(WorkTileResult result, Tile tile, City city)
+    {
+        if (_lastRefused == result)
+        {
+            return;
+        }
+
+        _lastRefused = result;
+
+        var message = result switch
+        {
+            WorkTileResult.ForeignUnits =>
+                "Enemy units are on that square, so it cannot be worked.",
+            WorkTileResult.ForeignCity =>
+                "That square holds another city.",
+            WorkTileResult.ForeignWorked =>
+                $"That square is already worked by {tile.WorkedBy?.Name ?? "another city"}.",
+            WorkTileResult.NoSpecialistAvailable =>
+                "No citizen is free to work that square.",
+            WorkTileResult.NoSlotForSpecialist =>
+                "Every citizen is already a specialist.",
+            _ => "That square cannot be worked right now."
+        };
+
+        var elements = new DialogElements
+        {
+            Name = "WORKTILE_REFUSED",
+            Title = "Cannot Work Square",
+            Width = 420,
+            Compact = true,
+            Button = [Labels.Ok],
+            Text = [message],
+            LineStyles = [TextStyles.Left]
+        };
+
+        var gameScreen = _cityWindow.CurrentGameScreen;
+        CivDialog? dialog = null;
+        dialog = new CivDialog(gameScreen.Main, elements, (_, _, _, _) => gameScreen.CloseDialog(dialog));
+        gameScreen.ShowDialog(dialog, stack: true);
     }
 
     public override void Draw(bool pulse)

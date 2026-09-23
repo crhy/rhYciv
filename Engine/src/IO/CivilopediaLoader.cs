@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Model.Controls.Civilopedia;
 using Model.Core.GameRules;
+using Model.Core.Mapping;
 
 namespace RhyCiv.Engine;
 
@@ -99,6 +100,38 @@ public class CivilopediaLoader
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Position of a base terrain or special in the @@TERRAIN_INDEX block.
+    /// Specials are not their own ruleset rows: slot 0 of each terrain follows
+    /// the eleven base terrains, slot 1 follows those.
+    /// </summary>
+    public static int GetTerrainIndex(ITerrain terrain, Rules rules)
+    {
+        if (terrain is Terrain baseTerrain)
+        {
+            return Array.FindIndex(rules.Terrains[0], row => row == baseTerrain);
+        }
+
+        if (terrain is not Special special || rules.Terrains.Count == 0)
+        {
+            return -1;
+        }
+
+        var host = rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 0 && t.Specials[0] == special);
+        if (host != null)
+        {
+            return Array.FindIndex(rules.Terrains[0], row => row == host) + rules.Terrains[0].Length;
+        }
+
+        host = rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 1 && t.Specials[1] == special);
+        if (host == null)
+        {
+            return -1;
+        }
+
+        return Array.FindIndex(rules.Terrains[0], row => row == host) + 2 * rules.Terrains[0].Length;
     }
 
     public static string GetDescription(CivilopediaEntry pedia, int id)

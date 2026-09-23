@@ -3,6 +3,7 @@ using RhyCiv.Engine.NewGame;
 using Model.Controls;
 using Model.ImageSets;
 using Model.InterfaceActions;
+using RaylibUtils;
 
 namespace RhyCiv.UI.Classic.Dialogs.NewGame;
 
@@ -15,8 +16,15 @@ public class Init : BaseDialogHandler
 
     public override IInterfaceAction Show(ClassicInterface activeInterface)
     {
-        Dialog.Image = new(activeInterface.PicSources["backgroundImageSmall1"][0]);
-        
+        // Compact maps backgroundImageSmall1 to the full 1280x520 panel wallpaper;
+        // CompatAlternate maps it to a 64x64 Civ2 tile. Only the tile belongs beside
+        // the intro text -- the wallpaper made the dialog ~1900px wide and crushed
+        // the prose into a single column (#152).
+        var introArt = activeInterface.PicSources["backgroundImageSmall1"][0];
+        Dialog.Image = Images.GetImageWidth(introArt, activeInterface) <= 256
+            ? new(introArt)
+            : null;
+
         var config = Initialization.ConfigObject;
         if (config.PlayerCiv.Id >= Initialization.ConfigObject.Civilizations.Count)
         {

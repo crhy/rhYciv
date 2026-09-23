@@ -14,57 +14,65 @@ namespace RhyCiv.Tests;
 /// </summary>
 public class GovernmentTests
 {
-    private const int MonarchyAdvance = (int)AdvanceType.Monarchy;
-    private const int RepublicAdvance = (int)AdvanceType.Republic;
+    // RULES.txt lists advances alphabetically; Monarchy loads at index 53, not
+    // at (int)AdvanceType.Monarchy which is the legacy enum's 54. Board() names
+    // advances at the indices the shipped ruleset uses.
+    private const int MonarchyAdvance = 53;
+    private const int RepublicAdvance = 80;
 
     [Fact]
     public void DespotismNeedsNothing()
     {
-        Assert.True(GovernmentFunctions.CanForm(Civ(), GovernmentType.Despotism));
+        var (game, civ) = Board();
+        Assert.True(GovernmentFunctions.CanForm(civ, GovernmentType.Despotism, game.Rules));
     }
 
     [Fact]
     public void AGovernmentNeedsItsAdvance()
     {
-        var civ = Civ();
+        var (game, civ) = Board();
 
-        Assert.False(GovernmentFunctions.CanForm(civ, GovernmentType.Monarchy));
+        Assert.False(GovernmentFunctions.CanForm(civ, GovernmentType.Monarchy, game.Rules));
         civ.Advances[MonarchyAdvance] = true;
-        Assert.True(GovernmentFunctions.CanForm(civ, GovernmentType.Monarchy));
+        Assert.True(GovernmentFunctions.CanForm(civ, GovernmentType.Monarchy, game.Rules));
     }
 
     [Fact]
     public void AnarchyIsNeverSomethingToChooseFor()
     {
-        Assert.False(GovernmentFunctions.CanForm(Civ(), GovernmentType.Anarchy));
-        Assert.DoesNotContain(GovernmentType.Anarchy, GovernmentFunctions.AvailableGovernments(Civ()));
+        var (game, civ) = Board();
+
+        Assert.False(GovernmentFunctions.CanForm(civ, GovernmentType.Anarchy, game.Rules));
+        Assert.DoesNotContain(GovernmentType.Anarchy, GovernmentFunctions.AvailableGovernments(civ, game.Rules));
     }
 
     [Fact]
     public void TheCurrentGovernmentIsNotOffered()
     {
-        var civ = Civ();
+        var (game, civ) = Board();
 
         // A revolution that changed nothing would still cost the turns of anarchy.
-        Assert.DoesNotContain(GovernmentType.Despotism, GovernmentFunctions.AvailableGovernments(civ));
+        Assert.DoesNotContain(GovernmentType.Despotism, GovernmentFunctions.AvailableGovernments(civ, game.Rules));
     }
 
     [Fact]
     public void ThereIsNothingToRevoltForUntilSomethingIsResearched()
     {
-        var civ = Civ();
+        var (game, civ) = Board();
 
-        Assert.False(GovernmentFunctions.CanRevolt(civ));
+        Assert.False(GovernmentFunctions.CanRevolt(civ, game.Rules));
         civ.Advances[RepublicAdvance] = true;
-        Assert.True(GovernmentFunctions.CanRevolt(civ));
+        Assert.True(GovernmentFunctions.CanRevolt(civ, game.Rules));
     }
 
     [Fact]
     public void AdvancesAreMappedToTheGovernmentTheyOpen()
     {
-        Assert.Equal(GovernmentType.Monarchy, GovernmentFunctions.GovernmentUnlockedBy(MonarchyAdvance));
-        Assert.Equal(GovernmentType.Republic, GovernmentFunctions.GovernmentUnlockedBy(RepublicAdvance));
-        Assert.Null(GovernmentFunctions.GovernmentUnlockedBy((int)AdvanceType.Pottery));
+        var (game, _) = Board();
+
+        Assert.Equal(GovernmentType.Monarchy, GovernmentFunctions.GovernmentUnlockedBy(MonarchyAdvance, game.Rules));
+        Assert.Equal(GovernmentType.Republic, GovernmentFunctions.GovernmentUnlockedBy(RepublicAdvance, game.Rules));
+        Assert.Null(GovernmentFunctions.GovernmentUnlockedBy((int)AdvanceType.Pottery, game.Rules));
     }
 
     [Fact]
@@ -105,8 +113,6 @@ public class GovernmentTests
         Assert.Equal(60, civ.ScienceRate);
     }
 
-    private static Civilization Civ() => Board().Civ;
-
     private static (MockGame Game, Civilization Civ) Board()
     {
         var governments = new Government[7];
@@ -124,6 +130,14 @@ public class GovernmentTests
         {
             advances[i] = new Advance { Index = i, Name = $"Advance {i}", Prereq1 = -1, Prereq2 = -1 };
         }
+
+        // Names the unlock table keys on, placed at the indices the shipped
+        // ruleset loads them at (Monarchy 53, The Republic 80, …).
+        advances[MonarchyAdvance].Name = "Monarchy";
+        advances[RepublicAdvance].Name = "The Republic";
+        advances[15].Name = "Communism";
+        advances[20].Name = "Democracy";
+        advances[82].Name = "Theology";
 
         var rules = new Rules { Advances = advances, Governments = governments };
         var civ = new Civilization

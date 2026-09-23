@@ -143,6 +143,11 @@ namespace RhyCiv.Engine.UnitActions
                 return false;
             }
 
+            // Walking into somebody is a meeting, and so is this: setting the
+            // Contact flags straight, as the embassy did, left the two at peace
+            // with an embassy between them and neither player ever told they had
+            // met -- no herald, no negotiation, no record (#149, #140).
+            Diplomacy.DiplomacyFunctions.MakeContact(game, agent.Owner, city.Owner);
             Diplomacy.DiplomacyFunctions.EstablishEmbassy(agent.Owner, city.Owner);
             SpendAgent(game, agent);
             return true;

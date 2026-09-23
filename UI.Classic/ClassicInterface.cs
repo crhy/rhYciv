@@ -690,12 +690,11 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
     }
 
     /// <summary>
-    /// City style rows in the classic CITIES sheet, in the order the renderer
-    /// indexes them: four per-civilisation ancient/classical/medieval styles,
-    /// then the shared industrial and modern styles.
+    /// High-resolution city art folders indexed by <see cref="CityStyleType"/>
+    /// (Bronze Age, Classical, Far East, Medieval) then Industrial and Modern.
     /// </summary>
     private static readonly string[] FossArtCityStyleFolders =
-        ["Aztec", "German", "Greek", "Japanese", "London", "USA"];
+        ["Aztec", "Greek", "Japanese", "German", "London", "USA"];
 
     /// <summary>
     /// Native high-resolution city art for a style row and size/walled column.
@@ -1007,14 +1006,9 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
                     => ["Info", "Close"],
                 var c when c.WindowType == CivilopediaWindowType.Info && c.InfoType == CivilopediaInfoType.Advances
                     => ["Go Back", "Tree", "Close"],
-                var c when c.WindowType == CivilopediaWindowType.Info &&
-                    (c.InfoType == CivilopediaInfoType.Governments || c.InfoType == CivilopediaInfoType.Concepts)
-                    => ["Go Back", "Close"],
-                // A city improvement's info page already shows its description, so
-                // the Description button only navigated to what was on screen.
-                var c when c.WindowType == CivilopediaWindowType.Info && c.InfoType == CivilopediaInfoType.Improvements
-                    => ["Go Back", "Close"],
-                _ => ["Go Back", "Description", "Close"],
+                // An info page already shows its description, so the Description
+                // button only navigated to what was on screen. (#104, #106)
+                _ => ["Go Back", "Close"],
             }
         };
     }

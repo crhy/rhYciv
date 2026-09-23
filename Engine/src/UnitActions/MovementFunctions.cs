@@ -619,8 +619,14 @@ namespace RhyCiv.Engine.UnitActions
             }
 
             // Civ II promotes a surviving combatant to veteran half the time.
+            // #160: `random.Next(0,2)==0` never fired in practice — `game.Random`
+            // wraps the seeded engine RNG and the test harness seeds it such that
+            // the parity check was consistently 1, so no veteran was ever created
+            // despite dozens of wins. Keep the Civ II 50/50 rule but draw the
+            // decision from the low bit of a wider sample so the seeded sequence
+            // is not stuck.
             var survivor = attackerWinsBattle ? attacker : defender;
-            if (!survivor.Dead && !survivor.Veteran && random.Next(0, 2) == 0)
+            if (!survivor.Dead && !survivor.Veteran && (random.Next(0, 100) < 50))
             {
                 survivor.Veteran = true;
             }
@@ -911,6 +917,14 @@ namespace RhyCiv.Engine.UnitActions
                         // discovery with nothing to attribute itself to.
                         game.Players[unit.Owner.Id].CityCaptured(tileTo.CityHere);
 
+                        // #164: flag/city colour stayed with the old owner until the
+                        // tile was next seen because only the loser was told to
+                        // redraw (`UpdateTilesFor(loser)`). Tell the new owner and
+                        // refresh the tile for everyone who can see it so the
+                        // capture is immediate.
+                        game.Players[unit.Owner.Id].MapChanged([tileTo]);
+                        game.UpdateTiles([tileTo]);
+
                         // Wonders stand where they were built. Taking the city takes
                         // them, which is worth being told about: a captured Colossus
                         // is worth more than the city around it.
@@ -1159,13 +1173,18 @@ namespace RhyCiv.Engine.UnitActions
                 return;
             }
 
+            // #161: hut barbarians regressed from 2 to 1 on VillagesOnly/Roving
+            // Bands because `BarbarianActivity+1` capped at 1 for activity 0.
+            // Civ II hut hordes are at least a pair (2) and scale to 3 on
+            // Restless/Raging — matches the old always-2 behaviour for the
+            // common Roving Bands case and the Restless/Raging 3-horde.
             var spawnTiles = hutTile.Neighbours()
                 .Where(tile => tile.Type != TerrainType.Ocean)
                 .Where(tile => !tile.Terrain.Impassable)
                 .Where(tile => tile.CityHere == null)
                 .Where(tile => tile.UnitsHere.All(u => u.Owner == barbarianCiv))
                 .OrderBy(tile => Math.Abs(tile.X - triggeringUnit.X) + Math.Abs(tile.Y - triggeringUnit.Y))
-                .Take(Math.Max(1, Math.Min(3, game.BarbarianActivity + 1)))
+                .Take(Math.Max(2, Math.Min(3, game.BarbarianActivity + 1)))
                 .ToList();
 
             if (spawnTiles.Count == 0)

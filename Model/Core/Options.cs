@@ -31,7 +31,14 @@ namespace Model.Core
         public bool SoundEffects { get; set; }
         public bool CheatMenu { get; set; }
         public bool AlwaysWaitAtEndOfTurn { get; set; }
-        public bool AutosaveEachTurn { get; set; }
+
+        /// <summary>
+        /// Write an autosave at the start of every turn (LocalPlayer.TurnStart,
+        /// three rotating slots). On by default: the option existed for as long
+        /// as the options dialog but defaulted to off, so a player who never
+        /// opened Game Options got no autosave at all (#173).
+        /// </summary>
+        public bool AutosaveEachTurn { get; set; } = true;
         public bool ShowEnemyMoves { get; set; }
         public bool NoPauseAfterEnemyMoves { get; set; }
         public bool FastPieceSlide { get; set; }
@@ -65,7 +72,13 @@ namespace Model.Core
         public bool WarnWhenFoodDangerouslyLow { get; set; } = true;
         public bool WarnWhenPollutionOccurs { get; set; } = true;
         public bool WarnChangProductWillCostShields { get; set; } = true;
-        public bool ZoomToCityNotDefaultAction { get; set; }
+
+        /// <summary>
+        /// City-report option: when set, Continue starts selected on the
+        /// Zoom-to-City / Continue pair instead of Zoom. Defaults to on because
+        /// zooming is a deliberate choice and dismissing the message is not.
+        /// </summary>
+        public bool ZoomToCityNotDefaultAction { get; set; } = true;
 
         public bool CheatPenaltyWarningDisabled { get; set; }
         public bool Grid { get; set; }

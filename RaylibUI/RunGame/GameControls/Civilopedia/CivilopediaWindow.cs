@@ -315,33 +315,6 @@ public class CivilopediaWindow : BaseDialog
 
             case CivilopediaWindowType.Description:
 
-                // Since we can't get index of special tiles from rules anymore (that info is lost), 
-                // here's a non elegant solution that works
-                int terrainsId = 0;
-                if (_pedia.InfoType == CivilopediaInfoType.Terrains)
-                {
-                    if (_terrains[_pedia.Id] is Terrain)
-                    {
-                        terrainsId = Array.FindIndex(_rules.Terrains[0], row => row == _terrains[_pedia.Id]);
-                    }
-                    else if (_terrains[_pedia.Id] is Special)
-                    {
-                        var s = (Special)_terrains[_pedia.Id];
-                        var baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 0 && t.Specials[0] == s);
-                        if (baseTerrain != null)
-                        {
-                            terrainsId = Array.FindIndex(_rules.Terrains[0], row => row == baseTerrain)
-                                + _rules.Terrains[0].Length;
-                        }
-                        else
-                        {
-                            baseTerrain = _rules.Terrains[0].FirstOrDefault(t => t.Specials.Length > 1 && t.Specials[1] == s);
-                            terrainsId = Array.FindIndex(_rules.Terrains[0], row => row == baseTerrain)
-                                + 2 * _rules.Terrains[0].Length;
-                        }
-                    }
-                }
-
                 int id = _pedia.InfoType switch
                 {
                     CivilopediaInfoType.Advances => Array.FindIndex(_rules.Advances, row => row == _advances[_pedia.Id]),
@@ -349,7 +322,7 @@ public class CivilopediaWindow : BaseDialog
                     CivilopediaInfoType.Wonders => Array.FindIndex(_rules.Improvements.Skip(_rules.FirstWonderIndex).ToArray(), 
                         row => row == _wonders[_pedia.Id]),
                     CivilopediaInfoType.Units => Array.FindIndex(_rules.UnitTypes, row => row == _units[_pedia.Id]),
-                    CivilopediaInfoType.Terrains => terrainsId,
+                    CivilopediaInfoType.Terrains => CivilopediaLoader.GetTerrainIndex(_terrains[_pedia.Id], _rules),
                     _ => throw new NotImplementedException()
                 };
                 Controls.Add(new CivilopediaDescription(this, _gameScreen, _pedia, id));

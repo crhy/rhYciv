@@ -206,6 +206,7 @@ public class GameSerializer
             ImprovementSold = cityData.ImprovementSold,
             WeLoveKingDay = cityData.WeLoveKingDay,
             CivilDisorder = cityData.Disorder,
+            FirstTurnProductionDue = cityData.FirstTurnProductionDue,
             Objective = cityData.Objective,
             Owner = owner,
             Size = cityData.Size,

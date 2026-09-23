@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RhyCiv.Engine.Advances;
 using RhyCiv.Engine.Enums;
 using Model.Core;
+using Model.Core.GameRules;
 
 namespace RhyCiv.Engine;
 
@@ -19,16 +21,26 @@ namespace RhyCiv.Engine;
 public static class GovernmentFunctions
 {
     /// <summary>
-    /// Which advance opens which government. Despotism is where everyone starts and
-    /// Anarchy is not chosen, so neither appears here.
+    /// Which advance opens which government, by the advance's name in the rules
+    /// file. Despotism is where everyone starts and Anarchy is not chosen, so
+    /// neither appears here.
+    /// <para>
+    /// Keyed on the name rather than on <c>(int)AdvanceType</c>: the enum is a
+    /// legacy constant list whose numbering follows a different order from the
+    /// loaded RULES.txt. Monarchy is enum 54 but rules index 53, and 54 in the
+    /// shipped ruleset is Monotheism -- so checking the enum number both failed to
+    /// fire on researching Monarchy and offered Monarchy when Monotheism was
+    /// discovered instead (#169). Names are what the ruleset carries, and they
+    /// hold whatever order a ruleset chooses to list them in.
+    /// </para>
     /// </summary>
-    private static readonly (GovernmentType Government, AdvanceType Advance)[] Unlocks =
+    private static readonly (GovernmentType Government, string AdvanceName)[] Unlocks =
     [
-        (GovernmentType.Monarchy, AdvanceType.Monarchy),
-        (GovernmentType.Communism, AdvanceType.Communism),
-        (GovernmentType.Fundamentalism, AdvanceType.Theology),
-        (GovernmentType.Republic, AdvanceType.Republic),
-        (GovernmentType.Democracy, AdvanceType.Democracy),
+        (GovernmentType.Monarchy, "Monarchy"),
+        (GovernmentType.Communism, "Communism"),
+        (GovernmentType.Fundamentalism, "Theology"),
+        (GovernmentType.Republic, "The Republic"),
+        (GovernmentType.Democracy, "Democracy"),
     ];
 
     /// <summary>
@@ -38,14 +50,20 @@ public static class GovernmentFunctions
     /// </summary>
     public const int AnarchyTurns = 2;
 
+    /// <summary>Where the loaded ruleset keeps an advance of this name, if it has one.</summary>
+    private static int? AdvanceIndexNamed(Rules rules, string name) =>
+        rules.Advances
+            .FirstOrDefault(advance => string.Equals(advance.Name, name, StringComparison.OrdinalIgnoreCase))
+            is { } advance ? advance.Index : null;
+
     /// <summary>The government an advance opens, if it opens one.</summary>
-    public static GovernmentType? GovernmentUnlockedBy(int advanceIndex) =>
-        Unlocks.Where(u => (int)u.Advance == advanceIndex)
+    public static GovernmentType? GovernmentUnlockedBy(int advanceIndex, Rules rules) =>
+        Unlocks.Where(u => AdvanceIndexNamed(rules, u.AdvanceName) == advanceIndex)
             .Select(u => (GovernmentType?)u.Government)
             .FirstOrDefault();
 
     /// <summary>Whether this civilisation knows how to form a government.</summary>
-    public static bool CanForm(Civilization civ, GovernmentType government)
+    public static bool CanForm(Civilization civ, GovernmentType government, Rules rules)
     {
         if (government == GovernmentType.Anarchy)
         {
@@ -59,7 +77,8 @@ public static class GovernmentFunctions
 
         var unlock = Unlocks.FirstOrDefault(u => u.Government == government);
         return unlock.Government == government &&
-               AdvanceFunctions.HasTech(civ, (int)unlock.Advance);
+               AdvanceIndexNamed(rules, unlock.AdvanceName) is { } advanceIndex &&
+               AdvanceFunctions.HasTech(civ, advanceIndex);
     }
 
     /// <summary>
@@ -67,14 +86,15 @@ public static class GovernmentFunctions
     /// them. Its current government is not offered: a revolution that changed
     /// nothing would still cost the turns of anarchy.
     /// </summary>
-    public static List<GovernmentType> AvailableGovernments(Civilization civ) =>
+    public static List<GovernmentType> AvailableGovernments(Civilization civ, Rules rules) =>
         System.Enum.GetValues<GovernmentType>()
-            .Where(government => government != (GovernmentType)civ.Government && CanForm(civ, government))
+            .Where(government => government != (GovernmentType)civ.Government &&
+                                 CanForm(civ, government, rules))
             .ToList();
 
     /// <summary>Whether there is anything to change to.</summary>
-    public static bool CanRevolt(Civilization civ) =>
-        civ.AnarchyTurnsRemaining == 0 && AvailableGovernments(civ).Count > 0;
+    public static bool CanRevolt(Civilization civ, Rules rules) =>
+        civ.AnarchyTurnsRemaining == 0 && AvailableGovernments(civ, rules).Count > 0;
 
     /// <summary>
     /// Throws the civilisation into Anarchy. What it becomes afterwards is chosen
@@ -83,7 +103,7 @@ public static class GovernmentFunctions
     /// </summary>
     public static void BeginRevolution(IGame game, Civilization civ)
     {
-        if (!CanRevolt(civ))
+        if (!CanRevolt(civ, game.Rules))
         {
             return;
         }

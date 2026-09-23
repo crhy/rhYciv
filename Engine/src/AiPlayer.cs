@@ -298,7 +298,7 @@ namespace RhyCiv.Engine
         /// </summary>
         public void GovernmentAvailable(int government)
         {
-            if (GovernmentFunctions.CanRevolt(Civilization))
+            if (GovernmentFunctions.CanRevolt(Civilization, game.Rules))
             {
                 GovernmentFunctions.BeginRevolution(game, Civilization);
             }

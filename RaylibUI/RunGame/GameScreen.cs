@@ -243,6 +243,14 @@ public class GameScreen : BaseScreen
     internal void RunCommand(string commandId) =>
         _commands.FirstOrDefault(command => command.Id == commandId)?.Action();
 
+    /// <summary>
+    /// Opens the negotiation with one civilisation directly. First contact puts
+    /// the leader just met across the table rather than the ministry's list
+    /// (#149, #140); the menu entry still opens the list as it always has.
+    /// </summary>
+    internal void MeetByParley(Civilization other) =>
+        _commands.OfType<Diplomacy>().FirstOrDefault()?.ParleyWith(other);
+
     private void TryExecuteCommand(IList<IGameCommand> commands)
     {
         foreach (var command in commands)
@@ -411,7 +419,11 @@ public class GameScreen : BaseScreen
     private void ShowOneCityMessage(CityNews news)
     {
         var city = news.City;
+        // Index 0 is Zoom to City, 1 is Continue. Which one starts selected is
+        // the city-report option "Zoom to city is not the default action".
+        var zoomIsDefault = !Game.Options.ZoomToCityNotDefaultAction;
         var options = new List<string> { Labels.For(LabelIndex.ZoomToCity), Labels.For(LabelIndex.Continue) };
+        var selectedOption = zoomIsDefault ? 0 : 1;
 
         void Answered(string _, int index, IList<bool>? __, IDictionary<string, string>? ___)
         {
@@ -427,7 +439,8 @@ public class GameScreen : BaseScreen
             // exactly as it always has -- its own title, its own layout.
             var (dialog, strings, numbers) = news.Items[0];
             ShowPopup(dialog, handleButtonClick: Answered, replaceNumbers: numbers,
-                options: options, replaceStrings: strings ?? DefaultCityStrings(city));
+                options: options, replaceStrings: strings ?? DefaultCityStrings(city),
+                selectedOption: selectedOption);
             return;
         }
 
@@ -442,14 +455,15 @@ public class GameScreen : BaseScreen
         }
 
         if (!ShowPopup("CITYNEWS", handleButtonClick: Answered, options: options,
-                replaceStrings: [city.Name, string.Join(" ", sentences)]))
+                replaceStrings: [city.Name, string.Join(" ", sentences)], selectedOption: selectedOption))
         {
             // No combined dialog in this ruleset's text. Rather than swallow the
             // news, fall back to reporting each piece as it used to be reported.
             foreach (var (dialog, strings, numbers) in news.Items)
             {
                 ShowPopup(dialog, handleButtonClick: Answered, replaceNumbers: numbers,
-                    options: options, replaceStrings: strings ?? DefaultCityStrings(city));
+                    options: options, replaceStrings: strings ?? DefaultCityStrings(city),
+                    selectedOption: selectedOption);
             }
         }
     }
@@ -682,7 +696,8 @@ public class GameScreen : BaseScreen
         List<TextBoxDefinition>? textBoxes = null,
         DialogImageElements? dialogImage = null,
         ListboxDefinition? listBox = null,
-        IList<string>? buttons = null)
+        IList<string>? buttons = null,
+        int? selectedOption = null)
     {
         SessionLog.Record($"popup {dialogName}");
 
@@ -694,7 +709,7 @@ public class GameScreen : BaseScreen
         if (_currentPopupDialog != null || _mapControl?.IsPlayingBack == true)
         {
             _queuedPopups.Enqueue(() => ShowPopup(dialogName, handleButtonClick, replaceNumbers, replaceStrings,
-                checkboxStates, options, textBoxes, dialogImage, listBox, buttons));
+                checkboxStates, options, textBoxes, dialogImage, listBox, buttons, selectedOption));
             return true;
         }
 
@@ -715,6 +730,10 @@ public class GameScreen : BaseScreen
                 {
                     Texts = options
                 };
+            }
+            if (selectedOption is { } selected && dialog.Options != null)
+            {
+                dialog.Options.SelectedId = selected;
             }
             if (checkboxStates != null)
             {

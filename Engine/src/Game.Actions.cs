@@ -465,7 +465,7 @@ namespace RhyCiv.Engine
                 return;
             }
 
-            var available = GovernmentFunctions.AvailableGovernments(activeCiv)
+            var available = GovernmentFunctions.AvailableGovernments(activeCiv, Rules)
                 .Select(government => (int)government)
                 .ToList();
             if (available.Count > 0)

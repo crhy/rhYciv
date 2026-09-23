@@ -5,6 +5,22 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Fixed
+
+- Civilopedia terrain Info pages now show description prose (previously blank).
+  `CivilopediaLoader.GetTerrainIndex` maps base terrains 0–32 and specials
+  +length/+2*length; `GetDescription` is wrapped and embedded as `PediaLabel`s
+  below the left-column stats via `contentBottom` tracking (both base and
+  Special branches). (#106)
+- Default texture filtering was Trilinear (blur); `Engine/appsettings.json`
+  `TextureFilter` changed 2→0 (Point). (#106)
+- The Civilopedia's Description button removed from every view —
+  `ClassicInterface.GetCivilopediaProperties` now uses a single default
+  `["Go Back", "Close"]` case; the description is already on the page
+  navigated from. (#104, #106)
+
 ## [0.1.6] — 2026-09-09
 
 The interface, from a full pass over the 0.1.5 report (#115).

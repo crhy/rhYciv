@@ -153,6 +153,17 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     }
 
     /// <summary>
+    /// Opens the audience with one named civilisation, whoever else has been met.
+    /// <para>
+    /// First contact goes straight to the leader just introduced rather than to
+    /// the ministry's list: Civ II opens the negotiation with them (#149, #140),
+    /// and making the player pick the envoy they have just been greeting by name
+    /// from a menu is not an introduction.
+    /// </para>
+    /// </summary>
+    public void ParleyWith(Civilization other) => Parley(other);
+
+    /// <summary>
     /// The audience itself: what may be raised, given who they are to us.
     /// </summary>
     /// <remarks>

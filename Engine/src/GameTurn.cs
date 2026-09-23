@@ -45,6 +45,14 @@ namespace RhyCiv.Engine
                 city.ImprovementSold = false;
                 city.ProductionChanged = false;
 
+                // One turn of production belongs to a city at its founding even if
+                // it starts in disorder (#166). The grant is decided the first time
+                // the city is processed, whichever way that turn goes, so a city
+                // that is merely at risk on turn one and only riots later gets no
+                // second free turn.
+                var firstTurnProduction = city.FirstTurnProductionDue;
+                city.FirstTurnProductionDue = false;
+
                 // Change food in storage
                 city.FoodInStorage += city.SurplusHunger;
 
@@ -99,10 +107,16 @@ namespace RhyCiv.Engine
                     {
                         player.CivilDisorder(city);
                         city.CivilDisorder = true;
-                        continue;
-                    }
+                        if (!firstTurnProduction)
+                        {
+                            continue;
+                        }
 
-                    if (city.CivilDisorder)
+                        // The founding turn falls through once so its shields are
+                        // banked below; tax, science and upkeep are still skipped
+                        // further down, before they are collected.
+                    }
+                    else if (city.CivilDisorder)
                     {
                         city.CivilDisorder = false;
                         player.OrderRestored(city);
@@ -185,6 +199,14 @@ namespace RhyCiv.Engine
                             WonderProgress.Completed(game, city, completedWonder);
                         }
                     }
+                }
+
+                if (happiness.IsInDisorder)
+                {
+                    // Reached only on the founding turn's one fall-through: the
+                    // shields above are kept, and the city's income still stops
+                    // with the riot as it does on every other turn in disorder.
+                    continue;
                 }
 
                 activeCiv.Money += tax;

@@ -5,6 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="RhyCiv.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="Raylib-CSharp" />
     </ItemGroup>
 

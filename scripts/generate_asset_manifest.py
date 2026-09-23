@@ -92,6 +92,21 @@ def attribution(relative: str) -> tuple[str, str, str, str, str]:
             generator = "scripts/prepare_road_overlays.py"
         elif "/Units/" in f"/{relative}" or "/Cities/" in f"/{relative}" or "/Flags/" in f"/{relative}" or "/Overlays/" in f"/{relative}":
             generator = "scripts/prepare_custom_textures.py"
+        elif "/Terrain/Specials/" in f"/{relative}":
+            # Most specials are keyed from the rhYcivtextures source set; the
+            # mountain gold cutout is taken from the orphaned Other/gold.jpg
+            # painting by its own importer (issue #150).
+            if relative.endswith("mountains_1.png"):
+                generator = "scripts/import_special_from_other.py"
+            else:
+                generator = "scripts/prepare_custom_textures.py"
+        elif relative in {
+            "RaylibUI/FOSSart/Terrain/goodyhut.png",
+            "RaylibUI/FOSSart/Other/deadtroop.png",
+        }:
+            # The two map markers (goody hut, killed-unit marker) are cut from
+            # their magenta generation matte by their own importer (issue #77).
+            generator = "scripts/import_map_markers.py"
         elif "/Terrain/" in f"/{relative}" and relative.endswith(".png"):
             # Painted base diamonds and special-resource cutouts are keyed and
             # downsampled from the rhYcivtextures source set by this script; the

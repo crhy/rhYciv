@@ -685,7 +685,7 @@ public class LocalPlayer : IPlayer
     {
         var rules = _gameScreen.Game.Rules.Governments;
         if (government < 0 || government >= rules.Length ||
-            !GovernmentFunctions.CanRevolt(Civilization))
+            !GovernmentFunctions.CanRevolt(Civilization, _gameScreen.Game.Rules))
         {
             return;
         }
@@ -743,14 +743,19 @@ public class LocalPlayer : IPlayer
     }
 
     /// <summary>
-    /// Somebody new. Civ II opens the diplomacy screen on first contact; this
-    /// announces the meeting, and from here the Foreign Ministry has somebody in
-    /// it to talk to.
+    /// Somebody new. Civ II opens the diplomacy screen on first contact, so this
+    /// announces the meeting and, once the player has read the herald, seats them
+    /// opposite the leader who was just introduced (#149, #140). From here the
+    /// Foreign Ministry has somebody in it to talk to as well, for whenever the
+    /// player next opens it from the menu.
     /// </summary>
     public void ContactMade(Civilization other)
     {
         SessionLog.Record($"met the {other.TribeName}");
-        _gameScreen.ShowPopup("GREETINGS", replaceStrings: [other.TribeName]);
+        _gameScreen.ShowPopup("GREETINGS", (_, _, _, _) =>
+        {
+            _gameScreen.QueueAfterCurrentPopup(() => _gameScreen.MeetByParley(other));
+        }, replaceStrings: [other.TribeName]);
     }
 
     /// <summary>
@@ -1625,9 +1630,11 @@ public class LocalPlayer : IPlayer
             return;
         }
 
+        // Button labels are "Incite Revolt!" / "Save My Money!", not Ok/Cancel —
+        // match the confirm label rather than Labels.Ok.
         _gameScreen.ShowPopup("INCITEREVOLT", handleButtonClick: (button, _, _, _) =>
         {
-            if (button != Labels.Ok || diplomat.Dead)
+            if (button != "Incite Revolt!" || diplomat.Dead)
             {
                 return;
             }

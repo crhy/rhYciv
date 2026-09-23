@@ -56,17 +56,29 @@ Still the procedural coloured marker in `build_terrain1()`:
 |---|---|---|
 | grassland row-2 pair | (shield) | reuses grassland 1/2 |
 | hills 1 | coal | no |
-| mountains 1 / 2 | gold / iron | no |
+| mountains 1 | gold | **yes** — cut from `FOSSart/Other/gold.jpg` (#150) |
+| mountains 2 | iron | no |
 | glacier 1 | ivory | no tusked-ivory art (seal + crab keyed in `terrain/alts/`) |
 | swamp 2 | peat / oil | no (swamp 1 uses sugarcane) |
 
-Unused source art already keyed and available in `~/rhYcivtextures/terrain/alts/`:
+Unused source art still keyed and available in `~/rhYcivtextures/terrain/alts/`:
 oasis alt, grassland lawn/conifer variants, oil-slick alt, yak, seal, crab.
+
+## Done: map markers (goody hut, killed-unit)
+
+The goody hut and the killed-unit marker are cut from their magenta generation
+matte by `scripts/import_map_markers.py` into `FOSSart/Terrain/goodyhut.png`
+and `FOSSart/Other/deadtroop.png`. `TerrainLoader` composes the hut onto the
+tile with `ComposeSpecialTile` when FOSS terrain art is applied (the normal
+path); the procedural `tile_hut()` cell in `Standalone/TERRAIN1.png` is only
+the fallback when that art is missing.
 
 ## Missing — overlays and markers (generator-drawn vector, not painted)
 
-- `TERRAIN1`: irrigation, farmland, mine, pollution, grassland shield and goody
-  hut. The road and railroad connection sprites are now painted -- see below.
+- `TERRAIN1`: irrigation, farmland, mine, pollution and grassland shield. The
+  goody-hut cell is still procedural as a fallback, but the map draws the
+  painted `FOSSart/Terrain/goodyhut.png` when FOSS art is on (see above). The
+  road and railroad connection sprites are now painted -- see below.
 - `TERRAIN2`: coast, river-mouth, and ocean-edge transition strokes.
 - `Standalone/ICONS.png`: every map-UI glyph (view toggles, zoom controls,
   progress rings, resource swatches, category chips) is drawn procedurally in
@@ -115,9 +127,11 @@ Findings, so this does not have to be redone:
 
 `RaylibUI/FOSSart/Other/*.jpg` (19 files: buffalo, fish, whales, wine, gems,
 gold, furs, silk, spice, oasis, ivory, fruit, pheasant, shield-grassland, and
-several "from above" mine/well shots) are **referenced by no runtime code**.
-They predate the `Terrain/Specials` pipeline. Either wire them into the
-Civilopedia resource pages or remove them; do not add more art to that folder.
+several "from above" mine/well shots) are **referenced by no runtime code** —
+except `gold.jpg`, which is the source for the mountain Gold special cutout
+(`Terrain/Specials/mountains_1.png`, issue #150). They predate the
+`Terrain/Specials` pipeline. Either wire the rest into the Civilopedia resource
+pages or remove them; do not add more art to that folder.
 
 ## City styles
 

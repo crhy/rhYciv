@@ -67,7 +67,8 @@ public class BuildCity(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
             var sizeIncrement =
                 _screen.Main.ActiveInterface.GetCityIndexForStyle(cityStyleIndex, city, city.Size);
             var cityImage = _active.CityImages.Sets[cityStyleIndex][sizeIncrement];
-            var flagImage = _screen.Main.ActiveInterface.PlayerColours[city.OwnerId];
+            var flagImage = city.Owner.NormalColour >= 0 && city.Owner.NormalColour < _screen.Main.ActiveInterface.PlayerColours.Length
+                ? _screen.Main.ActiveInterface.PlayerColours[city.Owner.NormalColour] : _screen.Main.ActiveInterface.PlayerColours[city.OwnerId];
 
             if (activeTile.CityHere != null)
             {
@@ -153,6 +154,26 @@ public class BuildCity(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
                 Tutorial.Offer(GameScreen, Tutorial.FirstCity);
             }
 
+            // #153: FOUNDED used a fixed Aztec/ancient image instead of the
+            // player's selected CityStyle, so the preview was always the same
+            // while the city on the map (via CityLoader/MapImage) was correct.
+            var foundedStyle = _screen.Main.ActiveInterface.GetCityStyleIndexFromEpoch(
+                _player.Civilization.CityStyle, _player.Civilization.Epoch);
+            var foundedSizeIdx = _screen.Main.ActiveInterface.GetCityIndexForStyle(foundedStyle, city, city.Size);
+            var foundedCityImage = _active.CityImages.Sets[foundedStyle][foundedSizeIdx];
+            var foundedFlag = city.Owner.NormalColour >= 0 && city.Owner.NormalColour < _screen.Main.ActiveInterface.PlayerColours.Length
+                ? _screen.Main.ActiveInterface.PlayerColours[city.Owner.NormalColour] : _screen.Main.ActiveInterface.PlayerColours[city.OwnerId];
+            var foundedImage = new DialogImageElements(
+                [foundedCityImage.Image, foundedFlag.Image], 2,
+                coords: new[,]
+                {
+                    { 0, 0 },
+                    {
+                        (int)foundedCityImage.FlagLoc.X,
+                        (int)foundedCityImage.FlagLoc.Y - Images.GetImageHeight(foundedFlag.Image, _active) - 5
+                    }
+                });
+
             GameScreen.ShowPopup("FOUNDED", handleButtonClick: (dialogButton, _, _, _) =>
                 {
                     if (dialogButton == Labels.Ok)
@@ -177,11 +198,7 @@ public class BuildCity(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
                         GameScreen.Game.ChooseNextUnit();
                     }
                 },
-                dialogImage: new([
-                    _player.Civilization.Epoch < 2
-                        ? _active.PicSources["cityBuiltAncient"][0]
-                        : _active.PicSources["cityBuiltModern"][0]
-                ]),
+                dialogImage: foundedImage,
                 replaceStrings: new List<string>
                     { name, GameScreen.Game.Date.GameYearString(GameScreen.Game.TurnNumber) });
         }

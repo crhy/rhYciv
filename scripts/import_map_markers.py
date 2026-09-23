@@ -62,13 +62,37 @@ def cut(path: Path) -> Image.Image:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
-    parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--check", action="store_true",
+        help="fail if a shipped marker is missing or stale against its source",
+    )
     args = parser.parse_args()
 
     if args.check:
-        missing = [target.name for target in MARKERS.values() if not target.exists()]
-        if missing:
-            print(f"missing map markers: {', '.join(missing)}", file=sys.stderr)
+        stale = []
+        for name, target in MARKERS.items():
+            source = args.source / name
+            if not target.exists():
+                stale.append(f"{target.name}: missing")
+                continue
+            # When the source art is available, also require the shipped cutout
+            # to match a fresh key of it; without the source, existence is all
+            # this machine can verify.
+            if source.exists():
+                generated = cut(source)
+                with Image.open(target) as shipped:
+                    if (shipped.size != generated.size
+                            or shipped.tobytes() != generated.tobytes()):
+                        stale.append(f"{target.name}: stale")
+            else:
+                print(f"  note: {source} absent; only checked that "
+                      f"{target.name} exists", file=sys.stderr)
+        if stale:
+            print(
+                "stale map markers: " + ", ".join(stale)
+                + "; re-run scripts/import_map_markers.py",
+                file=sys.stderr,
+            )
             return 1
         print(f"  markers: {len(MARKERS)} present")
         return 0

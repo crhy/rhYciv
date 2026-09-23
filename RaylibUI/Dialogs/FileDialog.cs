@@ -231,7 +231,12 @@ public class FileDialog : DynamicSizingDialog
     {
         _fileList = _isRoot ? new() : new() { { ParentDirectory, null } };
         var valid = new List<bool>() { false };
-        foreach (var directory in Directory.EnumerateDirectories(_currentDirectory))
+
+        // Directories in name order, then files newest first: the save you are
+        // most likely to want is the one you wrote last, and enumeration order
+        // is whatever the filesystem happens to return (#172).
+        foreach (var directory in Directory.EnumerateDirectories(_currentDirectory)
+                     .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
         {
             if (directory.StartsWith('.')) continue;
             var directoryName = Path.GetFileName(directory);
@@ -244,13 +249,17 @@ public class FileDialog : DynamicSizingDialog
 
         var files = Directory.EnumerateFiles(_currentDirectory)
             .Where(file => _isValidSelectionCallback(file))
-            .Select(Path.GetFileName)
-            .OfType<string>();
+            .OrderByDescending(File.GetLastWriteTimeUtc);
 
         // Get civ2 version of files
         foreach (var file in files)
         {
-            _fileList.Add(file, GetCiv2Version(Path.Combine(_currentDirectory, file)));
+            var fileName = Path.GetFileName(file);
+            if (string.IsNullOrEmpty(fileName))
+            {
+                continue;
+            }
+            _fileList.Add(fileName, GetCiv2Version(file));
         }
     }
 

@@ -927,8 +927,8 @@ The commander of the %STRING0 will take your side for %NUMBER0 gold. Your treasu
 @INCITEREVOLT
 @title=Incite a Revolt
 @width=300
-@button=Ok
-@button=Cancel
+@button=Incite Revolt!
+@button=Save My Money!
 The citizens of %STRING0 can be turned against the %STRING1 for %NUMBER0 gold. Your treasury holds %NUMBER1. The city would come over to you, and its garrison with it.
 
 @NODIPLOMATGOLD

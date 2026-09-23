@@ -25,6 +25,7 @@ public class JsonCityData
         ImprovementSold = city.ImprovementSold;
         WeLoveKingDay = city.WeLoveKingDay;
         Disorder = city.CivilDisorder;
+        FirstTurnProductionDue = city.FirstTurnProductionDue;
         Objective = city.Objective;
         Size = city.Size;
         Builder = city.WhoBuiltIt.Id;
@@ -50,6 +51,12 @@ public class JsonCityData
     public bool ImprovementSold { get; set; }
     public bool WeLoveKingDay { get; set; }
     public bool Disorder { get; set; }
+
+    /// <summary>
+    /// Whether the founding turn's production is still owed to this city.
+    /// Absent from saves written before #166, which loads as false.
+    /// </summary>
+    public bool FirstTurnProductionDue { get; set; }
     public int Objective { get; set; }
     public int Size { get; set; }
     public int Builder { get; set; }

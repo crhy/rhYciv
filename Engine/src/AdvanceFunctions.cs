@@ -137,14 +137,6 @@ namespace RhyCiv.Engine.Advances
                 civilization.ResearchGoal = -1;
             }
 
-            // A form of government has just become possible. Civ II offers the
-            // revolution at this point rather than leaving the player to notice.
-            if (GovernmentFunctions.GovernmentUnlockedBy(advanceIndex) is { } government &&
-                civilization.Id >= 0 && civilization.Id < game.Players.Length)
-            {
-                game.Players[civilization.Id].GovernmentAvailable((int)government);
-            }
-
             foreach (var effect in game.Rules.Advances[advanceIndex].Effects)
             {
                 if (effect.Key == Effects.EpochTech)
@@ -200,6 +192,18 @@ namespace RhyCiv.Engine.Advances
                 civilization.Advances = advances;
             }
             civilization.Advances[advanceIndex] = true;
+
+            // A form of government has just become possible. Civ II offers the
+            // revolution at this point rather than leaving the player to notice.
+            // After the grant, not before: the offer's guard asks whether the
+            // civilisation can form the new government, which reads the very tech
+            // bit that has only just been set -- asking first meant the answer was
+            // always no on the turn the advance landed (#169).
+            if (GovernmentFunctions.GovernmentUnlockedBy(advanceIndex, game.Rules) is { } government &&
+                civilization.Id >= 0 && civilization.Id < game.Players.Length)
+            {
+                game.Players[civilization.Id].GovernmentAvailable((int)government);
+            }
 
             var orders = ProductionOrder.GetAll(game.Rules);
             ProductionPossibilities.AddItems(targetCiv,

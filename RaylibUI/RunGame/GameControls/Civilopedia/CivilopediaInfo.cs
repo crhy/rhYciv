@@ -449,6 +449,7 @@ public sealed class CivilopediaInfo : BaseControl
             case CivilopediaInfoType.Terrains:
                 var terrain = terrains[pedia.Id];
                 var names = terrains.Select(tr => tr.Name).ToArray();
+                var contentBottom = 0;
 
                 if (terrain is Terrain t)
                 {
@@ -535,6 +536,8 @@ public sealed class CivilopediaInfo : BaseControl
                     Controls.Add(mineTimeLabel);
                     Controls.Add(new PediaLabel(window, "TO-DO", 200, (int)offsetY));
 
+                    contentBottom = Math.Max(contentBottom, (int)(offsetY + mineTimeLabel.Height + 1));
+
                     // Transformation effects
                     offsetX = Width / 2;
                     offsetY = 80;
@@ -598,6 +601,8 @@ public sealed class CivilopediaInfo : BaseControl
                         if (t.Specials.Length > 1 && t.Specials[0].Name == t.Specials[1].Name)
                             break;
                     }
+
+                    contentBottom = Math.Max(contentBottom, (int)offsetY);
                 }
                 else
                 {
@@ -739,6 +744,22 @@ public sealed class CivilopediaInfo : BaseControl
                             Controls.Add(new PediaLabel(window, $"no increase in {Labels.For(LabelIndex.Trade)}.",
                                 11, (int)offsetY));
                         }
+                    }
+
+                    contentBottom = Math.Max(contentBottom, (int)offsetY);
+                }
+
+                var descText = NormalizePediaText(CivilopediaLoader.GetDescription(pedia,
+                    CivilopediaLoader.GetTerrainIndex(terrain, rules)));
+                if (!string.IsNullOrWhiteSpace(descText))
+                {
+                    var descY = contentBottom + 8;
+                    var descWidth = (int)(Width / 2) - 22;
+                    var wrapped = DialogUtils.GetWrappedTexts(descText, descWidth, active.Look.LabelFont, 21);
+                    foreach (var line in wrapped.Take(20))
+                    {
+                        Controls.Add(new PediaLabel(window, line, 11, (int)descY));
+                        descY += 26;
                     }
                 }
 

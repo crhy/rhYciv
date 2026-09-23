@@ -58,7 +58,7 @@ internal static class BuiltInDialogs
         AddMessage(dialogs, "INCITEREVOLT", "Incite revolt",
             ["The citizens of %STRING0 will rise against %STRING1 for %NUMBER0 gold,",
              "and the city and its garrison will be yours.",
-             "You have %NUMBER1 gold.", "", "Pay?"], ["OK", "Cancel"]);
+             "You have %NUMBER1 gold.", "", "Pay?"], ["Incite Revolt!", "Save My Money!"]);
         AddMessage(dialogs, "NODIPLOMATGOLD", "Not enough gold",
             ["This will cost %NUMBER0 gold and your treasury holds %NUMBER1."]);
         AddMessage(dialogs, "CANNOTINCITE", "The capital will not be bought",
