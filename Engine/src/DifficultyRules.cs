@@ -10,9 +10,9 @@ namespace RhyCiv.Engine;
 /// What choosing Prince over Deity actually changes.
 /// <para>
 /// The difficulty was asked for at the start of every game, written into the
-/// save, and then read in three places: how content a city's people are, whether
-/// barbarians land as veterans, and how far the computer players expand. Prince
-/// and Deity played very nearly the same game.
+/// save, and then read in a few places: how content a city's people are, how
+/// hard the barbarians hit, and how far the computer players expand. Prince and
+/// Deity played very nearly the same game.
 /// </para>
 /// <para>
 /// Civ II's own levers, restored here: what the computer players pay for what
@@ -86,12 +86,6 @@ public static class DifficultyRules
 
         return attackFactor * BarbarianAttack[Level(game)] / 100d;
     }
-
-    /// <summary>
-    /// Whether barbarians come ashore as veterans, which Civ II starts doing at
-    /// King.
-    /// </summary>
-    public static bool BarbariansAreVeterans(IGame game) => Level(game) >= (int)DifficultyType.King;
 
     /// <summary>The level's name, for anything that reports it.</summary>
     public static string Name(IGame game) => ((DifficultyType)Level(game)).ToString();
