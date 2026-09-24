@@ -769,6 +769,7 @@ public class LocalPlayer : IPlayer
         {
             case DiplomacyProposals.GiveGold:
             case DiplomacyProposals.GiveTechnology:
+                DiplomacyFunctions.RenewCeaseFire(_gameScreen.Game, Civilization, from);
                 DiplomacyFunctions.AdjustAttitude(Civilization, from, 10);
                 _gameScreen.StatusPanel.Update();
                 return;
@@ -791,7 +792,7 @@ public class LocalPlayer : IPlayer
             switch (proposal.Kind)
             {
                 case DiplomacyProposals.CeaseFire:
-                    DiplomacyFunctions.AgreeCeaseFire(Civilization, from);
+                    DiplomacyFunctions.AgreeCeaseFire(_gameScreen.Game, Civilization, from);
                     break;
                 case DiplomacyProposals.Peace:
                     DiplomacyFunctions.AgreePeace(Civilization, from);

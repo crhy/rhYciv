@@ -29,6 +29,9 @@ public static class DiplomacyFunctions
 
     /// <summary>How warmly a civilisation must feel to agree to each treaty.</summary>
     private const int CeaseFireAttitude = 25;
+
+    /// <summary>Civ II cease-fires last about this many turns unless tribute extends them.</summary>
+    public const int CeaseFireDuration = 16;
     private const int PeaceAttitude = 45;
     private const int AllianceAttitude = 75;
 
@@ -211,9 +214,10 @@ public static class DiplomacyFunctions
     }
 
     /// <summary>Stops the shooting without settling anything.</summary>
-    public static void AgreeCeaseFire(Civilization a, Civilization b)
+    public static void AgreeCeaseFire(IGame game, Civilization a, Civilization b)
     {
         SetTreaty(a, b, ceaseFire: true, peace: false, alliance: false);
+        RenewCeaseFire(game, a, b);
         AdjustAttitude(a, b, 5);
         AdjustAttitude(b, a, 5);
     }
@@ -241,8 +245,76 @@ public static class DiplomacyFunctions
             relation.War = false;
             relation.Vendetta = false;
             relation.CeaseFire = ceaseFire;
+            if (!ceaseFire)
+            {
+                relation.CeaseFireTurn = -1;
+            }
             relation.Peace = peace;
             relation.Alliance = alliance;
+        }
+    }
+
+    /// <summary>
+    /// Civ II keeps a cease-fire alive for about sixteen turns, and tribute paid
+    /// by either side adds another sixteen.
+    /// </summary>
+    public static void RenewCeaseFire(IGame game, Civilization a, Civilization b)
+    {
+        if (!Between(a, b).CeaseFire && !Between(b, a).CeaseFire)
+        {
+            return;
+        }
+
+        var expiresTurn = game.TurnNumber + CeaseFireDuration;
+        Between(a, b).CeaseFire = true;
+        Between(a, b).CeaseFireTurn = expiresTurn;
+        Between(b, a).CeaseFire = true;
+        Between(b, a).CeaseFireTurn = expiresTurn;
+    }
+
+    /// <summary>
+    /// Ends cease-fires whose time has come. A peace or alliance is not touched:
+    /// only the temporary agreement expires.
+    /// </summary>
+    public static void ExpireCeaseFires(IGame game)
+    {
+        foreach (var civ in game.AllCivilizations)
+        {
+            if (!civ.Alive)
+            {
+                continue;
+            }
+
+            for (var other = 0; other < game.AllCivilizations.Count; other++)
+            {
+                var relation = Between(civ, game.AllCivilizations[other]);
+                if (civ == game.AllCivilizations[other])
+                {
+                    continue;
+                }
+
+                if (!relation.CeaseFire)
+                {
+                    continue;
+                }
+
+                // The expiry turn is not saved, so a cease-fire read back from a
+                // save (or set by any other route) starts its sixteen turns now
+                // rather than never ending.
+                if (relation.CeaseFireTurn < 0)
+                {
+                    relation.CeaseFireTurn = game.TurnNumber + CeaseFireDuration;
+                    continue;
+                }
+
+                if (game.TurnNumber < relation.CeaseFireTurn)
+                {
+                    continue;
+                }
+
+                relation.CeaseFire = false;
+                relation.CeaseFireTurn = -1;
+            }
         }
     }
 
