@@ -57,8 +57,10 @@ namespace RhyCiv.Engine
             // what has been left on the map belongs to everybody by now.
             PollutionFunctions.ResolveGlobalWarming(this);
 
-            // And time doing what it does to the memory of a broken treaty.
+            // And time doing what it does to the memory of a broken treaty, and to
+            // the temporary pause of a cease-fire.
             Diplomacy.DiplomacyFunctions.FadeReputations(this);
+            Diplomacy.DiplomacyFunctions.ExpireCeaseFires(this);
 
             // Raiders out of the empty country, which until now only ever came out
             // of a village somebody had walked into.

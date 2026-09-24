@@ -998,7 +998,7 @@ namespace RhyCiv.Engine
             {
                 case DiplomacyProposals.CeaseFire:
                     Answer(from, DiplomacyFunctions.Proposal.CeaseFire,
-                        () => DiplomacyFunctions.AgreeCeaseFire(Civilization, from));
+                        () => DiplomacyFunctions.AgreeCeaseFire(game, Civilization, from));
                     break;
                 case DiplomacyProposals.Peace:
                     Answer(from, DiplomacyFunctions.Proposal.Peace,
@@ -1010,7 +1010,9 @@ namespace RhyCiv.Engine
                     break;
                 case DiplomacyProposals.GiveGold:
                     // A gift is worth roughly what it costs the giver, and is
-                    // remembered for longer than it is spent.
+                    // remembered for longer than it is spent. In Civ II it also
+                    // extends an existing cease-fire.
+                    DiplomacyFunctions.RenewCeaseFire(game, Civilization, from);
                     DiplomacyFunctions.AdjustAttitude(Civilization, from,
                         Math.Clamp(proposal.Gold / 25, 1, 20));
                     break;
