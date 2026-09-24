@@ -34,6 +34,13 @@
     git history; this file describes the 0.1.x line only.
   -->
   <releases>
+    <release version="0.2.3" date="2026-09-24">
+      <description>
+        <p>Rules: barbarians are never veterans by default and never declare war (they are always at war); a cease-fire runs out after five turns unless tribute renews it; a finished building leaves production at once, and selling one pays a gold per shield.</p>
+        <p>Diplomacy: the leader is shown large beside centred text, a new government offers "Revolt!" or "Keep", and breaking a treaty asks "Declare War" or "Cower in Fear".</p>
+        <p>Map: land that blends instead of a quilt, a sea without seams, and rivers bent from the painted river.</p>
+      </description>
+    </release>
     <release version="0.2.2" date="2026-09-23">
       <description>
         <p>Crash fixes found by playing 0.2.1: null interface commands no longer NRE on every dialog, out-of-range dialog tokens left literal, empty city scenery tables show the panorama, dead-unit battle animations skipped, city capture redraws before the popup, and CivDialog guards for optional button lists.</p>
