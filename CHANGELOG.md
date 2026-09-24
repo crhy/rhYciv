@@ -5,7 +5,46 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
-## [Unreleased]
+## [0.2.3] — 2026-09-24
+
+### Rules
+
+- Barbarians are never veterans by default; difficulty scales how hard they hit,
+  not their veteran status. `DifficultyRules.BarbariansAreVeterans` removed
+  (part of #75, #134).
+- The barbarians are always at war, so they never declare it (#181).
+- A cease-fire runs out after five turns and the relation returns to no treaty;
+  tribute from either side restarts the count. Five is the owner's ruling over
+  the manual's "approximately 16"; research in `docs/CIV2-RULES-RESEARCH.md`
+  (part of #174).
+- A finished building leaves production at once instead of raising the "cannot
+  build" message, and selling a building pays one gold per shield (#185).
+
+### Diplomacy
+
+- The audience shows the leader large on the left and what is said centred on
+  the right, with lines spaced by their own type size (#183).
+- A new government offers "Revolt!" or "Keep <current>" instead of Ok and
+  Cancel (#184).
+- Breaking a treaty asks "Declare War" or "Cower in Fear".
+
+### Map
+
+- Land blends instead of a quilt, the sea has no seams, and whales are whole.
+- Rivers are bent from the painted river, shores are drawn from the land they
+  meet, and the painted rivers are also found in the shipped art folder.
+
+### Research
+
+- `docs/CIV2-RULES-RESEARCH.md` records the sources checked for first contact
+  (#140, #149), barbarian veterans (#134) and cease-fires (#174), including where
+  the sources disagree.
+
+### Release
+
+- Release builds attach to a release that already exists.
+
+## [0.2.2] — 2026-09-23
 
 ### Fixed
 

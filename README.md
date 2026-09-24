@@ -37,22 +37,22 @@ See [the gameplay guide](docs/GAMEPLAY.md) for systems, differences, and control
 
 ## Download
 
-**Version 0.2.2 runs on Linux, Windows and macOS.** Get it from the
+**Version 0.2.3 runs on Linux, Windows and macOS.** Get it from the
 [latest release](https://github.com/crhy/rhYciv/releases/latest):
 
 | Platform | Download | Run |
 |---|---|---|
-| Windows x64 | `rhYciv-0.2.2-win-x64.zip` | unzip, run `RaylibUI.exe` |
-| macOS (Apple silicon) | `rhYciv-0.2.2-osx-arm64.zip` | unzip, drag `rhYciv.app` to Applications |
-| macOS (Intel) | `rhYciv-0.2.2-osx-x64.zip` | as above |
-| Linux x64 | `rhYciv-0.2.2-linux-x64.tar.gz` | extract, run `./RaylibUI` |
-| Linux Flatpak | `rhYciv-0.2.2-x86_64.flatpak` | see below |
+| Windows x64 | `rhYciv-0.2.3-win-x64.zip` | unzip, run `RaylibUI.exe` |
+| macOS (Apple silicon) | `rhYciv-0.2.3-osx-arm64.zip` | unzip, drag `rhYciv.app` to Applications |
+| macOS (Intel) | `rhYciv-0.2.3-osx-x64.zip` | as above |
+| Linux x64 | `rhYciv-0.2.3-linux-x64.tar.gz` | extract, run `./RaylibUI` |
+| Linux Flatpak | `rhYciv-0.2.3-x86_64.flatpak` | see below |
 
 Nothing else is required. Each download carries its own .NET runtime and the
 complete art set.
 
 ```sh
-flatpak install --user ./rhYciv-0.2.2-x86_64.flatpak
+flatpak install --user ./rhYciv-0.2.3-x86_64.flatpak
 flatpak run io.github.crhy.rhYciv
 ```
 
