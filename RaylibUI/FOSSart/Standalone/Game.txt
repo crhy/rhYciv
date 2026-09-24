@@ -1088,8 +1088,8 @@ Knowledge given away is not knowledge lost, but it does even the ground. Which a
 @BREAKTREATY
 @title=Break the Treaty?
 @width=380
-@button=Ok
-@button=Cancel
+@button=Declare War
+@button=Cower in Fear
 There is a treaty with the %STRING0. To attack now is to end it by your own hand: the military gain may be immediate, but every civilization that has met you will remember that your signature is a light thing.
 
 @WARDECLARED
