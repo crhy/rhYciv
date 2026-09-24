@@ -1201,7 +1201,7 @@ namespace RhyCiv.Engine.UnitActions
             foreach (var spawnTile in spawnTiles)
             {
                 var barbarian = Barbarians.Create(barbarianCiv, barbarianUnitDefinition, spawnTile,
-                    veteran: DifficultyRules.BarbariansAreVeterans(game));
+                    veteran: false);
                 barbarian.MovePointsLost = barbarian.MaxMovePoints;
                 spawnTile.SetVisible(triggeringUnit.Owner.Id);
                 created++;

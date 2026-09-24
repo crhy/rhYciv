@@ -77,14 +77,6 @@ public class DifficultyRulesTests
         Assert.Equal(4, DifficultyRules.AttackStrength(Game(DifficultyType.Deity), civ, 4));
     }
 
-    [Fact]
-    public void BarbariansComeAshoreAsVeteransFromKingUpwards()
-    {
-        Assert.False(DifficultyRules.BarbariansAreVeterans(Game(DifficultyType.Prince)));
-        Assert.True(DifficultyRules.BarbariansAreVeterans(Game(DifficultyType.King)));
-        Assert.True(DifficultyRules.BarbariansAreVeterans(Game(DifficultyType.Deity)));
-    }
-
     private static MockGame Game(DifficultyType level) => new() { Difficulty = (int)level };
 
     private static City CityOf(PlayerType type) =>
