@@ -189,6 +189,73 @@ public class CityHappinessTests
         Assert.Equal(1, mood.AngryCitizens);
     }
 
+    [Fact]
+    public void ColosseumMakesThreeUnhappyContent_ElectronicsMakesFour()
+    {
+        var (game, city, civ) = CreateCity(DifficultyType.Deity, size: 5);
+        city.AddImprovement(new Improvement { Type = (int)ImprovementType.Colosseum });
+
+        Assert.Equal(1, city.CalculateHappiness(game.Object).UnhappyCitizens);
+
+        civ.Advances[(int)AdvanceType.Electronics] = true;
+        Assert.Equal(0, city.CalculateHappiness(game.Object).UnhappyCitizens);
+    }
+
+    [Fact]
+    public void CathedralEffectChangesWithTheologyAndCommunism()
+    {
+        var (game, city, civ) = CreateCity(DifficultyType.Deity, size: 5);
+        city.AddImprovement(new Improvement { Type = (int)ImprovementType.Cathedral });
+
+        Assert.Equal(1, city.CalculateHappiness(game.Object).UnhappyCitizens);
+
+        civ.Advances[(int)AdvanceType.Theology] = true;
+        Assert.Equal(0, city.CalculateHappiness(game.Object).UnhappyCitizens);
+
+        civ.Advances[(int)AdvanceType.Theology] = false;
+        civ.Government = (int)GovernmentType.Communism;
+        Assert.Equal(2, city.CalculateHappiness(game.Object).UnhappyCitizens);
+    }
+
+    [Fact]
+    public void MichelangelosChapelActsLikeCathedral()
+    {
+        var (game, city, civ) = CreateCity(DifficultyType.Deity, size: 4);
+        city.AddImprovement(new Improvement { Type = (int)ImprovementType.MichChapel });
+
+        var mood = city.CalculateHappiness(game.Object);
+        Assert.Equal(0, mood.UnhappyCitizens);
+        Assert.Equal(4, mood.ContentCitizens);
+    }
+
+    [Fact]
+    public void OracleDoublesTempleEffect()
+    {
+        var (game, city, civ) = CreateCity(DifficultyType.Deity, size: 4);
+        city.AddImprovement(new Improvement { Type = (int)ImprovementType.Temple });
+
+        Assert.Equal(2, city.CalculateHappiness(game.Object).UnhappyCitizens);
+
+        civ.Advances[(int)AdvanceType.Mysticism] = true;
+        Assert.Equal(1, city.CalculateHappiness(game.Object).UnhappyCitizens);
+
+        city.AddImprovement(new Improvement { Type = (int)ImprovementType.Oracle });
+        Assert.Equal(0, city.CalculateHappiness(game.Object).UnhappyCitizens);
+    }
+
+    [Fact]
+    public void ShakespeareClearsAllUnhappyCitizens()
+    {
+        var (game, city, civ) = CreateCity(DifficultyType.Deity, size: 6);
+        city.AddImprovement(new Improvement { Type = (int)ImprovementType.ShakespTheat });
+
+        var mood = city.CalculateHappiness(game.Object);
+        Assert.Equal(0, mood.UnhappyCitizens);
+        Assert.Equal(6, mood.ContentCitizens);
+        Assert.Equal(0, mood.AngryCitizens);
+        Assert.False(mood.IsInDisorder);
+    }
+
     private static (Mock<IGame> Game, City City, Civilization Civ) CreateCity(
         DifficultyType difficulty, int size)
     {
