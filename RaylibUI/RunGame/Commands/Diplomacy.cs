@@ -133,9 +133,9 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     /// larger than the screen -- the first attempt at this produced a window of
     /// stone with the question hanging off the top corner. Big enough to be a
     /// person you are talking to, small enough to leave room for what is being
-    /// said.
+    /// said. It was 300, and the leaders are good enough to be seen larger (#183).
     /// </remarks>
-    private const float PortraitHeight = 300f;
+    private const float PortraitHeight = 480f;
 
     private void Parley(Civilization other)
     {
@@ -146,7 +146,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             // control, so the scale asked for is the scale applied.
             var height = RaylibUtils.Images.GetImageHeight(portrait, gameScreen.Main.ActiveInterface);
             var scale = height > 0 ? PortraitHeight / height : 1f;
-            _portrait = new DialogImageElements(portrait, scale);
+            _portrait = new DialogImageElements(portrait, scale) { Portrait = true };
         }
 
         Audience(other);

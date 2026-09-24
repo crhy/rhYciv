@@ -362,13 +362,15 @@ public class CityExtensionsTests
     }
 
     [Fact]
-    public void GetSaleValue_UsesScenarioShieldRowSize()
+    public void GetSaleValue_IsAGoldPieceForEveryShieldItCost()
     {
+        // Cost is in shields -- a Temple is 40, and production charges exactly
+        // that -- so the sale pays 40 whatever the shield box's row size.
         var (_, rules, _, _) = SetupGame();
         rules.Cosmic.RowsShieldBox = 12;
-        var improvement = new Improvement { Cost = 4 };
+        var improvement = new Improvement { Cost = 40 };
 
-        Assert.Equal(48, improvement.GetSaleValue(rules));
+        Assert.Equal(40, improvement.GetSaleValue(rules));
     }
 
     [Fact]

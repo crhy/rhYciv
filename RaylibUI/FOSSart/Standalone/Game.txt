@@ -894,8 +894,8 @@ The anarchy is over. Your people are waiting to be told how they will be governe
 @GOVERNMENTLEARNED
 @title=%STRING0
 @width=300
-@button=Ok
-@button=Cancel
+@button=Revolt!
+@button=Keep %STRING1
 Your scholars have set out the workings of %STRING0. Adopting it means a revolution, and the anarchy that comes with one. Shall it be done?
 
 @TECHFROMCONQUEST
