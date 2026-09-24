@@ -52,8 +52,11 @@ public class MockPlayer : IPlayer
     {
     }
 
+    public int CantProduceCalls { get; private set; }
+
     public void CantProduce(City city, IProductionOrder? newItem)
     {
+        CantProduceCalls++;
     }
 
     public void CityProductionComplete(City city)
