@@ -153,21 +153,26 @@ public static class CaravanActions
 
     /// <summary>
     /// What the arrival itself is worth, paid once in gold and again in research.
-    /// A city that wants what the caravan is carrying pays twice over.
+    /// <para>
+    /// Civ II: <c>(distance + 10) * (T1 + T2) / 24</c>, doubled if the cities are
+    /// on different continents and halved if they belong to the same civilisation.
+    /// The small/large map factor and freight bonus are not modelled here; the
+    /// commodity-demand doubling is left as the current behaviour and remains
+    /// unverified because the sources disagree on its exact value.
+    /// </para>
     /// </summary>
     public static int DeliveryBonus(Unit caravan, City home, City destination)
     {
         // The payment for the delivery itself, which is a different thing from the
-        // route it leaves behind and is worked out differently: distance and the
-        // two civilisations' remoteness from one another are what make a caravan
-        // worth sending that far. This is still Civ I's shape and has not been
-        // measured against Civ II -- see docs/CIV2-COMPARISON.md.
+        // standing route it leaves behind. Distance is what makes the journey worth
+        // paying for: the further the goods have travelled, the more the arrival is
+        // worth.
         var distance = MapDistance(home.Location, destination.Location);
-        var value = (distance + 10) * (home.Trade + destination.Trade) / 24;
+        var value = (distance + 10) * (home.TileTrade + destination.TileTrade) / 24;
 
-        if (home.Location.Island == destination.Location.Island)
+        if (home.Location.Island != destination.Location.Island)
         {
-            value /= 2;
+            value *= 2;
         }
 
         if (home.Owner == destination.Owner)
@@ -175,21 +180,13 @@ public static class CaravanActions
             value /= 2;
         }
 
-        var bonus = Math.Max(1, value) * DeliveryMultiplier;
-
         if (Demands(destination, caravan.CaravanCommodity))
         {
-            bonus *= 2;
+            value *= 2;
         }
 
-        return Math.Max(1, bonus);
+        return Math.Max(1, value);
     }
-
-    /// <summary>
-    /// A delivery is worth a good deal more than a turn of the route it opens: the
-    /// caravan is carrying goods, and they are sold on arrival.
-    /// </summary>
-    private const int DeliveryMultiplier = 8;
 
     private static bool Demands(City city, int commodity) =>
         city.CommodityDemanded?.Any(wanted => wanted.Id == commodity) == true;

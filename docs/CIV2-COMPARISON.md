@@ -29,7 +29,7 @@ looked at.
 | Shields, support, production | verified | four cities |
 | Base trade from squares | verified | Cardiff, Kells, Carmarthen |
 | Trade route: standing bonus | verified, one gap | formula from two sources + Cardiff; the +1/+2 asymmetry is open |
-| Trade route: delivery payment | **unverified** | still Civ I's formula |
+| Trade route: delivery payment | verified core formula, open details | Apolyton + CivFanatics; freight/map-size details open |
 | Corruption | **wrong** | Kells 2 vs 0, Carmarthen 4 vs 1; distance term suspect |
 | Waste | **unverified** | never compared |
 | Happiness split and disorder | verified | Kells' Happiness Analysis, after the wonder fix |
@@ -319,10 +319,24 @@ formula, and not even that game's continuing-route formula — it is Civ I's
 one-off payment for the delivery, charged again every turn. Measured against Civ
 II on the same save it paid four arrows a turn where Civ II paid one.
 
-The delivery bonus keeps that arithmetic, because a delivery is a different thing
-and distance genuinely belongs in it, but it now owns the calculation rather than
-borrowing the route's. **The delivery figure has not been checked against Civ II
-and remains unverified.**
+The delivery bonus is a different calculation, and issue #128 checked it against
+independent Civ II sources rather than assuming it was still Civ I's formula.
+Those sources give the immediate caravan payment as:
+
+```
+(distance + 10) * (T1 + T2) / 24
+```
+
+where `T1` and `T2` are the two cities' base trade, every division drops its
+remainder, the result is doubled when the cities are on different continents or
+islands, and halved when they belong to the same civilization. The science from a
+delivery is the same as the gold payment.
+
+The implementation now uses that shape. It still doubles the payment when the
+destination demands the caravan's commodity, but that commodity/demand multiplier
+is not confirmed by the sources consulted and should be treated as an open detail.
+Civ II's freight/map-size modifier and the exact commodity-specific behaviour are
+also not implemented here.
 
 Base trade is now recorded on the city as `TileTrade`, because a route cannot be
 valued from the city's `Trade`: the route's own arrows are part of that, so a
@@ -387,7 +401,10 @@ one real city in a real position.
    overrule it. **Unresolved; needs either a second source or a second pair of
    cities to measure.**
 
-3. **The delivery bonus**, which remains Civ I's and unmeasured.
+3. **The delivery bonus details.** The core formula is now implemented:
+   `(distance + 10)(T1 + T2)/24`, doubled between different continents/islands and
+   halved for the same civilization. The remaining open questions are the exact
+   freight/map-size modifier and whether demanded commodities multiply the payment.
 
 ### Whales were worth a shield and an arrow too little
 
@@ -651,6 +668,13 @@ used in three ways:
 - **Trade Route Formula (Apolyton)** —
   <https://apolyton.net/forum/civilization-series/civilization-i-and-civilization-ii/130326-trade-route-formula>
   Used for: the second, independent statement of the same formula.
+- **Civ2 caravan/freight delivery payments (Apolyton)** —
+  <https://apolyton.net/forum/civilization-series/civilization-i-and-civilization-ii/76838-calculating-caravan-and-freight-delivery-payments>
+  Used for: issue #128's immediate delivery payment, including the distance/trade
+  base and the continent/island and same-civilization modifiers.
+- **Civ2 delivery/freight rules (CivFanatics scrolls)** —
+  <https://www.civfanatics.com/civ2/strategy/scrolls/>
+  Used for: a second independent statement of the same immediate delivery payment.
 - **Whales (Civ2)** — <https://civilization.fandom.com/wiki/Whales_(Civ2)>
   Used for: confirming whales raise ocean from 1/0/2 to 2/2/3, alongside the
   in-game measurement.
@@ -664,10 +688,12 @@ used in three ways:
 
 **Civilization I and Civilization II are constantly confused in forum threads,
 including in threads whose titles say Civ2.** The trade route bug in this game
-came from exactly that: `(distance + 10)(Ta + Tb)/24` is Civ I's one-off caravan
-delivery payment, and it was being charged every turn as though it were Civ II's
-standing route. A thread found by searching for "Civ2 trade route formula" turned
-out, on reading, to be entirely about Civ I.
+came from exactly that kind of confusion: a delivery-style distance formula was
+being charged every turn as though it were Civ II's standing route. Civ II's
+standing route is `(T1 + T2 + 4)/8`; its immediate caravan delivery payment is a
+distance-based formula with continent/island and ownership modifiers. A thread
+found by searching for "Civ2 trade route formula" turned out, on reading, to be
+entirely about Civ I.
 
 So: check which game a source is talking about before using it, prefer two
 independent sources for anything that changes established behaviour, and prefer a

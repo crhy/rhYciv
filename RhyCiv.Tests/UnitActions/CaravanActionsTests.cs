@@ -99,6 +99,42 @@ public class CaravanActionsTests
     }
 
     [Fact]
+    public void ADeliveryPaysTheVerifiedCivIICrossWorldPayment()
+    {
+        var world = World();
+
+        // Washington is 28 squares from Rome on this mock flat map; their base
+        // trades are 12 and 14. (28 + 10) * 26 / 24 = 41, and different
+        // continents double it.
+        Assert.Equal(82, CaravanActions.DeliveryBonus(world.Caravan, world.Home, world.Foreign));
+    }
+
+    [Fact]
+    public void ADeliveryToYourOwnCityIsHalved()
+    {
+        var world = World();
+
+        // Washington and New York are two squares apart; their combined base trade
+        // is 20. (2 + 10) * 20 / 24 = 10, then halved because they are the same civ.
+        Assert.Equal(5, CaravanActions.DeliveryBonus(world.Caravan, world.Home, world.OwnNeighbour));
+    }
+
+    [Fact]
+    public void AcrossTheWorldPaysMoreThanAlongTheSameContinent()
+    {
+        var world = World();
+
+        var sameIsland = CaravanActions.DeliveryBonus(
+            world.Caravan, world.Home, world.ForeignOnHomeIsland
+        );
+        var differentIsland = CaravanActions.DeliveryBonus(
+            world.Caravan, world.Home, world.Foreign
+        );
+
+        Assert.True(differentIsland > sameIsland);
+    }
+
+    [Fact]
     public void AnOpenRouteBringsItsCityTradeEveryTurn()
     {
         var world = World();
@@ -122,7 +158,14 @@ public class CaravanActionsTests
         Assert.Equal(3, CaravanActions.MapDistance(west, east));
     }
 
-    private record TestWorld(MockGame Game, City Home, City OwnNeighbour, City Foreign, Unit Caravan);
+    private record TestWorld(
+        MockGame Game,
+        City Home,
+        City OwnNeighbour,
+        City Foreign,
+        City ForeignOnHomeIsland,
+        Unit Caravan
+    );
 
     /// <summary>
     /// Two civilisations on two islands: the player's capital with a neighbour two
@@ -140,6 +183,7 @@ public class CaravanActionsTests
         var home = CityAt(map, us, "Washington", 2, 4, island: 1, trade: 12);
         var neighbour = CityAt(map, us, "New York", 4, 4, island: 1, trade: 8);
         var foreign = CityAt(map, them, "Rome", 30, 12, island: 2, trade: 14);
+        var foreignOnHomeIsland = CityAt(map, them, "Paris", 20, 4, island: 1, trade: 14);
 
         var caravan = new Unit
         {
@@ -164,7 +208,7 @@ public class CaravanActionsTests
             Players = players
         };
 
-        return new TestWorld(game, home, neighbour, foreign, caravan);
+        return new TestWorld(game, home, neighbour, foreign, foreignOnHomeIsland, caravan);
     }
 
     private static void Fill(Map map)
