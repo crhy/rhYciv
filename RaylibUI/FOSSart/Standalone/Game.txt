@@ -894,8 +894,8 @@ The anarchy is over. Your people are waiting to be told how they will be governe
 @GOVERNMENTLEARNED
 @title=%STRING0
 @width=300
-@button=Ok
-@button=Cancel
+@button=Revolt!
+@button=Keep %STRING1
 Your scholars have set out the workings of %STRING0. Adopting it means a revolution, and the anarchy that comes with one. Shall it be done?
 
 @TECHFROMCONQUEST
@@ -1088,8 +1088,8 @@ Knowledge given away is not knowledge lost, but it does even the ground. Which a
 @BREAKTREATY
 @title=Break the Treaty?
 @width=380
-@button=Ok
-@button=Cancel
+@button=Declare War
+@button=Cower in Fear
 There is a treaty with the %STRING0. To attack now is to end it by your own hand: the military gain may be immediate, but every civilization that has met you will remember that your signature is a light thing.
 
 @WARDECLARED

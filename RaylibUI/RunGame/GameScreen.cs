@@ -393,7 +393,10 @@ public class GameScreen : BaseScreen
             _pendingCityNews.Add(news);
         }
 
-        news.Items.Add((dialog, replaceStrings, replaceNumbers));
+        // Worded now, not when the message is shown: by then the city may have
+        // moved on (a finished building is replaced in production at once), and
+        // "cannot build" named the replacement instead of what it could not build.
+        news.Items.Add((dialog, replaceStrings ?? DefaultCityStrings(city), replaceNumbers));
     }
 
     /// <summary>

@@ -264,8 +264,15 @@ jobs:
             exit 1
           fi
 
-          gh release create "$tag" \
-            --title "rhYciv ${{ needs.version.outputs.version }}" \
-            --notes-file docs/RELEASE-NOTES.md \
-            --verify-tag \
-            "${assets[@]}"
+          # A release made by hand before this job ran (0.2.2 was) would fail
+          # `create` and ship with no downloads; attach the builds to it instead.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::warning::Release $tag already exists; uploading the builds to it"
+            gh release upload "$tag" --clobber "${assets[@]}"
+          else
+            gh release create "$tag" \
+              --title "rhYciv ${{ needs.version.outputs.version }}" \
+              --notes-file docs/RELEASE-NOTES.md \
+              --verify-tag \
+              "${assets[@]}"
+          fi

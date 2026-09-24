@@ -119,6 +119,8 @@ namespace Model.Core
 
         public bool CeaseFire { get; set; }
 
+        public int CeaseFireTurn { get; set; } = -1;
+
         public bool Contact { get; set; }
     }
 }

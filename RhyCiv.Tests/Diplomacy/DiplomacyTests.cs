@@ -40,7 +40,7 @@ public class DiplomacyTests
         DiplomacyFunctions.DeclareWar(game, us, them);
         Assert.True(DiplomacyFunctions.AtWar(them, us));
 
-        DiplomacyFunctions.AgreeCeaseFire(us, them);
+        DiplomacyFunctions.AgreeCeaseFire(game, us, them);
         Assert.False(DiplomacyFunctions.AtWar(them, us));
         Assert.True(DiplomacyFunctions.UnderTreaty(them, us));
     }
@@ -159,6 +159,101 @@ public class DiplomacyTests
         game.Turn = 25;
         DiplomacyFunctions.FadeReputations(game);
         Assert.Equal(1, DiplomacyFunctions.BlackMarks(us));
+    }
+
+    [Fact]
+    public void ACeaseFireExpiresAfterItsTurnsRunOut()
+    {
+        var (game, _) = World();
+        var us = game.AllCivilizations[0];
+        var them = game.AllCivilizations[1];
+
+        game.Turn = 0;
+        DiplomacyFunctions.AgreeCeaseFire(game, us, them);
+
+        for (var turn = 1; turn < DiplomacyFunctions.CeaseFireDuration; turn++)
+        {
+            game.Turn = turn;
+            DiplomacyFunctions.ExpireCeaseFires(game);
+
+            Assert.True(DiplomacyFunctions.UnderTreaty(us, them),
+                "A cease-fire should still hold before its turns have run out.");
+            Assert.True(DiplomacyFunctions.UnderTreaty(them, us),
+                "The cease-fire should still hold for both sides before its turns have run out.");
+        }
+
+        game.Turn = DiplomacyFunctions.CeaseFireDuration;
+        DiplomacyFunctions.ExpireCeaseFires(game);
+
+        Assert.False(DiplomacyFunctions.UnderTreaty(us, them));
+        Assert.False(DiplomacyFunctions.UnderTreaty(them, us));
+    }
+
+    [Fact]
+    public void TributeExtendsAExistingCeaseFire()
+    {
+        var (game, _) = World();
+        var us = game.AllCivilizations[0];
+        var them = game.AllCivilizations[1];
+
+        game.Turn = 0;
+        DiplomacyFunctions.AgreeCeaseFire(game, us, them);
+
+        var renewed = DiplomacyFunctions.CeaseFireDuration - 1;
+        game.Turn = renewed;
+        DiplomacyFunctions.RenewCeaseFire(game, us, them);
+
+        game.Turn = DiplomacyFunctions.CeaseFireDuration;
+        DiplomacyFunctions.ExpireCeaseFires(game);
+
+        Assert.True(DiplomacyFunctions.UnderTreaty(us, them),
+                "Tribute should extend a cease-fire past its original end.");
+        Assert.True(DiplomacyFunctions.UnderTreaty(them, us),
+                "Tribute should extend the cease-fire for both sides.");
+
+        game.Turn = renewed + DiplomacyFunctions.CeaseFireDuration;
+        DiplomacyFunctions.ExpireCeaseFires(game);
+
+        Assert.False(DiplomacyFunctions.UnderTreaty(us, them));
+        Assert.False(DiplomacyFunctions.UnderTreaty(them, us));
+    }
+
+    [Fact]
+    public void ACeaseFireReadBackFromASaveStillExpires()
+    {
+        var (game, _) = World();
+        var us = game.AllCivilizations[0];
+        var them = game.AllCivilizations[1];
+
+        // A save keeps that there is a cease-fire but not when it runs out.
+        game.Turn = 0;
+        DiplomacyFunctions.AgreeCeaseFire(game, us, them);
+        us.Relations[them.Id]!.CeaseFireTurn = -1;
+        them.Relations[us.Id]!.CeaseFireTurn = -1;
+
+        game.Turn = 40;
+        DiplomacyFunctions.ExpireCeaseFires(game);
+        Assert.True(DiplomacyFunctions.UnderTreaty(us, them),
+            "A loaded cease-fire should start its count, not end at once.");
+
+        game.Turn = 40 + DiplomacyFunctions.CeaseFireDuration;
+        DiplomacyFunctions.ExpireCeaseFires(game);
+        Assert.False(DiplomacyFunctions.UnderTreaty(us, them));
+        Assert.False(DiplomacyFunctions.UnderTreaty(them, us));
+    }
+
+    [Fact]
+    public void TributeDoesNotCreateACeaseFireWhereThereIsNone()
+    {
+        var (game, _) = World();
+        var us = game.AllCivilizations[0];
+        var them = game.AllCivilizations[1];
+
+        DiplomacyFunctions.MakeContact(game, us, them);
+        DiplomacyFunctions.RenewCeaseFire(game, us, them);
+
+        Assert.False(DiplomacyFunctions.UnderTreaty(us, them));
+        Assert.False(DiplomacyFunctions.UnderTreaty(them, us));
     }
 
     private static (MockGame Game, MockPlayer[] Players) World()
