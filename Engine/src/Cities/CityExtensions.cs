@@ -230,8 +230,17 @@ namespace RhyCiv.Engine
             return true;
         }
 
+        /// <summary>
+        /// What selling a building pays: a gold piece for every shield it cost, as
+        /// in Civilization II (docs/CIV2-COMPARISON.md, "Selling a building").
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Improvement.Cost"/> is already in shields -- production is
+        /// charged exactly that -- so multiplying by the shield box's row count
+        /// paid ten times over: 400 gold for a Temple.
+        /// </remarks>
         public static int GetSaleValue(this Improvement improvement, Rules rules) =>
-            improvement.Cost * rules.Cosmic.RowsShieldBox;
+            improvement.Cost;
 
         public static void AddImprovement(this City city, Improvement improvement) =>
             city.OrderedImprovements.Add(improvement.Type, improvement);

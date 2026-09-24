@@ -133,9 +133,9 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     /// larger than the screen -- the first attempt at this produced a window of
     /// stone with the question hanging off the top corner. Big enough to be a
     /// person you are talking to, small enough to leave room for what is being
-    /// said.
+    /// said. It was 300, and the leaders are good enough to be seen larger (#183).
     /// </remarks>
-    private const float PortraitHeight = 300f;
+    private const float PortraitHeight = 480f;
 
     private void Parley(Civilization other)
     {
@@ -146,7 +146,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             // control, so the scale asked for is the scale applied.
             var height = RaylibUtils.Images.GetImageHeight(portrait, gameScreen.Main.ActiveInterface);
             var scale = height > 0 ? PortraitHeight / height : 1f;
-            _portrait = new DialogImageElements(portrait, scale);
+            _portrait = new DialogImageElements(portrait, scale) { Portrait = true };
         }
 
         Audience(other);
@@ -278,6 +278,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private const string GiftButton = "We Offer a Gift";
     private const string BreakAllianceButton = "Cancel This Alliance";
     private const string DeclareWarButton = "Declare War";
+    private const string CowerButton = "Cower in Fear";
     private const string GiftGoldButton = "Gold";
     private const string GiftTechButton = "Knowledge";
     private const string NeverMind = "Never Mind";
@@ -340,9 +341,10 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private void DeclareWar(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
+        // The buttons say what each choice is: go to war, or back down.
         Step("BREAKTREATY", (button, _, _, _) =>
         {
-            if (button != Labels.Ok)
+            if (button != DeclareWarButton)
             {
                 ReturnToAudience(other);
                 return;
@@ -355,8 +357,9 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
 
             // War ends the audience. There is nothing further to say across a
             // table that no longer exists.
-            Step("WARDECLARED", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
-        }, replaceStrings: [other.Adjective]);
+            // "the Indians", not "the Indian": both messages name the people.
+            Step("WARDECLARED", (_, _, _, _) => { }, replaceStrings: [other.TribeName]);
+        }, replaceStrings: [other.TribeName], buttons: [DeclareWarButton, CowerButton]);
     }
 
     private const string GiftAmount = "Gift";

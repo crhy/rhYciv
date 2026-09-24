@@ -58,7 +58,14 @@ public static class DiplomacyFunctions
 
     public static bool HaveMet(Civilization a, Civilization b) => Between(a, b).Contact;
 
-    public static bool AtWar(Civilization a, Civilization b) => Between(a, b).War;
+    /// <summary>
+    /// Whether these two are at war. The barbarians always are, with everyone: they
+    /// never sign anything, so there is never a war to declare. Reading their
+    /// (empty) relation instead said they were at peace, and their first attack
+    /// "declared war" on the player (#181).
+    /// </summary>
+    public static bool AtWar(Civilization a, Civilization b) =>
+        a.PlayerType == PlayerType.Barbarians || b.PlayerType == PlayerType.Barbarians || Between(a, b).War;
 
     /// <summary>
     /// Whether something stands between these two: a cease-fire, a peace treaty or

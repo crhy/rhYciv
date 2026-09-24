@@ -40,6 +40,8 @@ looked at.
 | Diplomat and Spy missions | verified | In-Depth Guide Table 1.1 |
 | Attitude and reputation names | verified | Civ II's own nine ranks |
 | Tax / luxury / science split | partly | matches on two positions; Civ II's displayed figures sum to more than the city's trade, not yet understood |
+| Selling a building: a gold piece per shield | verified | two written sources; was paying ten times that |
+| What a city builds after finishing a building | **unverified** | now the city's best defender; not checked against the game |
 | Democracy, and the Republic's Senate | **not implemented** | — |
 | AI-initiated demands | **not implemented** | — |
 
@@ -538,6 +540,40 @@ there would have to be if combat units were ever announced. So Civ II announces
 buildings and units that cannot fight, and says nothing about a warrior or a
 horseman. This game had it the other way round.
 
+### Selling a building
+
+Civ II pays one gold piece for every shield a building cost. Two independent
+sources say so: the Civilization Wiki's page on gold in Civ II ("selling a city
+improvement immediately provides gold equivalent to the improvement's
+production cost"), and CivFanatics players describing building and selling
+improvements as a way of turning shields into gold at about one for one
+("can you sell city improvements", "How to earn money in CIV II?").
+
+This game's `Improvement.Cost` is already in shields — the standalone
+RULES.txt lists a Temple at 40, and production is charged exactly that — but
+the sale multiplied it by the shield box's row count again, paying 400 gold
+for a Temple. It now pays 40 (#185).
+
+Not yet measured in the original: whether the sale is affected by the
+difficulty level or a scenario's `RowsShieldBox`. A Temple sold in a Bottles
+game at two difficulty levels would settle it.
+
+A related, older gap found on the way: Civ II's own RULES.TXT lists costs in
+rows of ten (Warriors 1, Temple 4), while the standalone file lists shields
+(Warriors 10, Temple 40), and nothing converts one to the other. A game run on
+the original rules file would charge a tenth of the price. Not changed here.
+
+### What a city builds after it finishes a building
+
+**Unverified.** A building cannot be built twice, and this game used to leave
+it in production, so the next turn announced "cannot build" and swapped in the
+cheapest thing with no prerequisite — Barracks — which the player never chose
+(#185). A finished building is now replaced at once by the city's strongest
+defender, and the "builds" message still offers Zoom to City. Whether Civ II
+instead picks from its own advisor list, or opens the city window, has not been
+checked against the game; a screenshot of the production box the turn after a
+Temple completes would answer it.
+
 ---
 
 ## Diplomacy: what the original does
@@ -599,6 +635,9 @@ revolt for 776 gold".
 - **The tax, luxury and science split** matches on the two positions checked, but
   the figures Civ II displays sum to more than the city's trade, which is not yet
   understood.
+- **What a city builds after finishing a building** (see "What a city builds
+  after it finishes a building" above), and whether difficulty changes a
+  building's sale price.
 
 ---
 
@@ -628,6 +667,14 @@ used in three ways:
    the start of a turn and will not contain anything done during it.
 
 ### Secondary — written sources
+
+- [Gold (currency) (Civ2), Civilization Wiki](https://civilization.fandom.com/wiki/Gold_(currency)_(Civ2))
+  — selling an improvement pays gold equal to its production cost. Used for
+  "Selling a building".
+- CivFanatics, ["can you sell city improvements"](https://forums.civfanatics.com/threads/can-you-sell-city-improvements.9238/)
+  and ["How to earn money in CIV II?"](https://forums.civfanatics.com/threads/how-to-earn-money-in-civ-ii.260288/)
+  — players converting shields to gold one for one by building and selling.
+  The second, independent source for the same rule.
 
 - **Civ II city square rules (Civilopedia quoted verbatim)** —
   <https://forums.civfanatics.com/threads/rules-for-city-tile-yields.690510/>

@@ -121,6 +121,17 @@ public class CivDialog : DynamicSizingDialog
             innerLayout.Add(_imageBox, 0, 0);
         }
 
+        // An audience: the speaker's portrait on the left, and what they say in a
+        // column of the same width on the right, wrapped well inside it and
+        // centred both ways (#183).
+        var portrait = dialog.Image is { Portrait: true } && _imageBox != null;
+        // The same width the portrait itself is given (DynamicSizingDialog caps a
+        // sized picture at MaxPortraitWidth), so the two halves are equal.
+        var columnWidth = portrait
+            ? Math.Clamp(_imageBox!.GetPreferredWidth(), 360, DynamicSizingDialog.MaxPortraitWidth)
+            : 0;
+        const int portraitMargin = 56;
+
         var maxTextWidth = 0;
         if (dialog.Text?.Count > 0)
         {
@@ -163,9 +174,14 @@ public class CivDialog : DynamicSizingDialog
 
             // First make center and own line labels as they determine dialog width
             List<LabelControl> nonWrappedLabels = [];
+            // Beside a portrait every line wraps into the column, its own-line
+            // paragraphs included, so nothing runs out past the margin.
+            bool Wraps(TextStyles style) =>
+                style == TextStyles.Left || (portrait && style == TextStyles.LeftOwnLine);
+
             for (var j = 0; j < texts.Count; j++)
             {
-                if (styles[j] != TextStyles.Left)
+                if (!Wraps(styles[j]))
                 {
                     nonWrappedLabels.Add(new LabelControl(this,
                         string.IsNullOrEmpty(texts[j]) && styles[j] == TextStyles.LeftOwnLine ? " " : texts[j],    // Add space if ^ is the only character 
@@ -175,7 +191,9 @@ public class CivDialog : DynamicSizingDialog
                 }
             }
 
-            maxTextWidth = GetInnerPanelWidthFromText(nonWrappedLabels, dialog.Width ?? 0);
+            maxTextWidth = portrait
+                ? columnWidth
+                : GetInnerPanelWidthFromText(nonWrappedLabels, dialog.Width ?? 0);
             if (isMessageDialog)
             {
                 // Wrap the body to the full requested panel so the message fills
@@ -187,16 +205,23 @@ public class CivDialog : DynamicSizingDialog
             List<LabelControl> textLabels = [];
             for (var j = 0; j < texts.Count; j++)
             {
-                if (styles[j] == TextStyles.Left)
+                if (Wraps(styles[j]))
                 {
-                    var wrappedTexts = DialogUtils.GetWrappedTexts(texts[j], maxTextWidth, _active.Look.LabelFont, dialogFontSize);
+                    var wrapWidth = portrait ? maxTextWidth - 2 * portraitMargin : maxTextWidth;
+                    var wrappedTexts = DialogUtils.GetWrappedTexts(texts[j], wrapWidth, _active.Look.LabelFont, dialogFontSize);
+                    // A paragraph's lines are spaced for its own type size. They
+                    // took a label's default 32 pixels whatever the font, which
+                    // double-spaced the smaller dialogs' text (#183).
+                    var lineHeight = (int)MathF.Ceiling(dialogFontSize * 1.4f);
 
                     foreach (var text in wrappedTexts)
                     {
                         var wrappedLabel = new LabelControl(this,
                             string.IsNullOrEmpty(text) ? " " : text,    // Add space if ^ is the only character 
                             false,
-                            horizontalAlignment: styles[j] == TextStyles.Centered || isBigDialog ? HorizontalAlignment.Center : HorizontalAlignment.Left,
+                            defaultHeight: lineHeight,
+                            horizontalAlignment: styles[j] == TextStyles.Centered || isBigDialog || portrait
+                                ? HorizontalAlignment.Center : HorizontalAlignment.Left,
                             font: _active.Look.LabelFont, fontSize: dialogFontSize,
                             colorFront: textFront, colorShadow: textShadow, shadowOffset: textShadowOffset);
 
@@ -269,6 +294,20 @@ public class CivDialog : DynamicSizingDialog
             innerLayout.Add(_optionsPanel, layoutRow++, 1);
         }
 
+        // Centre what is said against the portrait: push the first line down by
+        // half of whatever height the text leaves over. Only for plain text; a
+        // list or form below it keeps its place at the top.
+        if (portrait && _listbox == null && _textBoxes == null && _optionsPanel == null)
+        {
+            var textCells = innerLayout.Cells.Where(c => c.Column == 1 && c.Control != null).ToList();
+            var textHeight = textCells.Sum(c => c.Control!.Height);
+            var spare = _imageBox!.GetPreferredHeight() - textHeight;
+            if (textCells.Count > 0 && spare > 0)
+            {
+                textCells.MinBy(c => c.Row)!.Padding = new Padding(spare / 2, 0, 0, 0);
+            }
+        }
+
         _innerPanel = new TableLayoutPanel(this)
         {
             Location = new Vector2(LayoutPadding.Left, LayoutPadding.Top),
@@ -277,8 +316,14 @@ public class CivDialog : DynamicSizingDialog
         Controls.Add(_innerPanel);
 
         var menuBar = new ControlGroup(this);
-        foreach (var button in dialog.Button ?? []) // Button is optional; a null list used to NRE
+        _buttonTexts = [];
+        foreach (var buttonTemplate in dialog.Button ?? []) // Button is optional; a null list used to NRE
         {
+            // A button can name what it does ("Keep Despotism"), so its label is
+            // filled in like the rest of the dialog's text.
+            var button = DialogUtils.ReplacePlaceholders(buttonTemplate, dialog.ReplaceStrings, dialog.ReplaceNumbers)
+                         ?? buttonTemplate;
+            _buttonTexts.Add(button);
             var actionButton = new Button(this, button);
 
             actionButton.Click += OnActionButtonOnClick;
@@ -313,10 +358,21 @@ public class CivDialog : DynamicSizingDialog
             case KeyboardKey.Escape when ButtonExists(Labels.Cancel):
                 CloseDialog(Labels.Cancel);
                 return;
+            // A dialog whose buttons say what they do ("Revolt!", "Keep
+            // Despotism") has no Ok or Cancel: Enter takes the first, the
+            // affirmative one, and Escape the last.
+            case KeyboardKey.Enter or KeyboardKey.KpEnter when _buttonTexts.Count > 0:
+                CloseDialog(_buttonTexts[0]);
+                return;
+            case KeyboardKey.Escape when _buttonTexts.Count > 1:
+                CloseDialog(_buttonTexts[^1]);
+                return;
         }
 
         base.OnKeyPress(key);
     }
+
+    private List<string> _buttonTexts = [];
 
     private void OnActionButtonOnClick(object? sender, MouseEventArgs mouseEventArgs)
     {

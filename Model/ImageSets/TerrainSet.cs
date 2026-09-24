@@ -36,6 +36,38 @@ namespace Model.ImageSets
         public IImageSource[] BaseTiles { get; set; } = [];
 
         /// <summary>
+        /// Every painting of each terrain, <c>[variant][terrain]</c>; variant 0 is
+        /// <see cref="BaseTiles"/>. The map picks one per tile from its position
+        /// so a field of one terrain is not a grid of identical tiles. Empty when
+        /// only the classic sheet is loaded.
+        /// </summary>
+        public IImageSource[][] BaseTileVariants { get; set; } = [];
+
+        /// <summary>
+        /// <see cref="DitherMaps"/> built from each of <see cref="BaseTileVariants"/>,
+        /// <c>[variant][edge]</c>.
+        /// </summary>
+        public DitherMap[][] DitherMapVariants { get; set; } = [];
+
+        /// <summary>
+        /// Which of <see cref="BaseTileVariants"/> this tile draws: a hash of its
+        /// position, so neighbours rarely match and nothing lines up in rows.
+        /// </summary>
+        public int VariantOf(Tile tile)
+        {
+            if (BaseTileVariants.Length <= 1)
+            {
+                return 0;
+            }
+
+            var hash = (uint)(tile.X * 73856093 ^ tile.Y * 19349663 ^ tile.Z * 83492791);
+            hash ^= hash >> 13;
+            hash *= 0x5bd1e995;
+            hash ^= hash >> 15;
+            return (int)(hash % (uint)BaseTileVariants.Length);
+        }
+
+        /// <summary>
         /// True once <see cref="BaseTiles"/> hold the bundled high-resolution
         /// photographic diamonds rather than the classic 8-bit sheet cells. The
         /// tile compositor softens terrain dithering and skips the legacy coast
@@ -73,6 +105,27 @@ namespace Model.ImageSets
         /// already carries its own sand, surf and open water.
         /// </summary>
         public IImageSource[] CoastMarch { get; set; } = [];
+
+        /// <summary>
+        /// The open sea, seamless over a 4x4 block of tiles and cut into the
+        /// sixteen tiles of that block, indexed <c>i * 4 + j</c> where i and j are
+        /// the tile's position along the two diagonals, (X + Y) / 2 and (X - Y) / 2,
+        /// each modulo 4.
+        /// </summary>
+        public IImageSource[] Sea { get; set; } = [];
+
+        /// <summary>
+        /// The shore drawn over a sea tile, indexed by a mask of what land it
+        /// touches: bits 0-3 for land across its NE, SE, SW, NW edge, bits 4-7 for
+        /// land touching only its N, E, S, W corner. Transparent where the land is:
+        /// <see cref="ShoreLand"/> is the matching land mask, and the land's own
+        /// terrain is drawn through it first. All 256 masks are filled; masks that
+        /// draw alike share an image.
+        /// </summary>
+        public IImageSource[] Shore { get; set; } = [];
+
+        /// <summary>The land part of each <see cref="Shore"/> image, white on black.</summary>
+        public IImageSource[] ShoreLand { get; set; } = [];
 
         /// <summary>
         /// Procedurally painted shorelines, indexed [edge][variant]. Edge is the
