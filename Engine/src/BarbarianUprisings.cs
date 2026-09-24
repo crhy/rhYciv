@@ -108,7 +108,7 @@ internal static class BarbarianUprisings
         foreach (var square in SpawnSquares(landing, barbarians, PartySize(activity)))
         {
             var raider = Barbarians.Create(barbarians, definition, square,
-                DifficultyRules.BarbariansAreVeterans(game));
+                false);
 
             // They have crossed the country or the sea to get here; they attack from
             // next turn, which gives the city a turn to prepare.
