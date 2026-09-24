@@ -162,7 +162,7 @@ public class DiplomacyTests
     }
 
     [Fact]
-    public void ACeaseFireExpiresAfterSixteenTurns()
+    public void ACeaseFireExpiresAfterItsTurnsRunOut()
     {
         var (game, _) = World();
         var us = game.AllCivilizations[0];
@@ -177,9 +177,9 @@ public class DiplomacyTests
             DiplomacyFunctions.ExpireCeaseFires(game);
 
             Assert.True(DiplomacyFunctions.UnderTreaty(us, them),
-                "A cease-fire should still hold before sixteen turns have passed.");
+                "A cease-fire should still hold before its turns have run out.");
             Assert.True(DiplomacyFunctions.UnderTreaty(them, us),
-                "The cease-fire should still hold for both sides before sixteen turns have passed.");
+                "The cease-fire should still hold for both sides before its turns have run out.");
         }
 
         game.Turn = DiplomacyFunctions.CeaseFireDuration;
@@ -199,18 +199,19 @@ public class DiplomacyTests
         game.Turn = 0;
         DiplomacyFunctions.AgreeCeaseFire(game, us, them);
 
-        game.Turn = 8;
+        var renewed = DiplomacyFunctions.CeaseFireDuration - 1;
+        game.Turn = renewed;
         DiplomacyFunctions.RenewCeaseFire(game, us, them);
 
         game.Turn = DiplomacyFunctions.CeaseFireDuration;
         DiplomacyFunctions.ExpireCeaseFires(game);
 
         Assert.True(DiplomacyFunctions.UnderTreaty(us, them),
-                "Tribute should extend a cease-fire past its original sixteen turns.");
+                "Tribute should extend a cease-fire past its original end.");
         Assert.True(DiplomacyFunctions.UnderTreaty(them, us),
                 "Tribute should extend the cease-fire for both sides.");
 
-        game.Turn = DiplomacyFunctions.CeaseFireDuration * 2;
+        game.Turn = renewed + DiplomacyFunctions.CeaseFireDuration;
         DiplomacyFunctions.ExpireCeaseFires(game);
 
         Assert.False(DiplomacyFunctions.UnderTreaty(us, them));
@@ -233,7 +234,7 @@ public class DiplomacyTests
         game.Turn = 40;
         DiplomacyFunctions.ExpireCeaseFires(game);
         Assert.True(DiplomacyFunctions.UnderTreaty(us, them),
-            "A loaded cease-fire should start its sixteen turns, not end at once.");
+            "A loaded cease-fire should start its count, not end at once.");
 
         game.Turn = 40 + DiplomacyFunctions.CeaseFireDuration;
         DiplomacyFunctions.ExpireCeaseFires(game);

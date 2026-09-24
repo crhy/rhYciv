@@ -30,8 +30,12 @@ public static class DiplomacyFunctions
     /// <summary>How warmly a civilisation must feel to agree to each treaty.</summary>
     private const int CeaseFireAttitude = 25;
 
-    /// <summary>Civ II cease-fires last about this many turns unless tribute extends them.</summary>
-    public const int CeaseFireDuration = 16;
+    /// <summary>
+    /// How many turns a cease-fire lasts unless tribute extends it. Civ II's manual
+    /// says "approximately 16"; the owner, playing the original, finds they end far
+    /// sooner, and five is their ruling until measured (docs/CIV2-RULES-RESEARCH.md).
+    /// </summary>
+    public const int CeaseFireDuration = 5;
     private const int PeaceAttitude = 45;
     private const int AllianceAttitude = 75;
 
@@ -255,8 +259,8 @@ public static class DiplomacyFunctions
     }
 
     /// <summary>
-    /// Civ II keeps a cease-fire alive for about sixteen turns, and tribute paid
-    /// by either side adds another sixteen.
+    /// A cease-fire lasts <see cref="CeaseFireDuration"/> turns, and tribute paid
+    /// by either side starts that count again.
     /// </summary>
     public static void RenewCeaseFire(IGame game, Civilization a, Civilization b)
     {
@@ -299,7 +303,7 @@ public static class DiplomacyFunctions
                 }
 
                 // The expiry turn is not saved, so a cease-fire read back from a
-                // save (or set by any other route) starts its sixteen turns now
+                // save (or set by any other route) starts its count now
                 // rather than never ending.
                 if (relation.CeaseFireTurn < 0)
                 {

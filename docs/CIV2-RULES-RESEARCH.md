@@ -8,7 +8,7 @@ the local Civ II wiki.
 
 ### Verified rule
 
-A cease-fire in Civilization II is temporary. It lasts approximately 16 turns.
+A cease-fire in Civilization II is temporary. The manual says it lasts approximately 16 turns (rhYciv uses 5; see the owner ruling below).
 When tribute is paid by either side, the cease-fire is automatically extended by
 approximately 16 more turns. When it expires, the two civilizations return to a
 neutral relationship unless a permanent peace or alliance has been made.
@@ -71,6 +71,16 @@ relation is "no treaty", not war. Subverting a city ends a cease-fire.
 no tribute, keep units away from the other civilisation, and note the turn of the
 "cease-fire has expired" message; repeat with a poor reputation and with units
 near their cities.
+
+### Owner ruling (2026-09-24): five turns
+
+The owner, who plays the original game, is confident cease-fires last well short
+of 16 turns and ruled that rhYciv uses **5 turns**, with tribute restarting the
+count. This is a deliberate departure from the manual's "approximately 16",
+based on the owner's play and consistent with the player reports above of
+cease-fires ending early. It is unmeasured: the test described above should
+still be run, and `DiplomacyFunctions.CeaseFireDuration` changed if it shows
+otherwise.
 
 ### What was changed
 
