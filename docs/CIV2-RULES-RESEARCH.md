@@ -42,6 +42,16 @@ lower difficulties; however, no reliable Civ II source lists a difficulty-based
 barbarian veteran mechanic. The existing claim appears to be a misreading of
 barbarian attack strength.
 
+**Owner ruling (2026-09-24):** the owner, who plays Civ II, confirms that
+barbarians are not veterans by default at any difficulty. That, together with no
+source listing such a rule, settles it. Difficulty scales barbarian attack
+strength (the Barbarian Paper's 25%-150% table), not veteran status.
+
+**Not settled by this change:** #75 (barbarians still too tough on Deity) and
+#134 (one barbarian killing two fortified units in a turn) remain open. Both need
+separate checks: whether an attack spends the attacker's whole move, whether a
+damaged unit keeps attacking, and when a whole stack dies with its defender.
+
 **Conclusion:**
 The difficulty-based barbarian veteran behavior is not supported by Civ II rules.
 The fix removes `DifficultyRules.BarbariansAreVeterans` and makes barbarians
