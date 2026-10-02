@@ -276,3 +276,21 @@ jobs:
               --verify-tag \
               "${assets[@]}"
           fi
+
+      # Without this the Flatpak waits for SpacedBazaar's next scheduled
+      # rebuild of the spaced-github repository, up to a day (crhy/spaced#250).
+      # SPACEDBAZAAR_DISPATCH_TOKEN is a fine-grained token for
+      # crhy/spacedbazaar with Contents: read and write.
+      - name: Ask SpacedBazaar to publish this release
+        env:
+          GH_TOKEN: ${{ secrets.SPACEDBAZAAR_DISPATCH_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::SPACEDBAZAAR_DISPATCH_TOKEN is not set; SpacedBazaar publishes this release at its next scheduled run"
+            exit 0
+          fi
+          gh api repos/crhy/spacedbazaar/dispatches \
+            -f event_type=crhy-release \
+            -f 'client_payload[app_id]=io.github.crhy.rhYciv'
