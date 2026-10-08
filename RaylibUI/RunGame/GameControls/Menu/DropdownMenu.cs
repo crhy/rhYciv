@@ -152,6 +152,11 @@ public class DropdownMenu(GameScreen gameScreen) : BaseDialog(gameScreen.Main)
                 MenuBar.Activate(_current + 1);
                 return;
             case KeyboardKey.Down:
+                if (Controls.Count == 0)
+                {
+                    return;
+                }
+
                 if (Focused == null)
                 {
                     Focused = Controls[0];
@@ -168,6 +173,11 @@ public class DropdownMenu(GameScreen gameScreen) : BaseDialog(gameScreen.Main)
 
                 return;
             case KeyboardKey.Up:
+                if (Controls.Count == 0)
+                {
+                    return;
+                }
+
                 if (Focused == null)
                 {
                     Focused = Controls[^1];

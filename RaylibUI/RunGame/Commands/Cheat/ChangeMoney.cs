@@ -43,6 +43,11 @@ public class ChangeMoney(GameScreen gameScreen) : AlwaysOnCommand(gameScreen, Co
             var civId = selection + 1;
             targetCiv = GameScreen.Game.AllCivilizations.Find(civ => civ.Id == civId && civ.PlayerType != PlayerType.Barbarians);
             Debug.Assert(targetCiv != null, nameof(targetCiv) + " != null");
+            if (targetCiv == null)
+            {
+                GameScreen.CloseDialog(_selectTribeDialog);
+                return;
+            }
 
             _enterNewMoneyDialog = BuildChangeMoneyDialog(targetCiv.Money, targetCiv.Adjective);
             GameScreen.CloseDialog(_selectTribeDialog);

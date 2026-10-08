@@ -151,7 +151,10 @@ public class CivilopediaWindow : BaseDialog
                                 ? uiImage
                                 : _active.PicSources["unit"][_units[i].Type];
                         }
-                        iconOffset = Images.GetImageWidth(icons[0][0], _active);
+                        if (icons.Length != 0 && icons[0] != null && icons[0].Length != 0)
+                        {
+                            iconOffset = Images.GetImageWidth(icons[0][0], _active);
+                        }
                         break;
                     case CivilopediaInfoType.Governments:
                         names = _govs.Select(g => g.Name).ToArray();
@@ -195,14 +198,17 @@ public class CivilopediaWindow : BaseDialog
                                 }
                             }
                         }
-                        iconOffset = Images.GetImageWidth(icons[0][0], _active) / 2;
+                        if (icons.Length != 0 && icons[0] != null && icons[0].Length != 0)
+                        {
+                            iconOffset = Images.GetImageWidth(icons[0][0], _active) / 2;
+                        }
                         break;
                     case CivilopediaInfoType.Concepts:
                         names = _concepts.ToArray();
                         icons = new IImageSource[_concepts.Count][];
                         break;
                 }
-                if (icons.Length != 0 && icons[0] != null)
+                if (icons.Length != 0 && icons[0] != null && icons[0].Length != 0)
                 {
                     iconWidth = Images.GetImageWidth(icons[0][0], _active, props.Listbox.IconScale);
                 }
@@ -282,7 +288,10 @@ public class CivilopediaWindow : BaseDialog
                 listbox.ItemSelected += (_, i) =>
                 {
                     _pedia.Id = i.Index;
-                    _ctrlHistory.Last().Id = _pedia.Id;
+                    if (_ctrlHistory.Count != 0)
+                    {
+                        _ctrlHistory.Last().Id = _pedia.Id;
+                    }
                 };
                 Controls.Add(listbox);
                 Focused = listbox;
