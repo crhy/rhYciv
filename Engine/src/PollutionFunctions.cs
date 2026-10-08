@@ -203,6 +203,11 @@ public static class PollutionFunctions
     private static void Foul(IGame game, Tile tile)
     {
         var pollution = game.TerrainImprovements[ImprovementTypes.Pollution];
+        if (tile.Z < 0 || tile.Z >= pollution.AllowedTerrains.Count)
+        {
+            return;
+        }
+
         var terrain = pollution.AllowedTerrains[tile.Z].FirstOrDefault(t => t.TerrainType == (int)tile.Type);
         if (terrain == null)
         {

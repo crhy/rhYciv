@@ -101,20 +101,26 @@ namespace RhyCiv.Engine
             NoOfTurnsOfPeace = gameData.NoOfTurnsOfPeace;
 
             var playerCiv = GetPlayerCiv;
-            var activePlayer = Players[playerCiv.Id];
-            
-            var firstUnit = objects.ActiveUnit is { Dead: false } ? objects.ActiveUnit : playerCiv.Units.FirstOrDefault(u=>u.AwaitingOrders);
-
-            if (firstUnit == null)
+            if (playerCiv != null)
             {
-                activePlayer.ActiveTile = playerCiv.Cities[0].Location;
-            }
-            else
-            {
-                activePlayer.SetUnitActive(firstUnit, false);
-            }
+                var activePlayer = Players[playerCiv.Id];
 
-            _activeCiv = playerCiv;
+                var firstUnit = objects.ActiveUnit is { Dead: false } ? objects.ActiveUnit : playerCiv.Units.FirstOrDefault(u=>u.AwaitingOrders);
+
+                if (firstUnit == null)
+                {
+                    if (playerCiv.Cities.Count > 0)
+                    {
+                        activePlayer.ActiveTile = playerCiv.Cities[0].Location;
+                    }
+                }
+                else
+                {
+                    activePlayer.SetUnitActive(firstUnit, false);
+                }
+
+                _activeCiv = playerCiv;
+            }
             AllCities.AddRange(objects.Cities);
             if (gameData.CitiesBuiltSoFar == null)
             {
@@ -139,7 +145,10 @@ namespace RhyCiv.Engine
             {
                 var map = _maps[index];
                 map.NormalizeIslands();
-                map.CalculateFertility(Rules.Terrains[index]);
+                if (index < Rules.Terrains.Count)
+                {
+                    map.CalculateFertility(Rules.Terrains[index]);
+                }
                 AllCities.ForEach(c =>
                 {
                     map.AdjustFertilityForCity(c.Location);
@@ -173,9 +182,12 @@ namespace RhyCiv.Engine
 
             foreach (var city in AllCities)
             {
-                var government = Rules.Governments[city.Owner.Government];
-                city.SetUnitSupport(government);
-                city.CalculateOutput(city.Owner.Government, this);
+                if (city.Owner.Government >= 0 && city.Owner.Government < Rules.Governments.Length)
+                {
+                    var government = Rules.Governments[city.Owner.Government];
+                    city.SetUnitSupport(government);
+                    city.CalculateOutput(city.Owner.Government, this);
+                }
             }
 
             Power.AssignPowerRanks(this);

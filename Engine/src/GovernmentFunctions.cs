@@ -121,6 +121,7 @@ public static class GovernmentFunctions
     {
         civ.Government = (int)government;
 
+        if ((int)government < 0 || (int)government >= game.Rules.Governments.Length) return;
         var rules = game.Rules.Governments[(int)government];
         ClampRatesTo(civ, rules);
 

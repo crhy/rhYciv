@@ -75,6 +75,7 @@ public static class GameExtensions
         var units = tile.UnitsHere.Where(u => u.Building == improvement.Id).ToList();
         if (units.Count <= 0) return units;
 
+        if (tile.Z < 0 || tile.Z >= improvement.AllowedTerrains.Count) return units;
         var terrain = improvement.AllowedTerrains[tile.Z].FirstOrDefault(t => t.TerrainType == (int)tile.Type);
         var existingImprovement = tile.Improvements.FirstOrDefault(i => i.Improvement == improvement.Id);
 
@@ -110,7 +111,7 @@ public static class GameExtensions
 
         var progress = units.Sum(u => u.Counter);
         var cost = terrain.BuildTime;
-        if (tile.River)
+        if (tile.River && tile.Z >= 0 && tile.Z < improvement.AllowedTerrains.Count)
         {
             var river = improvement.AllowedTerrains[tile.Z]
                 .FirstOrDefault(t => t.TerrainType == TerrainConstants.River);
@@ -120,7 +121,7 @@ public static class GameExtensions
             }
         }
 
-        if (improvement.Levels[levelToBuild].BuildCostMultiplier != 0)
+        if (levelToBuild >= 0 && levelToBuild < improvement.Levels.Count && improvement.Levels[levelToBuild].BuildCostMultiplier != 0)
         {
             cost += cost * improvement.Levels[levelToBuild].BuildCostMultiplier / 100;
         }
