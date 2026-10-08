@@ -91,7 +91,7 @@ namespace RhyCiv.Engine.MapObjects
             }
 
             var transformEffect = terrain.Effects?.FirstOrDefault(e => e.Target == ImprovementConstants.Transform);
-            if (transformEffect != null)
+            if (transformEffect != null && transformEffect.Value >= 0 && transformEffect.Value < terrains.Length)
             {
                 tile.Terrain = terrains[transformEffect.Value];
                 return;
