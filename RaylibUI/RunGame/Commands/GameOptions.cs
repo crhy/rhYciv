@@ -40,17 +40,24 @@ public class GameOptions(GameScreen gameScreen) : IGameCommand
     {
         if (button == Labels.Ok)
         {
-            _options.SoundEffects = checkboxes![0];
-            _options.Music = checkboxes[1];
-            _options.AlwaysWaitAtEndOfTurn = checkboxes[2];
-            _options.AutosaveEachTurn = checkboxes[3];
-            _options.ShowEnemyMoves = checkboxes[4];
-            _options.NoPauseAfterEnemyMoves = checkboxes[5];
-            _options.FastPieceSlide = checkboxes[6];
-            _options.InstantAdvice = checkboxes[7];
-            _options.TutorialHelp = checkboxes[8];
-            _options.MoveUnitsWithoutMouse = checkboxes[9];
-            _options.EnterClosestCityScreen = checkboxes[10];
+            try
+            {
+                _options.SoundEffects = checkboxes![0];
+                _options.Music = checkboxes[1];
+                _options.AlwaysWaitAtEndOfTurn = checkboxes[2];
+                _options.AutosaveEachTurn = checkboxes[3];
+                _options.ShowEnemyMoves = checkboxes[4];
+                _options.NoPauseAfterEnemyMoves = checkboxes[5];
+                _options.FastPieceSlide = checkboxes[6];
+                _options.InstantAdvice = checkboxes[7];
+                _options.TutorialHelp = checkboxes[8];
+                _options.MoveUnitsWithoutMouse = checkboxes[9];
+                _options.EnterClosestCityScreen = checkboxes[10];
+            }
+            catch (Exception e)
+            {
+                RhyCiv.Engine.Diagnostics.SessionLog.Record($"game options dialog: bad checkbox list ({e})");
+            }
         }
     }
 

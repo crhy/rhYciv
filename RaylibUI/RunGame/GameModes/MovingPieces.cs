@@ -273,7 +273,7 @@ public class MovingPieces : IGameMode
         controls.Add(unitDisplay);
 
         // Show move points correctly
-        var commonMultiplier = _gameScreen.Game.Rules.Cosmic.MovementMultiplier;
+        var commonMultiplier = Math.Max(1, _gameScreen.Game.Rules.Cosmic.MovementMultiplier);
         var remainingFullPoints = activeUnit.MovePoints / commonMultiplier;
         var fractionalMove = activeUnit.MovePoints % commonMultiplier;
         string movesText;
