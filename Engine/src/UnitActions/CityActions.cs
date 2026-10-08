@@ -178,9 +178,12 @@ namespace RhyCiv.Engine.UnitActions
                 var capitalImprovement = ProductionPossibilities.FindByEffect(city.Owner.Id, Effects.Capital)
                                          ?? game.Rules.Improvements.Where(i =>
                                              i.Effects.ContainsKey(Effects.Capital) &&
-                                             city.Owner.AllowedAdvanceGroups[
-                                                 game.Rules.Advances[i.Prerequisite].AdvanceGroup] !=
-                                             AdvanceGroupAccess.Prohibited).MinBy(i => i.Cost);
+                                             ( i.Prerequisite < 0 || i.Prerequisite >= game.Rules.Advances.Length ||
+                                               game.Rules.Advances[i.Prerequisite].AdvanceGroup < 0 ||
+                                               game.Rules.Advances[i.Prerequisite].AdvanceGroup >= city.Owner.AllowedAdvanceGroups.Length ||
+                                               city.Owner.AllowedAdvanceGroups[
+                                                   game.Rules.Advances[i.Prerequisite].AdvanceGroup] !=
+                                               AdvanceGroupAccess.Prohibited )).MinBy(i => i.Cost);
                 if (capitalImprovement != null)
                 {
                     city.AddImprovement(capitalImprovement);
