@@ -26,7 +26,7 @@ public static class LoadGame
     private static IInterfaceAction LoadFromInternal(string path, IMain mainApp)
     {
         var fileData = File.ReadAllBytes(path);
-        bool classicSave = fileData[0] == 67;   // Classic saves start with the word CIVILIZE so if we see a C treat it as old 
+        bool classicSave = fileData.Length > 0 && fileData[0] == 67;   // Classic saves start with the word CIVILIZE so if we see a C treat it as old 
 
         var extendedMetadata = new Dictionary<string, string>();
 

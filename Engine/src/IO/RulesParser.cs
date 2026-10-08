@@ -567,7 +567,7 @@ namespace RhyCiv.Engine.IO
             {
                 foreach (var unitType in Rules.UnitTypes)
                 {
-                    unitType.Move = (unitType.Move / Rules.Cosmic.MovementMultiplier) * commonMultiplier;
+                    unitType.Move = Rules.Cosmic.MovementMultiplier != 0 ? (unitType.Move / Rules.Cosmic.MovementMultiplier) * commonMultiplier : unitType.Move;
                 }
             }
 
