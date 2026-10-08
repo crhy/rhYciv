@@ -48,7 +48,7 @@ public class GotoOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
 
     private void HandleButtonClick(string button, int index, IList<bool>? arg3, IDictionary<string, string>? arg4)
     {
-        if (button == ToggleButton)
+        if (button == ToggleButton && GameScreen.Player.ActiveUnit != null)
         {
             _allCities = !_allCities;
             Show(_allCities ? GameScreen.Game.AllCities : GameScreen.Player.Civilization.Cities,
