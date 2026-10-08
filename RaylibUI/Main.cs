@@ -288,7 +288,7 @@ namespace RaylibUI
             {
                 _colorTarget.Unload();
             }
-            _colorTarget = RenderTexture2D.Load(width, height);
+            _colorTarget = RenderTexture2D.Load(Math.Max(1, width), Math.Max(1, height));
         }
 
         private void HandleColorCorrectionKeys()
