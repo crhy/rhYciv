@@ -382,14 +382,15 @@ public class AiInterface(Game game, Civilization civilization, int playerDifficu
     {
         var target = args.ContainsKey("target") ? args["target"] as TileApi : null;
         var location = args.ContainsKey("location") ? args["location"] as TileApi : null;
-        var speed = args.ContainsKey("speed") ? Convert.ToInt32(args["speed"]) / game.Rules.Cosmic.MovementMultiplier : 1;
+        var moveMultiplier = game.Rules.Cosmic.MovementMultiplier;
+        var speed = args.ContainsKey("speed") ? Convert.ToInt32(args["speed"]) / (moveMultiplier == 0 ? 1 : moveMultiplier) : 1;
         if (target == null || location == null) return null;
 
         var path = Path.CalculatePathBetween(game, location.BaseTile, target.BaseTile,
             location.BaseTile.Terrain.Type == TerrainType.Ocean ? UnitGas.Sea : UnitGas.Ground, 
             speed, civ, false,
             false, false);
-        if (path == null || path.Tiles.Length <= speed)
+        if (path == null || speed < 0 || path.Tiles.Length <= speed)
         {
             return target;
         }

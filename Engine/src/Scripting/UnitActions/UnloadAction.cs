@@ -10,6 +10,7 @@ public class UnloadAction(Unit baseUnit, Tile possibleMove, Game game) : TileAct
 {
     public override void Execute()
     {
+        if (BaseUnit.CarriedUnits.Count == 0) return;
         var unitToMove = BaseUnit.CarriedUnits.First();
         MovementFunctions.ExecuteUnitMove(game, unitToMove, Tile, BaseUnit.CurrentLocation);
     }
