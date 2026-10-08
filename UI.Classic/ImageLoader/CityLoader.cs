@@ -19,12 +19,17 @@ public static class CityLoader
     public static void LoadCities(Ruleset ruleset, CityImageSet cities, ClassicInterface active)
     {
         // Cities images
+        var citySources = active.PicSources["city"];
         for (int row = 0; row < 6; row++)
         {
+            if (8 * row + 7 >= citySources.Length)
+            {
+                break;
+            }
             var sets = new CityImage[8];
             for (int col = 0; col < 8; col++)
             {
-                var props = Images.ExtractBitmapData(active.PicSources["city"][8 * row + col], active); // put into cache
+                var props = Images.ExtractBitmapData(citySources[8 * row + col], active); // put into cache
                 cities.CityRectangle = new Rectangle(0, 0, props.Image.Width, props.Image.Height);
 
                 // Keep the classic sheet sprite as the UI/dialog source and the
@@ -32,7 +37,7 @@ public static class CityLoader
                 // The 300x300 FOSS art is attached separately for map rendering.
                 sets[col] = new CityImage()
                 {
-                    Image = active.PicSources["city"][8 * row + col],
+                    Image = citySources[8 * row + col],
                     MapImage = active.GetFossArtCityImage(row, col),
                     LogicalSize = new Vector2(props.Image.Width, props.Image.Height),
                     FlagLoc = props.Flag1,
