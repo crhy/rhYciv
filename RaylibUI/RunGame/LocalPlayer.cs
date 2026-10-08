@@ -1048,8 +1048,9 @@ public class LocalPlayer : IPlayer
 
     public void CivilizationVictorious()
     {
+        var victoryConquest = _gameScreen.Main.ActiveInterface.PicSources.GetValueOrDefault("victoryConquest");
         EndOfGame("CONQUEST", new DialogImageElements(
-            [_gameScreen.Main.ActiveInterface.PicSources["victoryConquest"][0]]));
+            (victoryConquest is { Length: > 0 }) ? [victoryConquest[0]] : null));
     }
 
     public void CityDecrease(City city)

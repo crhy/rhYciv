@@ -30,9 +30,14 @@ public class FortifyOrder(GameScreen gameScreen) : Order(gameScreen, new Shortcu
 
     public override void Action()
     {
-        Debug.Assert(_player.ActiveUnit != null);
-        _player.ActiveUnit.Order = (int)OrderType.Fortify;
-        _player.ActiveUnit.MovePointsLost = _player.ActiveUnit.MaxMovePoints;
+        var activeUnit = _player.ActiveUnit;
+        if (activeUnit == null)
+        {
+            return;
+        }
+
+        activeUnit.Order = (int)OrderType.Fortify;
+        activeUnit.MovePointsLost = activeUnit.MaxMovePoints;
         _game.ChooseNextUnit();
     }
 }

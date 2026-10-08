@@ -244,6 +244,11 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
                 return;
             }
 
+            if ((object)chosen == null)
+            {
+                return;
+            }
+
             gameScreen.QueueAfterCurrentPopup(() => Propose(chosen, other));
         }, replaceStrings: [other.Adjective], buttons: buttons);
     }

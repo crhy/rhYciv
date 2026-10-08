@@ -124,11 +124,11 @@ public sealed class CivilopediaAdvanceInfo : BaseControl
     private int AddPrerequisites(Advance advance, Rules rules, int y)
     {
         var prereqs = new List<Advance>();
-        if (advance.Prereq1 != AdvancesConstants.Nil)
+        if (advance.Prereq1 != AdvancesConstants.Nil && advance.Prereq1 >= 0 && advance.Prereq1 < rules.Advances.Length)
         {
             prereqs.Add(rules.Advances[advance.Prereq1]);
         }
-        if (advance.Prereq2 != AdvancesConstants.Nil)
+        if (advance.Prereq2 != AdvancesConstants.Nil && advance.Prereq2 >= 0 && advance.Prereq2 < rules.Advances.Length)
         {
             prereqs.Add(rules.Advances[advance.Prereq2]);
         }
