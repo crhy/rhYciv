@@ -32,6 +32,11 @@ namespace Model.Core.Mapping
         public bool IsValidTileC2(int xC2, int yC2)
         {
             var maxX = XDimMax;
+            if (maxX <= 0)
+            {
+                return false;
+            }
+
             var x = (((xC2 + maxX) % maxX) - yC2 % 2);
             return -1 < x && x < maxX && -1 < yC2 && yC2 < YDim;
         }
