@@ -19,17 +19,24 @@ public static class Shaders
             AssetPaths.Resolve("Shaders", "base.vs"),
             AssetPaths.Resolve("Shaders", "color-correction.fs")
         );
-        _brightnessLocation = ColorCorrection.GetLocation("brightness");
-        _saturationLocation = ColorCorrection.GetLocation("saturation");
-        _gammaLocation = ColorCorrection.GetLocation("gamma");
+        if (ColorCorrection.IsValid())
+        {
+            _brightnessLocation = ColorCorrection.GetLocation("brightness");
+            _saturationLocation = ColorCorrection.GetLocation("saturation");
+            _gammaLocation = ColorCorrection.GetLocation("gamma");
+        }
+        else
+        {
+            _brightnessLocation = _saturationLocation = _gammaLocation = -1;
+        }
         SetColorCorrection(Settings.Brightness, Settings.Saturation, Settings.Gamma);
     }
 
     public static void SetColorCorrection(float brightness, float saturation, float gamma)
     {
-        ColorCorrection.SetValue(_brightnessLocation, brightness, ShaderUniformDataType.Float);
-        ColorCorrection.SetValue(_saturationLocation, saturation, ShaderUniformDataType.Float);
-        ColorCorrection.SetValue(_gammaLocation, gamma, ShaderUniformDataType.Float);
+        if (_brightnessLocation >= 0) ColorCorrection.SetValue(_brightnessLocation, brightness, ShaderUniformDataType.Float);
+        if (_saturationLocation >= 0) ColorCorrection.SetValue(_saturationLocation, saturation, ShaderUniformDataType.Float);
+        if (_gammaLocation >= 0) ColorCorrection.SetValue(_gammaLocation, gamma, ShaderUniformDataType.Float);
     }
 
     public static void Unload()
