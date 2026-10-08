@@ -44,6 +44,12 @@ public class UnitType(UnitDefinition unitDefinition, Game game)
         set
         {
             var extraFlags = Utils.FromBitmask(value);
+            if (extraFlags.Length < 7)
+            {
+                var padded = new bool[7];
+                Array.Copy(padded, extraFlags, extraFlags.Length);
+                extraFlags = padded;
+            }
             unitDefinition.Invisible = extraFlags[0];
             unitDefinition.NonDispandable = extraFlags[1];
             unitDefinition.UnbribaleBarb = extraFlags[3];
