@@ -46,7 +46,7 @@ public class TaxRateWindow : BaseDialog
             4 => 60,    // fundamentalism
             5 => 80,    // republic
             6 => 90,    // democracy
-            _ => throw new ArgumentOutOfRangeException($"Not expected government value: {_civ.Government}")
+            _ => 80    // beyond the classic six: match RulesParser.BuildTaxRateLimits' default of 8 tenths
         };
 
         _headerLabel = new HeaderLabel(this, _active.Look, $"How Shall We Distribute The Wealth",

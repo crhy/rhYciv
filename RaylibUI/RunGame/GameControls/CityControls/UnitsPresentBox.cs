@@ -77,7 +77,7 @@ public class UnitsPresentBox : Listbox
                         ScaleIcon = UnitScaleFor(cityWindow, properties)},
                     new ListboxGroupElement { Text = ShortCityName(unit.HomeCity), Xoffset = 0, 
                         HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom }],
-                Height = (int)Math.Ceiling(properties.Box.Height / properties.Rows * cityWindow.Scale)
+                Height = (int)Math.Ceiling(properties.Box.Height / Math.Max(1, properties.Rows) * cityWindow.Scale)
             };
             groups.Add(group);
         }
@@ -158,7 +158,7 @@ public class UnitsPresentBox : Listbox
         // Fit the row, not the column. Civ II sizes these to the height of the row
         // and lets neighbours overlap a little; fitting the cell width as well
         // shrank every unit to about seven tenths of the size it should be.
-        var cellHeight = properties.Box.Height / properties.Rows;
+        var cellHeight = properties.Box.Height / Math.Max(1, properties.Rows);
         return Math.Max(0.1f, cellHeight / unit.Height * cityWindow.Scale);
     }
 }

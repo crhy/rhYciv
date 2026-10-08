@@ -389,7 +389,7 @@ public sealed class CivilopediaInfo : BaseControl
                 Controls.Add(icon);
 
                 offsetY = 210;
-                AddUnitStat(window, Labels.For(LabelIndex.Cost) + ":", $"{10 * unit.Cost}", active.ResourceImages.First(i => i.Name == "Shields").LargeImage,
+                AddUnitStat(window, Labels.For(LabelIndex.Cost) + ":", $"{10 * unit.Cost}", active.ResourceImages.FirstOrDefault(i => i.Name == "Shields")?.LargeImage,
                     18, ref offsetY);
                 AddUnitStat(window, Labels.For(LabelIndex.AttackStrength) + ":", $"{unit.Attack}", null, 18, ref offsetY);
                 AddUnitStat(window, Labels.For(LabelIndex.DefenseStrength) + ":", $"{unit.Defense}", null, 18, ref offsetY);
