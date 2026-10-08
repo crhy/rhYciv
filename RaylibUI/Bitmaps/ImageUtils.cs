@@ -488,10 +488,16 @@ public static class ImageUtils
     public static Vector2 GetUnitTextures(IUnit unit, IUserInterface active, IGame game,
         List<IViewElement> viewElements, Vector2 loc, bool noStacking = false, bool useMapArt = false)
     {
-        var unitImage = active.UnitImages.Units[(int)unit.Type];
+        var unitTypeIndex = (int)unit.Type;
+        if (unitTypeIndex < 0 || unitTypeIndex >= active.UnitImages.Units.Length)
+        {
+            if (active.UnitImages.Units.Length == 0) return new Vector2(0, 0);
+            unitTypeIndex = 0;
+        }
+        var unitImage = active.UnitImages.Units[unitTypeIndex];
         var sourceImage = GetUnitSourceImage(unit, active, unitImage, useMapArt);
         var unitTexture = TextureCache.GetImage(sourceImage);
-        var shield = active.UnitShield((int)unit.Type);
+        var shield = active.UnitShield(unitTypeIndex);
         // #165: Viking settler was brown because the shield was keyed on
         // `Owner.Id` (civ slot) rather than the tribe colour. Use the
         // civilization's `NormalColour` (tribe.Color) which matches

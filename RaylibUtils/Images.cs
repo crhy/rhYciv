@@ -65,6 +65,12 @@ public static partial class Images
             var dataOffset = BitConverter.ToInt16(bytes, 10);
             var width = BitConverter.ToInt32(bytes, 18);
             var height = BitConverter.ToInt32(bytes, 22);
+            if (width <= 0 || height <= 0)
+            {
+                img = Image.GenColor(1, 1, new Color(0, 0, 0, 0));
+                bpp = 0;
+                return new Image_and_bpp { Image = img, ColourDepth = bpp };
+            }
             bpp = BitConverter.ToInt16(bytes, 28);
             var size = BitConverter.ToInt32(bytes, 34);
             if (size == 0)

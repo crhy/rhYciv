@@ -49,8 +49,9 @@ namespace RaylibUI
                 pair => LegacyRulesetMetadataKeys.GetValueOrDefault(pair.Key, pair.Key),
                 pair => pair.Value);
 
+            if (AllRuleSets.Length == 0) return ActiveInterface;
             var maxScore = -1;
-            Ruleset selected = AllRuleSets.First();
+            Ruleset selected = AllRuleSets[0];
             foreach (var set in AllRuleSets)
             {
                 var score = metadata

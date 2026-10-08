@@ -232,7 +232,8 @@ namespace RaylibUtils
                 }
                 case MemoryStorage memoryStorage:
                 {
-                    if (owner != -1 && memoryStorage.ReplacementColour != null && active != null)
+                    if (owner != -1 && memoryStorage.ReplacementColour != null && active != null &&
+                        owner >= 0 && owner < active.PlayerColours.Length)
                     {
                         var image = memoryStorage.Image.Copy();
                         image.ReplaceColor(memoryStorage.ReplacementColour.Value,

@@ -368,7 +368,13 @@ namespace RaylibUI
 
                 _activeInterface = value;
 
-                ActiveRuleSet ??= AllRuleSets.First(r => r.InterfaceIndex == _activeInterface.InterfaceIndex);
+                if (ActiveRuleSet is null)
+                {
+                    var matchingRuleSet = AllRuleSets.FirstOrDefault(r => r.InterfaceIndex == _activeInterface.InterfaceIndex);
+                    matchingRuleSet ??= AllRuleSets.Length > 0 ? AllRuleSets[0] : null;
+                    if (matchingRuleSet is null) return;
+                    ActiveRuleSet = matchingRuleSet;
+                }
 
                 _activeInterface.Initialize();
                 TextureCache.Clear();
@@ -410,7 +416,10 @@ namespace RaylibUI
 
         public void ReloadMain()
         {
-            ActiveRuleSet = AllRuleSets.First(r => r.InterfaceIndex == _activeInterface.InterfaceIndex);
+            var matchingRuleSet = AllRuleSets.FirstOrDefault(r => r.InterfaceIndex == _activeInterface.InterfaceIndex);
+            matchingRuleSet ??= AllRuleSets.Length > 0 ? AllRuleSets[0] : null;
+            if (matchingRuleSet is null) return;
+            ActiveRuleSet = matchingRuleSet;
             TextureCache.Clear();
             ImageUtils.SetLook(_activeInterface);
             _activeScreen = new MainMenu(this,() => _shouldClose= true, StartGame, Soundman);
