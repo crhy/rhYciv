@@ -47,7 +47,7 @@ public class UnitType(UnitDefinition unitDefinition, Game game)
             if (extraFlags.Length < 7)
             {
                 var padded = new bool[7];
-                Array.Copy(padded, extraFlags, extraFlags.Length);
+                Array.Copy(extraFlags, padded, extraFlags.Length);
                 extraFlags = padded;
             }
             unitDefinition.Invisible = extraFlags[0];
