@@ -147,7 +147,7 @@ public class Listbox : BaseControl
 
     public override void OnResize()
     {
-        if (_controls.Count == 0) return;
+        if (_controls.Count == 0 || _def.Columns <= 0) return;
 
         int scrollBarWidth = 0;
         if (_def.VerticalScrollbar && _controls.Count > _def.Rows * _def.Columns)
@@ -194,6 +194,7 @@ public class Listbox : BaseControl
         }
 
         _def.SelectedId = selectedId;
+        if (_totalColumns <= 0 || _totalRows <= 0) return;
 
         // If the selected control is beyond the view
         int selectedRow, selectedCol;

@@ -48,6 +48,8 @@ namespace RhyCiv.Engine
         {
             TurnNumber++;
 
+            SessionLog.Record($"world step at turn {TurnNumber} (power, pollution, diplomacy, barbarians)");
+
             if (TurnNumber % 2 == 0)
             {
                 Power.CalculatePowerRatings(this);
@@ -287,6 +289,8 @@ namespace RhyCiv.Engine
             // which is what the loop this returns into is about to do anyway, so
             // that request is taken back rather than being served twice.
             activePlayer.WaitingAtEndOfTurn();
+            SessionLog.Record(
+                $"computer end-of-turn complete for {activePlayer.Civilization.TribeName}");
             _chooseNextCivAgain = false;
         }
 
@@ -296,6 +300,8 @@ namespace RhyCiv.Engine
                 $"turn {TurnNumber} begins for {activePlayer.Civilization.TribeName} " +
                 $"({activePlayer.Civilization.Cities.Count} cities, {activePlayer.Civilization.Units.Count} units)");
             activePlayer.TurnStart(TurnNumber);
+            SessionLog.Record(
+                $"player turn start complete for {activePlayer.Civilization.TribeName}");
 
             //If there are any units waiting to move goto move them
             if (_activeCiv.Units.Any(u => u is { MovePointsLost: 0, Order: (int)OrderType.NoOrders }))

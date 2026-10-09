@@ -189,8 +189,9 @@ namespace RhyCiv.Engine
         {
             if (!string.IsNullOrWhiteSpace(GameDataPath) && IsValidRoot(GameDataPath)) return;
 
-            GameDataPath = BuiltInSearchPaths.First(path =>
-                FileUtilities.GetFile(path, RulesFile) != null && FileUtilities.GetFile(path, "game.txt") != null);
+            GameDataPath = BuiltInSearchPaths.FirstOrDefault(path =>
+                FileUtilities.GetFile(path, RulesFile) != null && FileUtilities.GetFile(path, "game.txt") != null)
+                ?? GameDataPath;
         }
 
         public static string BasePath => AppDomain.CurrentDomain.BaseDirectory;

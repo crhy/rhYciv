@@ -19,6 +19,24 @@ public class UnitTypeTests
     }
 
     [Fact]
+    public void AdvancedFlags_ShortBitmaskKeepsItsBitsAndClearsTheRest()
+    {
+        var (game, _, _) = ApiTestHarness.CreateGameAndAi();
+        var def = game.Rules.UnitTypes.First();
+        var api = new UnitType(def, game);
+        def.IsEngineer = true;
+
+        // Only bits 0 and 1 are set, so the decoded array is shorter than the
+        // setter reads. It used to throw; padding must keep the bits that are set.
+        api.advancedFlags = 0b11;
+
+        Assert.True(def.Invisible);
+        Assert.True(def.NonDispandable);
+        Assert.False(def.UnbribaleBarb);
+        Assert.False(def.IsEngineer);
+    }
+
+    [Fact]
     public void UnitType_Lua_Access()
     {
         var (game, _, _) = ApiTestHarness.CreateGameAndAi();

@@ -103,9 +103,11 @@ public class OptionsPanel : BaseControl
 
     public override void OnResize()
     {
+        var visibleColumns = Math.Min(_columns, _maxVisibleColumns);
+        if (visibleColumns <= 0) return;
         foreach (var option in _optionControls)
         {
-            option.Width = Width / Math.Min(_columns, _maxVisibleColumns);
+            option.Width = Width / visibleColumns;
         }
 
         _tableLayout.CalculateDimensions(_startingControlRow, _startingControlCol, _maxVisibleRows, _maxVisibleColumns);

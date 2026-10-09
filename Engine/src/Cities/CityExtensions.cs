@@ -366,7 +366,8 @@ namespace RhyCiv.Engine
             var totalStorage = storageBuildings.Sum();
             if (totalStorage is > 100 or < 0)
             {
-                totalStorage = storageBuildings.Where(v => v is >= 0 and <= 100).Max();
+                var inRange = storageBuildings.Where(v => v is >= 0 and <= 100).ToList();
+                totalStorage = inRange.Count > 0 ? inRange.Max() : totalStorage;
             }
 
             return totalStorage;

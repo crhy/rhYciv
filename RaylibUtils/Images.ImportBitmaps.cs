@@ -120,7 +120,11 @@ namespace RaylibUtils
                             var path = Utils.GetFilePath(binarySource.Filename);
                             if (path is null)
                             {
-                                throw new FileNotFoundException($"Image file '{binarySource.Filename}' was not found.");
+                                RhyCiv.Engine.Diagnostics.SessionLog.Record(
+                                    $"image '{binarySource.Filename}' missing; drawing blank");
+                                _imageCache[key] = new Image();
+                                imageProps.Image = _imageCache[key];
+                                return imageProps;
                             }
                             var source_img_bpp = Images.LoadImageFromFile(path, binarySource.DataStart, binarySource.Length);
                             _imageCache[sourceKey] = source_img_bpp.Image;
@@ -134,6 +138,7 @@ namespace RaylibUtils
                         {
                             rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
                         }
+                        rect = ClampToImage(rect, sourceImage);
                         var image = Image.FromImage(sourceImage, rect);
                         _imageCache[binarySource.Key] = image;
                         OwnedImageKeys.Add(binarySource.Key);
@@ -150,7 +155,11 @@ namespace RaylibUtils
                             path ??= Utils.GetFilePath(bitmapStorage.Filename, Settings.SearchPaths, bitmapStorage.Extension);
                             if (path is null)
                             {
-                                throw new FileNotFoundException($"Image file '{bitmapStorage.Filename}' was not found.");
+                                RhyCiv.Engine.Diagnostics.SessionLog.Record(
+                                    $"image '{bitmapStorage.Filename}' missing; drawing blank");
+                                _imageCache[key] = new Image();
+                                imageProps.Image = _imageCache[key];
+                                return imageProps;
                             }
                             var source_img_bpp = Images.LoadImageFromFile(path);
                             _imageCache[sourceKey] = source_img_bpp.Image;
@@ -164,6 +173,7 @@ namespace RaylibUtils
                         {
                             rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
                         }
+                        rect = ClampToImage(rect, sourceImage);
                         var image = Image.FromImage(sourceImage, rect);
 
                         // Upper-left pixel transparency (not for 8bpp gif/bmp)
@@ -180,7 +190,13 @@ namespace RaylibUtils
                             var orangePixel = new Color(255, 155, 0, 255);
                             for (var col = 0; col < rect.Width; col++)
                             {
-                                var pixelColour = sourceImage.GetColor((int)rect.X + col, (int)rect.Y - 1);
+                                var sampleX = (int)rect.X + col;
+                                var sampleY = (int)rect.Y - 1;
+                                if (sampleX < 0 || sampleY < 0 || sampleX >= sourceImage.Width || sampleY >= sourceImage.Height)
+                                {
+                                    continue;
+                                }
+                                var pixelColour = sourceImage.GetColor(sampleX, sampleY);
                                 if (bluePixel.R == pixelColour.R && bluePixel.G == pixelColour.G && bluePixel.B == pixelColour.B)
                                 {
                                     flag1X = col;
@@ -192,7 +208,13 @@ namespace RaylibUtils
                             }
                             for (var row = 0; row < rect.Height; row++)
                             {
-                                var pixelColour = sourceImage.GetColor((int)rect.X - 1, (int)rect.Y + row);
+                                var sampleX = (int)rect.X - 1;
+                                var sampleY = (int)rect.Y + row;
+                                if (sampleX < 0 || sampleY < 0 || sampleX >= sourceImage.Width || sampleY >= sourceImage.Height)
+                                {
+                                    continue;
+                                }
+                                var pixelColour = sourceImage.GetColor(sampleX, sampleY);
                                 if (bluePixel.R == pixelColour.R && bluePixel.G == pixelColour.G && bluePixel.B == pixelColour.B)
                                 {
                                     flag1Y = row;
@@ -210,7 +232,8 @@ namespace RaylibUtils
                 }
                 case MemoryStorage memoryStorage:
                 {
-                    if (owner != -1 && memoryStorage.ReplacementColour != null && active != null)
+                    if (owner != -1 && memoryStorage.ReplacementColour != null && active != null &&
+                        owner >= 0 && owner < active.PlayerColours.Length)
                     {
                         var image = memoryStorage.Image.Copy();
                         image.ReplaceColor(memoryStorage.ReplacementColour.Value,
@@ -251,6 +274,23 @@ namespace RaylibUtils
             OwnedImageKeys.Clear();
             _imageCache.Clear();
             _sourceBpp.Clear();
+        }
+
+        private static Rectangle ClampToImage(Rectangle rect, Image sourceImage)
+        {
+            var x = Math.Max(0f, rect.X);
+            var y = Math.Max(0f, rect.Y);
+            var width = Math.Min(rect.Width, sourceImage.Width - x);
+            var height = Math.Min(rect.Height, sourceImage.Height - y);
+            if (width < 0f)
+            {
+                width = 0f;
+            }
+            if (height < 0f)
+            {
+                height = 0f;
+            }
+            return new Rectangle(x, y, width, height);
         }
     }
 }

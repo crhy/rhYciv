@@ -32,7 +32,8 @@ public class PillageOrder : Order
         }
 
         if (activeTile.Improvements.Count > 0 &&
-            activeTile.Improvements.Any(i => !GameScreen.Game.TerrainImprovements[i.Improvement].Negative))
+            activeTile.Improvements.Any(i => GameScreen.Game.TerrainImprovements.ContainsKey(i.Improvement) &&
+                !GameScreen.Game.TerrainImprovements[i.Improvement].Negative))
         {
             return SetCommandState(CommandStatus.Normal);
         }
