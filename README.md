@@ -113,6 +113,17 @@ locally is what CI will say. Flatpak instructions are in
 
 *Advance artwork. Every shipped asset has a row in [ASSET-MANIFEST.tsv](ASSET-MANIFEST.tsv) recording its author and licence.*
 
+## Community
+
+Chat happens on [Discord](https://discord.gg/wyWN7HrcHX) and
+[Telegram](https://t.me/+JaW5Iy5CTN9hNmRh). The site is
+[rhyciv.org](https://rhyciv.org); [rhyciv.com](https://rhyciv.com) serves the
+same pages. The same links are in the game's About dialog.
+
+Reproducible bug reports belong in [GitHub issues](https://github.com/crhy/rhYciv/issues)
+rather than in chat: a report there carries the save file, the version and the
+text a test can be written against.
+
 ## Forking and licensing
 
 Code and project-original art are GPL-3.0-only unless an asset’s manifest row
