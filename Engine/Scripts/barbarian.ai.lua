@@ -239,6 +239,62 @@ ai.RegisterEvent(AiEvent.Units_Lost, function(ai, data)
     end
 end)
 
+-- How far a barbarian looks around itself for company and for the enemy it
+-- would have to face. Issue #7 asks for the Civ II behaviour: a barbarian that
+-- turns up on its own with a stronger neighbour in reach backs away from it
+-- instead of walking into it.
+local lone_radius = 5
+
+-- True when the unit has no company inside the radius and an enemy inside it.
+-- NearestFriend answers with the square the unit stands on, so the search asks
+-- for a friend of another type and the unit's own square is counted by hand.
+local function isolated_and_outmatched(ai, unit, radius)
+    if ai.NearestFriend({ tile = unit.location, distance = radius, unit_type = unit.type.id }) then
+        return false
+    end
+
+    for _, other in ipairs(unit.location.units) do
+        if other.id ~= unit.id then
+            return false
+        end
+    end
+
+    return ai.NearestEnemy({ tile = unit.location, distance = radius, same_landmass = true }) ~= nil
+end
+
+-- The move that puts the most distance between the unit and the enemy it is
+-- running from. Only a move that actually increases that distance counts, so a
+-- barbarian boxed in by the enemy or the sea gets nil rather than a step into
+-- it. Ties break on the square's coordinates: no random is drawn, so a fixed
+-- seed gives a fixed answer.
+local function retreat_move(ai, unit, enemy)
+    if not enemy then
+        return nil
+    end
+
+    local from = ai.Distance(unit.location, enemy)
+    local best
+    local best_dist
+
+    for _, move in ipairs(ai.GetPossibleMoves(unit)) do
+        if move.actionType == "Move" then
+            local dist = ai.Distance(move.tile, enemy)
+            if dist > from then
+                if not best
+                    or dist > best_dist
+                    or (dist == best_dist
+                        and (move.tile.x < best.tile.x
+                            or (move.tile.x == best.tile.x and move.tile.y < best.tile.y))) then
+                    best = move
+                    best_dist = dist
+                end
+            end
+        end
+    end
+
+    return best
+end
+
 ai.RegisterEvent(AiEvent.Unit_Orders_Needed, function(ai, data)
     local unit = data.Unit;
     -- Move leaders last and to nearest friendly unit
@@ -251,7 +307,10 @@ ai.RegisterEvent(AiEvent.Unit_Orders_Needed, function(ai, data)
             if friend then
                 return friend
             end
-            -- TODO: Run away from enemies if no friends around
+            -- No company to catch up with: run from the enemy instead.
+            if isolated_and_outmatched(ai, unit, lone_radius) then
+                return retreat_move(ai, unit, ai.NearestEnemy({ tile = unit.location, distance = lone_radius, same_landmass = true }))
+            end
             return nil
         end
     
@@ -260,6 +319,12 @@ ai.RegisterEvent(AiEvent.Unit_Orders_Needed, function(ai, data)
         end
         return "w"
     end
+    -- Alone and outmatched, reposition away from the enemy first: handing such
+    -- a unit to a horde would aim it straight back at that same enemy.
+    if isolated_and_outmatched(ai, unit, lone_radius) then
+        return retreat_move(ai, unit, ai.NearestEnemy({ tile = unit.location, distance = lone_radius, same_landmass = true }))
+    end
+
     -- is unit not in a horde, find one
     local horde = unit:GetNum("horde")
     if not horde then

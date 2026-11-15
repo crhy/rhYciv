@@ -5,6 +5,14 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Rules
+
+- A barbarian that turns up on its own with an enemy in reach now backs away
+  from that enemy instead of walking into it; barbarians that have company still
+  gather into a horde as before (#7).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
