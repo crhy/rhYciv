@@ -5,6 +5,15 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Fixed
+
+- When a city's defences are what turn an attack back -- fighters scrambling from it,
+  its SAM batteries, its SDI defence, its coastal guns -- the player is now told which
+  one did it, instead of watching a stack that ought to have died sit there in silence
+  (part of #8).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
