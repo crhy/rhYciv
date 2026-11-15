@@ -131,7 +131,10 @@ public class Path
 
     private static IEnumerable<Tile> GetInitialCandidates(Tile startTile, bool ignoreZoc, Civilization owner, UnitGas domain)
     {
-        if (ignoreZoc)
+        // #159: the first step out of a city is not taken through a zone of control
+        // either, so a start tile holding a city is offered the way an
+        // ignore-zones-of-control unit's is.
+        if (ignoreZoc || MovementFunctions.ExemptFromZoneOfControl(startTile))
         {
             return startTile.Neighbours().Where(n => !n.IsUnitPresent || MovementFunctions.IsFriendlyTile(n, owner));
 
@@ -190,6 +193,7 @@ public class Path
 
     private static bool CanContinueThroughZoneOfControl(Unit unit, Tile destination) =>
         unit.IgnoreZonesOfControl ||
+        MovementFunctions.ExemptFromZoneOfControl(unit.CurrentLocation, unit) ||
         MovementFunctions.IsFriendlyTile(destination, unit.Owner) ||
         !MovementFunctions.IsNextToEnemy(unit.CurrentLocation, unit.Owner, unit.Domain) ||
         !MovementFunctions.IsNextToEnemy(destination, unit.Owner, unit.Domain);

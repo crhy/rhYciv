@@ -359,6 +359,159 @@ public class MovementFunctionsTests
 
     #endregion
 
+    #region City Exit Zone Of Control Tests (#159)
+
+    /// <summary>
+    /// Puts a city of <paramref name="owner"/> on a tile, the way the other
+    /// fixtures do: built in code, no save file.
+    /// </summary>
+    private City PlaceCity(Tile tile, Civilization owner)
+    {
+        var city = new City
+        {
+            Owner = owner,
+            Location = tile,
+            X = tile.X,
+            Y = tile.Y,
+            Size = 2
+        };
+        owner.Cities.Add(city);
+        tile.CityHere = city;
+        return city;
+    }
+
+    /// <summary>
+    /// The city stands on (6,2), the enemy land unit on (8,2), and (7,1) is empty
+    /// ground touching both — the square the zone rule used to refuse. All three
+    /// are Civ2-style coordinates, as every lookup below is.
+    /// </summary>
+    private (Tile cityTile, Tile enemyTile, Tile exitTile) CityExitSetup()
+    {
+        var cityTile = _map.TileC2(6, 2);
+        var enemyTile = _map.TileC2(8, 2);
+        var exitTile = _map.TileC2(7, 1);
+
+        var enemy = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        enemy.CurrentLocation = enemyTile;
+
+        return (cityTile, enemyTile, exitTile);
+    }
+
+    [Fact]
+    public void GetPossibleMoves_UnitInItsOwnCity_LeavesToAnyEmptyTileDespiteEnemyZoc()
+    {
+        // Arrange
+        var (cityTile, _, exitTile) = CityExitSetup();
+        PlaceCity(cityTile, _civ);
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = cityTile;
+        unit.X = cityTile.X;
+        unit.Y = cityTile.Y;
+        var player = (MockPlayer)_game.Players[0];
+
+        // Both the city and the square outside it are covered by the enemy's zone.
+        Assert.True(MovementFunctions.IsNextToEnemy(cityTile, _civ, UnitGas.Ground));
+        Assert.True(MovementFunctions.IsNextToEnemy(exitTile, _civ, UnitGas.Ground));
+
+        // Act
+        var possibleMoves = MovementFunctions.GetPossibleMoves(cityTile, unit).ToList();
+
+        // Assert
+        Assert.Contains(exitTile, possibleMoves);
+
+        MovementFunctions.Moveto(_game, unit, exitTile.X, exitTile.Y);
+
+        Assert.Equal(exitTile, unit.CurrentLocation);
+        Assert.False(player.MoveBlockedCalled);
+    }
+
+    [Fact]
+    public void Moveto_UnitOnGroundWithNoCity_IsStillBlockedByEnemyZoc()
+    {
+        // Arrange — the same three squares, only nothing has founded a city.
+        var (cityTile, _, exitTile) = CityExitSetup();
+        Assert.False(cityTile.IsCityPresent);
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = cityTile;
+        unit.X = cityTile.X;
+        unit.Y = cityTile.Y;
+        var player = (MockPlayer)_game.Players[0];
+
+        // Act
+        MovementFunctions.Moveto(_game, unit, exitTile.X, exitTile.Y);
+
+        // Assert
+        Assert.True(player.MoveBlockedCalled);
+        Assert.Equal(BlockedReason.Zoc, player.LastBlockedReason);
+        Assert.Equal(cityTile, unit.CurrentLocation);
+    }
+
+    [Fact]
+    public void IsNextToEnemy_EnemyOfAnotherDomain_LeavesALandExitOpen()
+    {
+        // Arrange — the exemption is the city alone; a warship moored next door
+        // has never held a legionnaire in place.
+        var cityTile = _map.TileC2(6, 2);
+        var enemyTile = _map.TileC2(8, 2);
+        var exitTile = _map.TileC2(7, 1);
+        var seaEnemy = CreateTestUnit(UnitGas.Sea, _enemyCiv);
+        seaEnemy.CurrentLocation = enemyTile;
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = cityTile;
+        unit.X = cityTile.X;
+        unit.Y = cityTile.Y;
+        var player = (MockPlayer)_game.Players[0];
+        Assert.False(cityTile.IsCityPresent);
+
+        // Assert the domain rule itself
+        Assert.False(MovementFunctions.IsNextToEnemy(cityTile, _civ, UnitGas.Ground));
+        Assert.True(MovementFunctions.IsNextToEnemy(cityTile, _civ, UnitGas.Sea));
+
+        // Act
+        var possibleMoves = MovementFunctions.GetPossibleMoves(cityTile, unit).ToList();
+
+        // Assert
+        Assert.Contains(exitTile, possibleMoves);
+
+        MovementFunctions.Moveto(_game, unit, exitTile.X, exitTile.Y);
+
+        Assert.Equal(exitTile, unit.CurrentLocation);
+        Assert.False(player.MoveBlockedCalled);
+    }
+
+    [Fact]
+    public void Path_FromACityTile_WalksOutThroughAnEnemyAdjacentSquare()
+    {
+        // Arrange — the city at (7,3), the enemy at (8,2), and (9,3) the only
+        // square from which a two-square route to (11,3) is possible. The city
+        // and that square both sit inside the enemy's zone, so the route used
+        // to be found the long way round.
+        var cityTile = _map.TileC2(7, 3);
+        var enemyTile = _map.TileC2(8, 2);
+        var intermediate = _map.TileC2(9, 3);
+        var destination = _map.TileC2(11, 3);
+        PlaceCity(cityTile, _civ);
+        var enemy = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        enemy.CurrentLocation = enemyTile;
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = cityTile;
+
+        Assert.True(MovementFunctions.IsNextToEnemy(cityTile, _civ, UnitGas.Ground));
+        Assert.True(MovementFunctions.IsNextToEnemy(intermediate, _civ, UnitGas.Ground));
+
+        // Act
+        var path = RhyCiv.Engine.Units.Path.CalculatePathBetween(_game, cityTile, destination, UnitGas.Ground,
+            unit.MaxMovePoints, _civ, false, false, false);
+
+        // Assert
+        Assert.NotNull(path);
+        Assert.Equal(2, path!.Tiles.Length);
+        Assert.Equal(intermediate, path!.Tiles[0]);
+        Assert.Equal(destination, path!.Tiles[1]);
+    }
+
+    #endregion
+
     #region GetIslandsFor Tests
 
     [Fact]

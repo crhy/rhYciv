@@ -5,6 +5,16 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Movement
+
+- A unit standing in a city may leave it for any empty tile, however close the
+  nearest enemy is. Zones of control hold the square a unit arrives on, not the
+  city square it came from, so the city exit is now offered by the move list,
+  the move itself and Go To alike. This is ordinary Civ II play, so it is not
+  behind an Advanced Settings checkbox. (#159)
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules

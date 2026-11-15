@@ -661,12 +661,14 @@ namespace RhyCiv.Engine.UnitActions
             attacker.MovePointsLost = Math.Clamp(movementLost, 0, attacker.MaxMovePoints);
         }
 
-        private static void Moveto(IGame game, Unit unit, int destX, int destY)
+        internal static void Moveto(IGame game, Unit unit, int destX, int destY)
         {
             var map = unit.CurrentLocation.Map;
             var tileFrom =  map.TileC2(unit.X, unit.Y);
             var tileTo = map.TileC2(destX, destY);
-            if (!unit.IgnoreZonesOfControl && !IsFriendlyTile(tileTo, unit.Owner) && IsNextToEnemy(tileFrom, unit.Owner, unit.Domain) && IsNextToEnemy(tileTo, unit.Owner, unit.Domain))
+            if (!unit.IgnoreZonesOfControl && !ExemptFromZoneOfControl(tileFrom, unit) &&
+                !IsFriendlyTile(tileTo, unit.Owner) && IsNextToEnemy(tileFrom, unit.Owner, unit.Domain) &&
+                IsNextToEnemy(tileTo, unit.Owner, unit.Domain))
             {
                 game.Players[unit.Owner.Id].MoveBlocked(unit, BlockedReason.Zoc);
                 return;
@@ -1350,6 +1352,17 @@ namespace RhyCiv.Engine.UnitActions
                 t.UnitsHere.Any(u => u.Owner != civ && u.InShip == null && u.Domain == domain));
         }
 
+        /// #159: a unit standing in a city is not stopped by zones of control when
+        /// it leaves. Civ II lets a unit walk out of a city to any empty tile however
+        /// close the nearest enemy is; the zone rule bites on the square it arrives
+        /// on, not on the square it came from. The exemption is a property of the
+        /// departure square, so the tile-only overload is the whole of the rule and
+        /// the unit-taking one exists so every call site reads the same way.
+        /// This is ordinary Civ II play, so it gets no Advanced Settings checkbox.
+        internal static bool ExemptFromZoneOfControl(Tile from, Unit unit) => ExemptFromZoneOfControl(from);
+
+        internal static bool ExemptFromZoneOfControl(Tile from) => from.IsCityPresent;
+
         public static IEnumerable<Tile> GetPossibleMoves(Tile tile, Unit unit)
         {
             var neighbours = unit switch
@@ -1375,7 +1388,8 @@ namespace RhyCiv.Engine.UnitActions
 
                 _ => tile.Neighbours().Where(n => !n.Terrain.Impassable)
             };
-            if (unit.IgnoreZonesOfControl || !IsNextToEnemy(tile, unit.Owner, unit.Domain))
+            if (unit.IgnoreZonesOfControl || ExemptFromZoneOfControl(tile, unit) ||
+                !IsNextToEnemy(tile, unit.Owner, unit.Domain))
             {
                 return neighbours;
             }
