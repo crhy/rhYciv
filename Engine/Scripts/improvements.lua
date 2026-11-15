@@ -61,6 +61,10 @@ civ.getImprovement(22).Effects.Add(civ.core.Effects.LuxMultiplier, 50)
 --Supermarket,               8, 3,    Rfg,
 civ.getImprovement(24).addTerrainEffect({ Resource = civ.core.Resources.Food, Value=1, Improvement = civ.core.Improvements.Irrigation, Level=1 })
 --Superhighways,            20, 5,    Aut,
+-- Civ II gives +50% trade from worked tiles that carry a road (issue #28, docs/CIV2-PARITY-DEEP-AUDIT.md TR1).
+-- Value is 150 because the yield path applies Multiply as value / 100, so 150 is x1.5.
+civ.getImprovement(25).addTerrainEffect({ Resource = civ.core.Resources.Trade, Value = 150,
+    Action = civ.core.TerrainEffectActions.Multiply, Improvement = civ.core.Improvements.Road, Level = 1 })
 --Research Lab,             16, 3,    Cmp,
 civ.getImprovement(26).Effects.Add(civ.core.Effects.ScienceMultiplier, 50)
 --SAM Missile Battery,      10, 2,    Roc,

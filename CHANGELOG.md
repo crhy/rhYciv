@@ -5,6 +5,15 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Rules
+
+- Super Highways now do what Civ II's says they do: a city holding them takes
+  50% more trade from the worked tiles that carry a road. The rule lives in the
+  tile-yield path (`TileResourceExtensions.GetTrade`), so the worked-window tile
+  map and the city's totals move together (#28).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
