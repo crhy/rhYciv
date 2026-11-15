@@ -5,6 +5,17 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Stability
+
+- A barbarian raider is refused a target it is not allowed to attack — a ship at
+  sea, a shore it cannot storm from the transport it rides in, an air unit it
+  cannot engage, a square held by an enemy zone of control — and ends its turn
+  instead of putting the same question to the same square forever. The loop never
+  came back, which stopped a whole test run from printing a result about one run
+  in five.
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules

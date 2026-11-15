@@ -663,7 +663,9 @@ namespace RhyCiv.Engine
             }
         }
 
-        private void ProcessBarbarianTurn(IPlayer activePlayer)
+        // internal so the raiders' loop can be tested on its own; ChooseNextCivilizationOnce
+        // is the only caller.
+        internal void ProcessBarbarianTurn(IPlayer activePlayer)
         {
             activePlayer.TurnStart(TurnNumber);
 
@@ -678,6 +680,9 @@ namespace RhyCiv.Engine
                 while (!unit.Dead && unit.MovePoints > 0)
                 {
                     var currentTile = unit.CurrentLocation;
+                    // What the raider had left to spend when the round began, so
+                    // the round can be checked for having done anything at all.
+                    var movePointsAtStart = unit.MovePoints;
                     var adjacentEnemy = FindAdjacentBarbarianTarget(unit, currentTile);
                     if (adjacentEnemy != null)
                     {
@@ -720,6 +725,25 @@ namespace RhyCiv.Engine
                         {
                             MovementFunctions.MoveC2(this, unit, destination.X - currentTile.X, destination.Y - currentTile.Y);
                         }
+                    }
+
+                    // A round that changed nothing. Both halves of the loop can be
+                    // refused without deciding anything, and the refusal leaves the
+                    // raider on the same square with the same move points: a land
+                    // raider cannot attack a ship at sea, a raider riding a transport
+                    // is turned down when it reaches for the shore, one that cannot
+                    // engage air units cannot attack an air unit, and a step can be
+                    // blocked by an enemy zone of control. The target search offers
+                    // those squares because it asks only who owns them, so the same
+                    // question would be put to the same square forever and the
+                    // raider's turn -- and with it the whole turn, and the test run
+                    // that walks a game -- would never come back. Nothing moved and
+                    // no move point was spent, so this raider is done for the turn.
+                    if (!unit.Dead && unit.MovePoints == movePointsAtStart &&
+                        unit.CurrentLocation == currentTile)
+                    {
+                        unit.SkipTurn();
+                        break;
                     }
                 }
             }
