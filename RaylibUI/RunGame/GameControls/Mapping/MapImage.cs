@@ -29,6 +29,23 @@ public static class MapImage
 
     public static Rectangle TileRec = new (0, 0, 64, 32);
 
+    /// <summary>
+    /// The side of the square block of tiles the sea art repeats over; the sea
+    /// array holds period x period tiles, written by scripts/prepare_coast_tiles.py.
+    /// </summary>
+    private static int SeaPeriod(TerrainSet terrainSet)
+        => (int)Math.Round(Math.Sqrt(terrainSet.Sea.Length));
+
+    /// <summary>
+    /// Whether the sea array is a whole square block of at least 16 tiles, which
+    /// is what the shore coastline needs; a partial set falls back to CoastMarch.
+    /// </summary>
+    private static bool IsSquareSeaSet(IImageSource[] sea)
+    {
+        var period = (int)Math.Round(Math.Sqrt(sea.Length));
+        return period >= 4 && period * period == sea.Length;
+    }
+
     internal static TileDetails MakeTileGraphic(Tile tile, Map map,
         TerrainSet terrainSet, IGame game, int civilizationId)
     {
@@ -37,13 +54,13 @@ public static class MapImage
         var neighbours = map.Neighbours(tile, nullForInvalid: true).ToArray();
 
         // For an ocean tile, when the marching-squares coastline set is loaded,
-        // the whole tile is one of 16 pre-rendered diamonds chosen by the land
-        // state of its four vertices (N=8, E=4, S=2, W=1). Each vertex is land
-        // if any of the three tiles that meet there is land. neighbours are in
-        // NE, E, SE, S, SW, W, NW, N order.
+        // the whole tile is one of the pre-rendered sea diamonds, chosen by the land
+        // state of its four vertices (N=8, E=4, S=2, W=1). Each vertex is land if
+        // any of the three tiles that meet there is land. neighbours are in NE, E,
+        // SE, S, SW, W, NW, N order.
         var useShore = tile.Type == TerrainType.Ocean
                        && terrainSet.HighResBaseTiles
-                       && terrainSet.Sea.Length == 16
+                       && IsSquareSeaSet(terrainSet.Sea)
                        && terrainSet.Shore.Length == 256;
         var useMarchCoast = !useShore
                             && tile.Type == TerrainType.Ocean
@@ -377,21 +394,24 @@ public static class MapImage
     }
 
     /// <summary>
-    /// A sea tile: the open sea for its place in the 4x4 block the sea repeats
-    /// over, then the land it touches -- that land's own terrain, cut to the
-    /// shape of the shore -- and the beach, surf and shallows over both.
+    /// A sea tile: the open sea for its place in the period x period block the sea
+    /// repeats over, then the land it touches -- that land's own terrain, cut to
+    /// the shape of the shore -- and the beach, surf and shallows over both.
     /// </summary>
     /// <remarks>
     /// Land comes in along each edge whose neighbour is land, and as a rounded
     /// point where land only touches a corner; see scripts/prepare_coast_tiles.py
-    /// for why neighbouring sea tiles' shores then meet exactly.
+    /// for why neighbouring sea tiles' shores then meet exactly. The block side is
+    /// the square root of the sea array, so the map follows whatever period the
+    /// art was generated with.
     /// </remarks>
     private static Image ShoreTile(Tile tile, Map map, TerrainSet terrainSet,
         Tile?[] directNeighbours, Tile?[] neighbours, int civilizationId)
     {
-        var i = (((tile.X + tile.Y) / 2) % 4 + 4) % 4;
-        var j = (((tile.X - tile.Y) / 2) % 4 + 4) % 4;
-        var tilePic = Images.ExtractBitmap(terrainSet.Sea[i * 4 + j]).Copy();
+        var period = SeaPeriod(terrainSet);
+        var i = (((tile.X + tile.Y) / 2) % period + period) % period;
+        var j = (((tile.X - tile.Y) / 2) % period + period) % period;
+        var tilePic = Images.ExtractBitmap(terrainSet.Sea[i * period + j]).Copy();
 
         bool IsLand(Tile? neighbour) => neighbour is { Type: not TerrainType.Ocean }
                                         && (neighbour.IsVisible(civilizationId) || map.MapRevealed);

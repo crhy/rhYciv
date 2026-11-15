@@ -912,10 +912,25 @@ namespace RhyCiv.UI.Classic.ImageLoader
                 return new MemoryStorage(img, $"{key}-{terrain.RenderScale}");
             }
 
-            var sea = new IImageSource[16];
-            for (var i = 0; i < 4; i++)
+            // scripts/prepare_coast_tiles.py writes the sea as one square block
+            // of tiles that the map repeats over. The block's side is read off the
+            // files themselves, so this loader and the map follow whatever period
+            // the art was generated with instead of assuming a size.
+            var period = 0;
+            while (FindCoastPath($"sea_{period}_0.png") != null)
             {
-                for (var j = 0; j < 4; j++)
+                period++;
+            }
+
+            if (period == 0)
+            {
+                return;
+            }
+
+            var sea = new IImageSource[period * period];
+            for (var i = 0; i < period; i++)
+            {
+                for (var j = 0; j < period; j++)
                 {
                     var tile = Load($"sea_{i}_{j}.png", $"Sea-{i}-{j}");
                     if (tile == null)
@@ -927,7 +942,7 @@ namespace RhyCiv.UI.Classic.ImageLoader
                     // the size it is drawn, exactly as every land tile is cut.
                     ApplyDiamondAlpha(tile.Image);
 
-                    sea[i * 4 + j] = tile;
+                    sea[i * period + j] = tile;
                 }
             }
 

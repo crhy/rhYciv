@@ -25,9 +25,13 @@ This draws the shore from the land itself:
   a matching land mask, and the map draws the neighbouring land's own terrain
   under it. A desert coast is desert down to the sand.
 
-The open sea is the painted ocean made seamless and periodic over a 4x4 block
-of tiles, cut into the sixteen tiles of that block (`sea_<i>_<j>.png`), so the
-sea no longer repeats every tile.
+The open sea is the painted ocean made seamless and periodic over an 8x8 block
+of tiles, cut into the sixty-four tiles of that block (`sea_<i>_<j>.png`), so
+the sea no longer repeats every tile. The four-copy blend that makes the painting
+seamless is invariant under a half-period shift, so on its own the block repeats
+every `SEA_PERIOD / 2` tiles and the sea still comes out as a quilt; a ripple
+layer periodic over the whole block rather than over one tile is what makes all
+sixty-four tiles different.
 
 Tile keys
 ---------
@@ -82,9 +86,13 @@ WET_SAND = np.array([150.0, 132.0, 96.0])
 SHALLOW = np.array([64.0, 156.0, 168.0])
 FOAM = np.array([236.0, 244.0, 244.0])
 
-# The sea repeats over this many tiles along each diagonal.
-SEA_PERIOD = 4
-
+# The sea repeats over this many tiles along each diagonal. Four was too few:
+# see below, the blend repeats over half that, so a 4x4 block gave only four
+# distinct pictures and the open sea looked like a quilt.
+SEA_PERIOD = 8
+# Contrast of the sea's own ripple, in 0-255 units, applied equally to R, G and
+# B so it changes the water's brightness without drifting its hue.
+SEA_CONTRAST = 12.0
 
 def canonical(mask: int) -> int:
     for corner, (a, b) in enumerate(CORNER_EDGES):
@@ -129,6 +137,17 @@ def lattice_noise(gx: np.ndarray, gy: np.ndarray, terms) -> np.ndarray:
 
 COAST_TERMS = [(1, 1, 0.4, 1.0), (3, -1, 2.1, 0.7), (2, 4, 4.4, 0.45), (5, 3, 1.3, 0.3),
                (-7, 5, 5.2, 0.2), (9, -7, 0.7, 0.12), (12, 10, 3.3, 0.08)]
+
+# Swells across the open sea, in the same (coefficient, coefficient, phase,
+# weight) shape as COAST_TERMS but read against a 512 * SEA_PERIOD period, so
+# they run across the whole block of tiles instead of across one of them.
+SEA_TERMS = [(1, 2, 0.7, 1.0), (2, 0, 2.6, 0.8), (-1, 2, 4.1, 0.55), (3, 2, 1.9, 0.4),
+             (4, 4, 5.5, 0.3), (-2, 4, 3.0, 0.22), (6, 4, 0.5, 0.15), (5, 6, 2.2, 0.1),
+             (48, 48, 1.7, 0.12), (64, 0, 3.3, 0.08), (40, -16, 5.0, 0.06)]
+# Peak of that sum over a block, so the ripple lands in about [-1, 1] and SEA_CONTRAST
+# is the contrast it actually gets. Fixed rather than measured per tile: a per-tile
+# normal would differ between neighbouring tiles and reopen the seams.
+SEA_RIPPLE_SCALE = 3.0
 SAND_TERMS = [(21, 17, 0.2, 1.0), (-29, 33, 1.9, 0.8), (40, -38, 4.0, 0.6), (57, 51, 2.2, 0.4)]
 
 
@@ -218,7 +237,12 @@ class Sea:
     ocean.png is one diamond of sea. Scaled so it spans SEA_PERIOD tiles, the
     diamonds tile the plane; four copies offset by half a diamond are blended so
     each copy is weighted to nothing at its own border, which removes the seams,
-    and the blend is rescaled so the ripples keep their contrast.
+    and the blend is rescaled so the ripples keep their contrast. That blend is
+    invariant under a half-period shift, so the painting alone repeats every
+    SEA_PERIOD / 2 tiles -- with SEA_PERIOD = 4 that was four pictures for
+    sixteen tiles, the quilt of issue #156. ripple() adds swells periodic over
+    the whole SEA_PERIOD x SEA_PERIOD block, which keeps the seams gone and makes
+    every tile of the block distinct.
     """
 
     def __init__(self, path: Path):
@@ -231,6 +255,27 @@ class Sea:
         self.b = np.array([width / 2.0, -height / 2.0])    # W -> N
         # Screen px of one tile step, in the source's own pixels.
         self.tile_step_scale = (width / 2.0) / (SEA_PERIOD * 256.0)
+
+    def ripple(self, sx: np.ndarray, sy: np.ndarray) -> np.ndarray:
+        """The sea's own swells, periodic over the whole block of tiles.
+
+        `sx`, `sy` are screen px at tile scale, so one tile step is (256, 128)
+        along one diagonal and (256, -128) along the other, and a block is
+        SEA_PERIOD steps. A wave with integer (a, b) over a period of 512 * SEA_PERIOD
+        px comes back to a whole turn over both diagonals of a block - that is
+        the parity rule asserted here, the same kind of rule lattice_noise uses
+        for one tile - so the block tiles seamlessly into itself. Because it is
+        read at absolute screen positions it is continuous, so the two tiles
+        meeting at an edge draw the same water there. Unlike lattice_noise it is
+        deliberately not periodic over a single tile: that is what makes the
+        tiles of the block differ from each other.
+        """
+        total = np.zeros_like(sx)
+        period = 512.0 * SEA_PERIOD
+        for a, b, phase, weight in SEA_TERMS:
+            assert (2 * a + b) % 4 == 0 and (2 * a - b) % 4 == 0
+            total += weight * np.sin(2.0 * np.pi * (a * sx + b * sy) / period + phase)
+        return total / SEA_RIPPLE_SCALE
 
     def colour(self, sx: np.ndarray, sy: np.ndarray) -> np.ndarray:
         """Screen coordinates at 512-wide tile scale -> colour."""
@@ -252,7 +297,10 @@ class Sea:
                 sample = bilinear(self.source, px, py)
                 total += weight[..., None] * (sample - self.mean)
                 weights_sq += weight ** 2
-        return self.mean + total / np.sqrt(np.maximum(weights_sq, 1e-6))[..., None]
+        rgb = self.mean + total / np.sqrt(np.maximum(weights_sq, 1e-6))[..., None]
+        # The blend is invariant under a half-period shift, so the painting alone
+        # repeats every SEA_PERIOD / 2 tiles; the ripple breaks that up.
+        return rgb + SEA_CONTRAST * self.ripple(sx, sy)[..., None]
 
     def tile(self, i: int, j: int) -> Image.Image:
         ys, xs = np.mgrid[0:HEIGHT, 0:WIDTH].astype(np.float64)
