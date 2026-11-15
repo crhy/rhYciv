@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using Model.Core;
 using RhyCiv.Engine;
 using RhyCiv.Engine.Enums;
+using RhyCiv.Engine.Events;
 using RhyCiv.Engine.Scripting;
 using Model.Core.Units;
 // ReSharper disable UnusedMember.Global
@@ -168,12 +170,51 @@ public class UnitApi
     // }
 
     /// <summary>
+    /// Whether the unit belongs to a player the interface gives orders to.
+    /// <para>
+    /// A computer player or the barbarians run their own units, so there is nothing
+    /// to select their units with: they are refused here rather than being handed
+    /// to whichever interface happens to be on screen.
+    /// </para>
+    /// </summary>
+    private bool hasHumanOwner => _unit.Owner.PlayerType is PlayerType.Local or PlayerType.Remote;
+
+    /// <summary>
     /// Activates a unit, clearing its orders, and, if it has a human owner and movement points left,
     /// selects it on the map.
+    /// <para>
+    /// What is refused: a dead unit is left exactly as it was and nothing is raised
+    /// for it; a unit owned by a computer player or the barbarians has its orders
+    /// cleared but is never selected; a unit whose type grants it no movement is
+    /// cleared but never selected, because the interface refuses a unit whose turn
+    /// has ended.
+    /// </para>
+    /// <para>
+    /// Clearing the orders means the unit is offered for new ones: its order goes back
+    /// to none and its spent moves are forgotten, which is what makes it awaiting
+    /// orders again.
+    /// </para>
     /// </summary>
     public void activate()
     {
-        // TODO: implement 
+        if (_unit.Dead)
+        {
+            return;
+        }
+
+        _unit.Order = (int)OrderType.NoOrders;
+        _unit.MovePointsLost = 0;
+
+        if (!hasHumanOwner || _unit.MovePoints <= 0)
+        {
+            return;
+        }
+
+        // The same notification and the same hand-off the turn cycle makes when it
+        // offers a unit, so a script waking a unit up is indistinguishable from the
+        // game choosing it.
+        _game.RaiseUnitEvent(new ActivationEventArgs(unit: _unit, userInitiated: true, reactivation: false));
+        _game.Players[_unit.Owner.Id].SetUnitActive(_unit, true);
     }
 
     /// <summary>
