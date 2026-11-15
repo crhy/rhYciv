@@ -379,11 +379,15 @@ handful of buildings are declared but have no effect.
 ### TR1 · major · several buildings do nothing
 
 `improvements.lua` — no effect attached to **Recycling Center** (Civ II:
-industrial pollution / 3), **Police Station** (field / war unhappiness relief),
-**Super Highways** (+50% trade on roaded tiles). Hydro and Nuclear Plant lack
-their pollution reduction (Civ II halves industrial pollution). **Supermarket**
-is modelled as "+1 food on irrigated tiles" rather than "+50% on farmland", and
-farmland isn't gated on it.
+industrial pollution / 3), **Police Station** (field / war unhappiness relief).
+Hydro and Nuclear Plant lack their pollution reduction (Civ II halves industrial
+pollution). **Supermarket** is modelled as "+1 food on irrigated tiles" rather
+than "+50% on farmland", and farmland isn't gated on it.
+
+**Super Highways** (+50% trade on roaded tiles) is fixed 2026-11-15 (#28): the
+row now carries a `CityTerrainEffect` — multiply 150 on Trade where the tile has
+a road — and `TileResourceExtensions.GetTrade` applies the city's terrain effects
+the way `GetFood` already did. Tested in `RhyCiv.Tests/Cities/SuperhighwayTradeTests.cs`.
 
 ### TR2 · minor · power-plant percentages and stacking
 

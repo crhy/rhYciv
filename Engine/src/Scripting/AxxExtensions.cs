@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RhyCiv.Engine;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.Units;
 using Model.Constants;
@@ -33,6 +34,8 @@ namespace RhyCiv.Engine.Scripting
         public ResourceList Resources { get; } = new();
 
         public TerrainImprovements Improvements { get; } = new();
+
+        public TerrainEffectActions TerrainEffectActions { get; } = new();
         public void OnCivInit(Func<Civilization, object> action)
         {
             _game.OnCivEvent += (sender, args) =>
@@ -64,6 +67,17 @@ namespace RhyCiv.Engine.Scripting
         public int Fortress = ImprovementTypes.Fortress;
         public int Pollution = ImprovementTypes.Pollution;
         public int Airbase = ImprovementTypes.Airbase;
+    }
+
+    /// <summary>
+    /// The names of the <see cref="CityTerrainEffect"/> actions, so a script can
+    /// write `Action = civ.core.TerrainEffectActions.Multiply` instead of a bare 2.
+    /// </summary>
+    public class TerrainEffectActions
+    {
+        public int Add = CityTerrainEffect.Add;
+        public int AddExtra = CityTerrainEffect.AddExtra;
+        public int Multiply = CityTerrainEffect.Multiply;
     }
 
     public class ResourceList
