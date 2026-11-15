@@ -5,6 +5,7 @@ using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.MapObjects;
 using RhyCiv.Engine.Production;
 using RhyCiv.Engine.Terrains;
+using RhyCiv.Engine.Statistics;
 using Model.Constants;
 using Model.Core;
 using Model.Core.Advances;
@@ -217,6 +218,36 @@ namespace RhyCiv.Engine.Advances
         }
 
         /// <summary>
+        /// The civilisation the science-cost formula measures itself against: the
+        /// strongest one still on the board, barbarians excluded.
+        /// <para>
+        /// A power rank is a position in the order <see cref="Power.AssignPowerRanks"/>
+        /// builds -- <c>AllCivilizations</c> sorted by <see cref="Power.CalculateRating"/>
+        /// then id, barbarians included -- and is never a list index. Looking up
+        /// <c>AllCivilizations[PowerRank]</c> therefore names whichever civilisation
+        /// happens to sit at that offset, so a civilisation's research cost used to
+        /// scale against the progress of an unrelated one.
+        /// </para>
+        /// <para>
+        /// The barbarians really are in <c>AllCivilizations</c> and rate 0 with no
+        /// cities or advances, so they are filtered out rather than allowed to become
+        /// the key civilisation; eliminated civilisations are filtered out too. Ties
+        /// break on id exactly as <see cref="Power.AssignPowerRanks"/> breaks them,
+        /// so the last of the order is the strongest. Returns null when nothing
+        /// qualifies.
+        /// </para>
+        /// </summary>
+        public static Civilization? KeyCivilization(this IGame game)
+        {
+            return game.AllCivilizations
+                .Where(civilization => civilization.Alive &&
+                         civilization.PlayerType != PlayerType.Barbarians)
+                .OrderBy(Power.CalculateRating)
+                .ThenBy(civilization => civilization.Id)
+                .LastOrDefault();
+        }
+
+        /// <summary>
         ///  I'm not sure if this formula is correct I've just grabed if from https://forums.civfanatics.com/threads/tips-tricks-for-new-players.96725/
         /// </summary>
         /// <param name="game"></param>
@@ -227,7 +258,11 @@ namespace RhyCiv.Engine.Advances
             if (civ.ReseachingAdvance < 0) return -1;
             var techParadigm = game.Rules.Cosmic.TechParadigm;
             var ourAdvances = TotalAdvances(game, civ.Id);
-            var keyCivAdvances = TotalAdvances(game, civ.PowerRank);
+            // The key civilisation is found by power, not by treating this civilisation's
+            // rank as an index into AllCivilizations. With no qualifying civilisation
+            // there is nothing to compare against, so the lead term is 0.
+            var key = KeyCivilization(game);
+            var keyCivAdvances = key is null ? ourAdvances : TotalAdvances(game, key.Id);
             var techLead = (ourAdvances - keyCivAdvances) / 3;
             var baseCost = techParadigm + techLead;
 
