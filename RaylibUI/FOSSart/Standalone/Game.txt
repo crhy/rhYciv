@@ -1110,6 +1110,12 @@ The %STRING0 have declared war. Their armies are already moving; whatever was ag
 @button=Ok
 The %STRING0 accept what was sent and will remember it. Goodwill is not a treaty, but treaties are easier to reach with those who have it.
 
+@EXCHANGEDONE
+@title=Knowledge Is Shared
+@width=420
+@button=Ok
+The %STRING0 have taken what you knew and given you what they knew. Neither court parts with less than it came in with, and each has read the other's mind a little further; a court that has been taught by you is slower to be turned against you.
+
 @DIPLOMACY
 @title=Diplomacy
 @width=360
@@ -1134,6 +1140,17 @@ The %STRING0 envoy waits. A treaty binds only as far as both sides mean to keep 
 @width=420
 @button=Ok
 A gift costs something now and buys goodwill that may be worth more later. Choose what to send.
+
+@DIPLOMACYEXCHANGE
+@title=An Exchange of Knowledge
+@width=520
+@button=Ok
+@button=Never Mind
+Knowledge passes both ways at once, and a gift is not the same thing: nothing is given up to be had. The %STRING0 would take these from you:
+^%STRING1
+And you would take these from them:
+^%STRING2
+This is raised only where both courts stand to gain, so both have something to give. Place the trade before them, or leave it.
 
 @EMISSARYFORCE
 @title=An Audience Is Demanded

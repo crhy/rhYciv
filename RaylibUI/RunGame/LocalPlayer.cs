@@ -773,6 +773,11 @@ public class LocalPlayer : IPlayer
         {
             case DiplomacyProposals.GiveGold:
             case DiplomacyProposals.GiveTechnology:
+            case DiplomacyProposals.ExchangeKnowledge:
+                // Taken without being asked, as a gift is: what was put to us has
+                // already been done by the civilisation that put it, an exchange
+                // being a gift in both directions at once. What is left here is
+                // the goodwill, and the cease-fire a gift buys more time for.
                 DiplomacyFunctions.RenewCeaseFire(_gameScreen.Game, Civilization, from);
                 DiplomacyFunctions.AdjustAttitude(Civilization, from, 10);
                 _gameScreen.StatusPanel.Update();

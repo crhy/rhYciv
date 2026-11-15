@@ -5,6 +5,16 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Diplomacy
+
+- The parley now offers "Exchange Knowledge" beside "We Offer a Gift": a mutual
+  trade in which each court takes what the other knows and gives nothing up, offered
+  only where both sides hold an advance the other lacks. A computer civilisation
+  refuses one whose court is colder than Uncooperative. The one-way gift of knowledge
+  is unchanged, and exchanging world maps is still missing (#201).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
