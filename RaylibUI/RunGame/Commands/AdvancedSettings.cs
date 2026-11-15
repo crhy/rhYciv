@@ -9,13 +9,14 @@ using Model.Input;
 namespace RaylibUI.RunGame.Commands;
 
 /// <summary>
-/// The settings that are not part of ordinary play: a rule the player opts into,
+/// The settings that are not part of ordinary play: the rules the player opts into,
 /// and the two development menus.
 /// <para>
-/// All three are off until they are asked for, and all three are remembered
-/// between sessions, so turning the cheat menu on once is enough. Global warming
-/// is the one that changes the game itself -- pollution left on the map long
-/// enough will start changing terrain -- so it is not something to have happen to
+/// All four are off until they are asked for, and all four are remembered
+/// between sessions, so turning the cheat menu on once is enough. The two rules
+/// are the ones that change the game itself -- pollution left on the map long
+/// enough will start changing terrain, and a unit bought through diplomacy can
+/// be moved the turn it is bought -- so neither is something to have happen to
 /// somebody who has not chosen it.
 /// </para>
 /// </summary>
@@ -39,13 +40,13 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
             checkboxStates: (List<bool>)
             [
                 Settings.GlobalWarmingEnabled, Settings.CheatMenuEnabled, Settings.EditorMenuEnabled,
-                false
+                Settings.BoughtUnitsMoveAtOnce, false
             ]);
     }
 
     private void DialogClick(string button, int _, IList<bool>? checkboxes, IDictionary<string, string>? _2)
     {
-        if (button != Labels.Ok || checkboxes is not { Count: >= 4 })
+        if (button != Labels.Ok || checkboxes is not { Count: >= 5 })
         {
             return;
         }
@@ -53,7 +54,7 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
         // Not a setting so much as a button that looks like one: ticking it puts
         // the tutorial back for somebody who wants to see it again, and it is
         // unticked the next time this dialog opens because it has already happened.
-        if (checkboxes[3])
+        if (checkboxes[4])
         {
             Settings.ForgetTutorials();
         }
@@ -61,7 +62,7 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
         var menusChanged = Settings.CheatMenuEnabled != checkboxes[1] ||
                            Settings.EditorMenuEnabled != checkboxes[2];
 
-        Settings.SetAdvancedSettings(checkboxes[0], checkboxes[1], checkboxes[2]);
+        Settings.SetAdvancedSettings(checkboxes[0], checkboxes[1], checkboxes[2], checkboxes[3]);
 
         if (menusChanged)
         {

@@ -267,9 +267,16 @@ namespace RhyCiv.Engine.UnitActions
         }
 
         /// <summary>
-        /// Buys a unit. The diplomat is spent doing it, as Civ II spends one, and
-        /// the bought unit arrives with its turn already over: it has just changed
-        /// sides, not been given fresh orders.
+        /// Buys a unit. The diplomat is spent doing it, as Civ II spends one.
+        /// <para>
+        /// Civ II also spends the bought unit's turn: it has just changed sides,
+        /// not been given fresh orders, so it cannot be moved until the next turn.
+        /// That is the parity default. The "use a bought unit right away" advanced
+        /// setting is the player asking for the other rule, in which the unit is
+        /// handed a full day's move points and can be ordered around the square
+        /// it was bought on -- which is what stops an enemy unit that was waiting
+        /// for the turn to end from getting in first.
+        /// </para>
         /// </summary>
         public static bool BribeUnit(IGame game, Unit diplomat, Unit target)
         {
@@ -291,7 +298,7 @@ namespace RhyCiv.Engine.UnitActions
             target.HomeCity = null;
             target.NeedsSupport = false;
             target.Order = (int)OrderType.NoOrders;
-            target.MovePointsLost = target.MaxMovePoints;
+            target.MovePointsLost = Settings.BoughtUnitsMoveAtOnce ? 0 : target.MaxMovePoints;
             buyer.Units.Add(target);
 
             game.Players[loser.Id].UnitLost(target, diplomat);

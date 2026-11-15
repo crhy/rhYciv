@@ -5,6 +5,14 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Rules
+
+- Ticking "Use a bought unit right away" in Advanced Settings lets a unit bought
+  through diplomacy be moved in the same turn it was bought. Unticked, Civ II's
+  rule stands and the bought unit's turn is already over (#196).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules

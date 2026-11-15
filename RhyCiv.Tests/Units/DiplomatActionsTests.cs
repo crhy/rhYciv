@@ -1,3 +1,5 @@
+using System.Reflection;
+using RhyCiv.Engine;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.UnitActions;
 using Model.Constants;
@@ -130,6 +132,66 @@ public class DiplomatActionsTests
     }
 
     [Fact]
+    public void ABoughtUnit_KeepsItsDayWhenThePlayerAskedForIt()
+    {
+        // #196: the barbarian that was waiting for this turn to end killed the troop
+        // the player had only just bought. With the advanced setting on, the bought
+        // unit is handed a full day and can be ordered about the same turn.
+        var folder = SettingsFolder();
+        Settings.SetAdvancedSettings(false, false, false, true);
+        try
+        {
+            var (game, map, mine) = World();
+            mine.Money = 10_000;
+            var owner = Rival(money: 200);
+            var target = UnitOf(owner, game, map.Tile[4, 4]);
+            var diplomat = DiplomatOf(mine, game, map.Tile[4, 3]);
+
+            Assert.True(DiplomatActions.BribeUnit(game, diplomat, target));
+            Assert.Equal(target.MaxMovePoints, target.MovePoints);
+            Assert.True(target.AwaitingOrders,
+                "a bought unit should be one the player is offered this turn");
+            // The agent is still spent on the job: one point, as Civ II spends it.
+            Assert.Equal(6 - 3, diplomat.MovePoints);
+        }
+        finally
+        {
+            Settings.SetAdvancedSettings(false, false, false, false);
+            ReleaseSettingsFolder(folder);
+        }
+    }
+
+    [Fact]
+    public void TheBoughtUnitRule_IsRememberedBetweenSessions()
+    {
+        var folder = SettingsFolder();
+        try
+        {
+            Settings.SetAdvancedSettings(false, false, false, true);
+
+            var file = Path.Combine(folder, "appsettings.json");
+            var written = File.ReadAllText(file);
+            using (var parsed = System.Text.Json.JsonDocument.Parse(written))
+            {
+                Assert.True(parsed.RootElement
+                    .GetProperty(nameof(Settings.BoughtUnitsMoveAtOnce)).GetBoolean());
+            }
+
+            // A new session starts with nothing remembered and reads the file back,
+            // which is how nobody is asked about the cheat menu a second time.
+            Settings.SetAdvancedSettings(false, false, false, false);
+            File.WriteAllText(file, written);
+            ReadSettings(file);
+            Assert.True(Settings.BoughtUnitsMoveAtOnce);
+        }
+        finally
+        {
+            Settings.SetAdvancedSettings(false, false, false, false);
+            ReleaseSettingsFolder(folder);
+        }
+    }
+
+    [Fact]
     public void BuyingAUnit_IsRefusedWithoutTheGold()
     {
         var (game, map, mine) = World();
@@ -189,6 +251,33 @@ public class DiplomatActionsTests
 
         Assert.True(DiplomatActions.InciteCost(game, large) > DiplomatActions.InciteCost(game, small));
     }
+
+    /// <summary>
+    /// A settings directory of the test's own: turning an advanced setting on writes
+    /// it out, and rhY's own appsettings.json must never be the one written to.
+    /// </summary>
+    private static string SettingsFolder()
+    {
+        var folder = Path.Combine(Path.GetTempPath(),
+            "rhyciv-tests-" + Guid.NewGuid().ToString("N"));
+        Settings.DataFolder = () => folder;
+        return folder;
+    }
+
+    /// <summary>Hands the data folder back and removes the test's copy.</summary>
+    private static void ReleaseSettingsFolder(string folder)
+    {
+        Settings.DataFolder = () => Path.Combine(Path.GetTempPath(), "rhyciv-tests-unset");
+        if (Directory.Exists(folder))
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    /// <summary>The same read the game does on startup; the loader is private.</summary>
+    private static void ReadSettings(string file) =>
+        typeof(Settings).GetMethod("LoadSettings", BindingFlags.NonPublic | BindingFlags.Static)!
+            .Invoke(null, new object[] { file });
 
     // ---- fixture -----------------------------------------------------------
 
