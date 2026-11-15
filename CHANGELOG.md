@@ -5,6 +5,14 @@ Notable changes to rhYciv. Entries reference the issue they close.
 The AppStream release notes in `packaging/flatpak/io.github.crhy.rhYciv.metainfo.xml`
 carry a shorter, user-facing summary of each release; this file is the full record.
 
+## [Unreleased]
+
+### Rules
+
+- Air units can now be airlifted between cities that have Airbases, one unit into
+  a city per turn; the Airlift order takes the destination city as the next click
+  (#50).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
