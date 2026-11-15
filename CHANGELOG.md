@@ -7,6 +7,21 @@ carry a shorter, user-facing summary of each release; this file is the full reco
 
 ## [Unreleased]
 
+### Happiness
+
+- The five happiness passes can now be read one at a time. `AnalyzeHappiness`
+  returns the counts after base mood, luxuries, improvements, government and
+  wonders, each row naming what moved it — "Colosseum -4 (Electronics)",
+  "martial law: 3 units x1 (Despotism) -3", "Temple -4 (Mysticism) x2 (Oracle)"
+  — and its last row is always the split the game itself uses, so a breakdown
+  cannot drift from the number behind civil disorder (#131). Tests pin those
+  rows for a city in actual disorder, for one to four garrisoned combat units
+  under Despotism, Monarchy and Communism, for the same city at two luxury rates,
+  at three difficulty levels, for a twelve-city empire under Despotism and
+  Communism, and for Temple, Cathedral, Colosseum and Shakespeare's Theatre.
+  The three-row panel in the RaylibUI city screen, and Civ II's own figures for
+  every city but Kells', are still open.
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at
