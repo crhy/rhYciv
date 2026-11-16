@@ -51,8 +51,13 @@ public class UnitsPresentBox : Listbox
             _unitsSignature = signature;
         }
 
+        // The layout declares every rectangle in the window's own coordinates. This
+        // box is drawn inside the info panel, which is itself placed from the layout,
+        // so the panel's origin is subtracted to get the offset this control's parent
+        // expects.
+        var panel = _cityWindow.CityWindowProps.InfoPanel.Box;
         var pos = _cityWindow.CityWindowProps.InfoPanel.UnitsPresent.Box;
-        Location = new(pos.X * _cityWindow.Scale, pos.Y * _cityWindow.Scale);
+        Location = new((pos.X - panel.X) * _cityWindow.Scale, (pos.Y - panel.Y) * _cityWindow.Scale);
         Width = (int)(pos.Width * _cityWindow.Scale);
         Height = (int)(pos.Height * _cityWindow.Scale);
 
