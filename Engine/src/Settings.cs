@@ -127,6 +127,11 @@ namespace RhyCiv.Engine
         /// menus are development tools, and a menu bar with them on it is not the
         /// one the game is meant to be played with.
         /// </para>
+        /// <para>
+        /// Giving the units in one area their orders together is a rule the player
+        /// opts into as well: it changes the order the game walks the army in, and
+        /// Civ II's own order is what a player who has not asked should get.
+        /// </para>
         /// </summary>
         public static bool GlobalWarmingEnabled { get; private set; }
 
@@ -136,15 +141,20 @@ namespace RhyCiv.Engine
         /// <inheritdoc cref="GlobalWarmingEnabled"/>
         public static bool EditorMenuEnabled { get; private set; }
 
+        /// <inheritdoc cref="GlobalWarmingEnabled"/>
+        public static bool NearbyUnitsFirstEnabled { get; private set; }
+
         /// <summary>
         /// Records the advanced settings and writes them out. They persist between
         /// sessions: somebody who has turned the cheat menu on is not asked again
         /// next time they start the game.
         /// </summary>
-        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu)
+        /// <param name="nearbyUnitsFirst">Defaults to off, as every one of these does.</param>
+        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu,
+            bool nearbyUnitsFirst = false)
         {
             if (GlobalWarmingEnabled == globalWarming && CheatMenuEnabled == cheatMenu &&
-                EditorMenuEnabled == editorMenu)
+                EditorMenuEnabled == editorMenu && NearbyUnitsFirstEnabled == nearbyUnitsFirst)
             {
                 return;
             }
@@ -152,6 +162,7 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = globalWarming;
             CheatMenuEnabled = cheatMenu;
             EditorMenuEnabled = editorMenu;
+            NearbyUnitsFirstEnabled = nearbyUnitsFirst;
             Save();
         }
 
@@ -276,6 +287,7 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = ReadFlag(root, nameof(GlobalWarmingEnabled));
             CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
             EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
+            NearbyUnitsFirstEnabled = ReadFlag(root, nameof(NearbyUnitsFirstEnabled));
         }
 
         /// <summary>An advanced setting, absent from the file until it is turned on.</summary>
@@ -442,6 +454,7 @@ namespace RhyCiv.Engine
             writer.WriteBoolean(nameof(GlobalWarmingEnabled), GlobalWarmingEnabled);
             writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
             writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
+            writer.WriteBoolean(nameof(NearbyUnitsFirstEnabled), NearbyUnitsFirstEnabled);
             writer.WriteStartArray(nameof(SeenTutorials));
             foreach (var tutorial in SeenTutorials)
             {

@@ -361,6 +361,7 @@ Enter closest city screen
 Global warming
 Cheat menu
 Editor menu
+Give nearby units their orders together
 Show the tutorial advice again
 @MESSAGEOPTIONS
 @title=City Report Options
