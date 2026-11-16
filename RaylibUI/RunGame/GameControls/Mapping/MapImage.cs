@@ -220,15 +220,17 @@ public static class MapImage
             DrawLayer(tilePic, Images.ExtractBitmap(RiverTile(terrainSet, tile, index)), TileRec);
         }
 
-        // Draw shield for grasslands
-        if (tile.Type == TerrainType.Grassland)
+        // Draw shield for grasslands, then the resource special over it.
+        // Civ II paints the resource icon on top of the grass shield, so both
+        // layers belong on the tile. They used to be an if/else pair, which meant
+        // a special was never drawn on grassland at all -- with or without a
+        // shield -- and grassland is where the grazing resources live (#178).
+        if (tile.Type == TerrainType.Grassland && tile.HasShield)
         {
-            if (tile.HasShield)
-            {
-                DrawLayer(tilePic, Images.ExtractBitmap(terrainSet.GrasslandShield), TileRec);
-            }
+            DrawLayer(tilePic, Images.ExtractBitmap(terrainSet.GrasslandShield), TileRec);
         }
-        else if (tile.Special != -1)
+
+        if (tile.Special != -1)
         {
             // Draw special resources if they exist
             DrawLayer(tilePic, Images.ExtractBitmap(terrainSet.Specials[tile.Special][(int)tile.Type]), TileRec);
