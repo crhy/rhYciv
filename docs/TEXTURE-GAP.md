@@ -84,14 +84,37 @@ the fallback when that art is missing.
   progress rings, resource swatches, category chips) is drawn procedurally in
   `build_standalone_sheets.build_icons()`.
 
+## Done: dialog and city-screen backgrounds
+
+`panel.jpg`, `city_land.jpg`, `city_river.jpg` and `city_ocean.jpg` are cut from
+the painted slate sheet the dialog chrome is already cut from --
+`Backgrounds/stonetexture.png`, the same file `ImageUtils.StoneTextureAsset` feeds
+the frame tiles -- instead of the flat fill with a line every 26 px that
+`build_backgrounds()` used to write. These are the pictures behind every dialog
+and the city screen, so the whole UI now sits on painted stone.
+
+Each slot keeps its own colour: the crop's per-channel deviation from its own
+mean is re-based on the slot colour, so the painting's relief survives untouched
+while the mean of every channel lands back on `(68,74,84)` panel, `(93,125,77)`
+land, `(70,119,137)` river and `(40,90,132)` ocean. Land, river and ocean stay
+distinguishable in the city window, and the panel stays exactly as dark under
+dialog text as it was. The four crops come from the same four well-separated
+regions of the sheet `ImageUtils.TryBuildStoneWallpaper` uses, so a dialog sits on
+the same painting its frame is cut from. That code lightens its interior tiles
+toward limestone and darkens its border crop; these four keep the slot colours
+they had, so the panel stays as dark under dialog text as it was.
+
+The source-set half of the old item was stale: `stonetileable.png` is not in
+`~/rhYcivtextures` (only `graystonetileable.png` is), and no new art was needed
+anyway -- the sheet that already ships is the input, and `ASSET-MANIFEST.tsv`
+already attributes it to project-original art, so no new provenance was added.
+
+`scripts/check_background_art.py --check` holds the line: each file must exist,
+be 1280x520, and show at least 100 distinct colours on a 13 px sample grid. The
+placeholder scored 5 there; these score over 1000.
+
 ## Missing — UI and screen art
 
-- Panel and city-window backgrounds (`panel.jpg`, `city_land.jpg`,
-  `city_river.jpg`, `city_ocean.jpg`) are flat colour with a stripe every 26px,
-  from `build_backgrounds()`. These are the placeholders behind every dialog and
-  the city screen, so they set the tone of the whole UI. Painted tileable stone
-  exists unused in the source set (`stonetileable.png`, `graystonetileable.png`)
-  and would be a straight upgrade.
 - `main_menu.jpg` is also a procedural gradient, but nothing reads it: the menu
   uses the painted `NewCartographerBackground.png`. It is generated and shipped
   for nothing.
@@ -119,8 +142,8 @@ Findings, so this does not have to be redone:
 | root `ocean.png`, `Ocean2.png`, `salmon.png`, `Whale.png`, `Crab.png` | byte-identical duplicates of files under `terrain/`; the `terrain/` copies are the ones the pipeline reads |
 | `GoldenSunsetWin.png` | wired — `Backgrounds/victory_conquest.png` is this painting with the victory line baked in, re-rendered at 1280x720 |
 | `GoldenSunsetWinText.png` | a personal variant carrying an extra line of political text. **Not shipped, and must not be** — it would go out in every bundle. |
-| `stonetexture.png`, `NewCartographerBackground.png` | wired (`ImageUtils.StoneTextureAsset`, `CompactInterface` `backgroundImage`) |
-| `stonetileable.png`, `graystonetileable.png` | unused; see the panel-background item above |
+| `stonetexture.png`, `NewCartographerBackground.png` | wired (`ImageUtils.StoneTextureAsset`, `CompactInterface` `backgroundImage`); the slate sheet is also the input `build_backgrounds()` cuts the four dialog and city backgrounds from |
+| `graystonetileable.png` | unused. `stonetileable.png` **does not exist** in the source set -- the panel-background item that named it was wrong, and the shipped `stonetexture.png` is the stone the pipeline uses |
 | `_archive/` (29) | archived by hand, not part of the pipeline |
 
 ## Orphaned reference images

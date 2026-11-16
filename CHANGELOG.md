@@ -7,6 +7,15 @@ carry a shorter, user-facing summary of each release; this file is the full reco
 
 ## [Unreleased]
 
+### Art
+
+- Every dialog and the city screen now sit on painted slate instead of a flat
+  colour with a stripe every 26 px: `panel.jpg`, `city_land.jpg`, `city_river.jpg`
+  and `city_ocean.jpg` are cut from the repo's own `stonetexture.png`, each held
+  at the colour it had so land, river and ocean stay distinguishable, and
+  `scripts/check_background_art.py` fails the gate if a flat placeholder comes
+  back (#3).
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at

@@ -445,6 +445,62 @@ def build_view_piece_cursor() -> None:
 
 
 
+# The four backgrounds behind every dialog and the city screen. Each keeps the
+# colour it has always had -- that colour is what tells the city screen's land,
+# river and ocean variants apart, and what sets the contrast of the text drawn
+# over the panel -- but the colour is now carried by the painted slate sheet the
+# dialog chrome is already cut from, instead of a flat fill with a stripe every
+# 26 px. The origin fractions are the same four well-separated regions of the
+# sheet ImageUtils.TryBuildStoneWallpaper cuts its frame tiles from, so a dialog
+# sits on the same painting its frame is cut from rather than on a flat panel.
+BACKGROUND_SLOTS = (
+    ("panel", (68, 74, 84), (0.05, 0.08)),
+    ("city_land", (93, 125, 77), (0.62, 0.12)),
+    ("city_river", (70, 119, 137), (0.28, 0.70)),
+    ("city_ocean", (40, 90, 132), (0.88, 0.82)),
+)
+
+# How far the slate's own relief is allowed to reach around the slot colour. At
+# 1.0 the painted sheet keeps exactly the contrast it has on disk; the sheet is
+# already a low-contrast painting (about 17 levels of spread per channel), so
+# pushing this higher buys noise in the JPEG rather than stone you can read.
+STONE_RELIEF = 1.0
+
+
+def channel_mean(plane: Image.Image) -> float:
+    histogram = plane.histogram()
+    return sum(level * count for level, count in enumerate(histogram)) / (plane.width * plane.height)
+
+
+def stone_background(sheet: Image.Image, size: tuple[int, int], tint: tuple[int, int, int],
+                     origin: tuple[float, float]) -> Image.Image:
+    """Cut a region of the painted slate sheet and hold it at ``tint``.
+
+    Every channel of the crop is re-based so its mean lands on the slot colour
+    and its deviation from that mean is the painting's own. The relief therefore
+    survives untouched while the background keeps exactly the colour it has always
+    had: land, river and ocean stay distinguishable, and the panel stays as dark
+    under the dialog text as it was.
+    """
+    if sheet.width < size[0] or sheet.height < size[1]:
+        raise ValueError(f"slate sheet {sheet.size} is smaller than the {size} footprint")
+
+    left = round((sheet.width - size[0]) * origin[0])
+    top = round((sheet.height - size[1]) * origin[1])
+    crop = sheet.crop((left, top, left + size[0], top + size[1]))
+
+    planes = []
+    for index, channel in enumerate("RGB"):
+        plane = crop.getchannel(channel)
+        centre = channel_mean(plane)
+        base = tint[index]
+        planes.append(plane.point([
+            min(255, max(0, round(base + (level - centre) * STONE_RELIEF)))
+            for level in range(256)
+        ]))
+    return Image.merge("RGB", planes)
+
+
 def build_backgrounds() -> None:
     backgrounds = OUT / "Backgrounds"
     backgrounds.mkdir(parents=True, exist_ok=True)
@@ -458,12 +514,19 @@ def build_backgrounds() -> None:
     menu = menu.filter(ImageFilter.GaussianBlur(2))
     menu.save(backgrounds / "main_menu.jpg", quality=88, optimize=True, progressive=True)
 
-    for name, color in (("panel", (68, 74, 84)), ("city_land", (93, 125, 77)), ("city_river", (70, 119, 137)), ("city_ocean", (40, 90, 132))):
-        image = Image.new("RGB", (1280, 520), color)
-        idraw = ImageDraw.Draw(image)
-        for y in range(0, image.height, 26):
-            idraw.line((0, y, image.width, y), fill=tuple(min(255, channel + 8) for channel in color), width=1)
-        image.save(backgrounds / f"{name}.jpg", quality=86, optimize=True, progressive=True)
+    # The painted slate sheet ships in the repo and is project-original (ASSET-MANIFEST
+    # line for it), so cutting from it needs no new provenance. It is not generated
+    # by this script, hence the explicit complaint rather than a bare traceback.
+    sheet_path = backgrounds / "stonetexture.png"
+    if not sheet_path.exists():
+        raise FileNotFoundError(
+            f"{sheet_path} is missing; the dialog and city-screen backgrounds are cut from it")
+
+    with Image.open(sheet_path) as loaded:
+        sheet = loaded.convert("RGB")
+        for name, color, origin in BACKGROUND_SLOTS:
+            image = stone_background(sheet, (1280, 520), color, origin)
+            image.save(backgrounds / f"{name}.jpg", quality=86, optimize=True, progressive=True)
 
 
 def main() -> None:
