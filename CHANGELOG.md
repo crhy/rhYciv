@@ -15,6 +15,11 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   instead of putting the same question to the same square forever. The loop never
   came back, which stopped a whole test run from printing a result about one run
   in five.
+- A ruleset a mod has truncated, reordered or mistyped now fails with an error naming
+  the file, the section and the line — `RULES.txt section ORDERS, line 412: expected
+  at least 2 comma-separated fields, found 1 ("Halt")` — instead of an
+  `IndexOutOfRangeException` or a `FormatException` some time after startup, with no
+  hint of which file or line to fix (#67).
 
 ## [0.2.3] — 2026-09-24
 

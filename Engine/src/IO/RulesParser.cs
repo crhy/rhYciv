@@ -12,15 +12,18 @@ using Path = System.IO.Path;
 
 namespace RhyCiv.Engine.IO
 {
-    public class RulesParser : IFileHandler
+    public class RulesParser : IFileHandler, ILineAwareFileHandler
     {
         private Rules Rules { get; init; }
 
+        private readonly string _rulesetFile;
+
         private readonly Dictionary<string, Action<string[]>> _sectionHandlers = new();
 
-        private RulesParser(Rules rules)
+        private RulesParser(Rules rules, string rulesetFile)
         {
             this.Rules = rules; 
+            _rulesetFile = rulesetFile;
             _sectionHandlers.Add("COSMIC", ProcessCosmicRules);
             _sectionHandlers.Add("COSMIC2", ProcessExtraMovementAdjustments);
             _sectionHandlers.Add("CIVILIZE", ProcessTech);
@@ -73,7 +76,7 @@ namespace RhyCiv.Engine.IO
             {
                 return rules;
             }
-            TextFileParser.ParseFile(filePath, new RulesParser(rules));
+            TextFileParser.ParseFile(filePath, new RulesParser(rules, filePath));
             return rules;
         }
 
@@ -603,16 +606,156 @@ namespace RhyCiv.Engine.IO
         }
 
 
+        /// <summary>
+        /// Opt-in line numbers, set by <see cref="TextFileParser.ParseFile"/> before
+        /// every <see cref="ProcessSection"/> call: the 1-based line on which the current
+        /// section's content begins. Content lines are contiguous, so a handler can
+        /// name the file line it went wrong on.
+        /// </summary>
+        public int SectionStartLine { get; set; } = 1;
+
+        /// 1-based line number of the section content line at <c>index</c>.
+        private int LineOf(int index) => SectionStartLine + index;
+
+        private RulesetParseError Error(string section, int line, string detail, string? lineText) =>
+            new(_rulesetFile, section, line, detail, lineText);
+
+        /// <summary>
+        /// Civ II keeps twenty-one leaders, and <see cref="ProcessLeaders"/> slices
+        /// the section down to that many lines, which throws when the file has fewer.
+        /// </summary>
+        private const int LeaderCount = 21;
+
+        /// Highest value of <see cref="AdvanceGroupAccess"/>: the digit a
+        /// LEADERS2 flag may hold.
+        private const int MaxAdvanceGroupFlag = (int)AdvanceGroupAccess.Prohibited;
+
+        /// <summary>
+        /// Sections whose lines are comma-separated and whose handler reads a fixed
+        /// number of fields. The value is the fewest fields the handler can read;
+        /// a shorter line used to reach an IndexOutOfRangeException.
+        /// </summary>
+        private static readonly Dictionary<string, int> _minimumFields = new()
+        {
+            ["ORDERS"] = 2,
+            ["CARAVAN"] = 1,
+            ["CIVILIZE2"] = 1,
+            ["MAP_TRANSPORT_RELATIONSHIPS"] = 1,
+            ["LEADERS"] = 8,
+            ["SECONDARY_MAPS"] = 9
+        };
+
+        /// Of those sections, the ones whose fields are all read with int.Parse.
+        private static readonly HashSet<string> _integerFields =
+            ["CIVILIZE2", "MAP_TRANSPORT_RELATIONSHIPS", "SECONDARY_MAPS"];
+
+        /// <summary>
+        /// Check the shape of a section's lines before parsing them, so a mod's
+        /// truncated or mistyped file fails with a named line instead of an index
+        /// exception from inside a handler.
+        /// </summary>
+        private void ValidateSection(string section, List<string> contents)
+        {
+            if (section == "LEADERS")
+            {
+                if (contents.Count < LeaderCount)
+                {
+                    throw Error(section, SectionStartLine,
+                        $"expected at least {LeaderCount} leader lines, found {contents.Count}; " +
+                        "the section starts at this line", null);
+                }
+            }
+            else if (section == "LEADERS2")
+            {
+                ValidateLeaderGroupFlags(contents);
+            }
+
+            var minimumFields = _minimumFields.TryGetValue(section, out var minimum) ? minimum : 0;
+            var allIntegers = _integerFields.Contains(section);
+            if (minimumFields == 0 && !allIntegers) return;
+
+            for (var index = 0; index < contents.Count; index++)
+            {
+                var line = contents[index];
+                // A ';' opens a comment in these files, so only what precedes it is read.
+                var fields = line.Split(';', 2, StringSplitOptions.TrimEntries)[0]
+                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+                if (fields.Length < minimumFields)
+                {
+                    throw Error(section, LineOf(index),
+                        $"expected at least {minimumFields} comma-separated fields, found {fields.Length}",
+                        line);
+                }
+
+                if (!allIntegers) continue;
+
+                var notANumber = fields.FirstOrDefault(field => !int.TryParse(field, out _));
+                if (notANumber != null)
+                {
+                    throw Error(section, LineOf(index),
+                        $"expected every comma-separated field to be a number, found \"{notANumber}\" which is not one",
+                        line);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A LEADERS2 line is the leader's advance-group flags, one digit per group,
+        /// then a tab or space. The handler takes everything before that separator and
+        /// parses each character, so a line with no separator throws on a -1 index and
+        /// a non-digit throws in int.Parse.
+        /// </summary>
+        private void ValidateLeaderGroupFlags(List<string> contents)
+        {
+            for (var index = 0; index < contents.Count; index++)
+            {
+                var line = contents[index];
+                var separator = line.IndexOfAny("\t ".ToCharArray());
+                if (separator < 0)
+                {
+                    throw Error("LEADERS2", LineOf(index),
+                        "expected one digit per advance group followed by a tab or space, found no separator",
+                        line);
+                }
+
+                var flags = line[..separator];
+                var badFlag = flags.FirstOrDefault(c => !char.IsDigit(c) || c > '0' + MaxAdvanceGroupFlag);
+                if (badFlag != default)
+                {
+                    throw Error("LEADERS2", LineOf(index),
+                        $"expected a digit 0 to {MaxAdvanceGroupFlag} per advance group, found \"{badFlag}\"",
+                        line);
+                }
+            }
+        }
+
         public void ProcessSection(string section, List<string>? contents)
         {
             if (contents == null) return;
-            if (section.StartsWith("TERRAIN"))
+            try
             {
-                ProcessTerrain(contents);
+                ValidateSection(section, contents);
+                if (section.StartsWith("TERRAIN"))
+                {
+                    ProcessTerrain(contents);
+                }
+                else if (_sectionHandlers.TryGetValue(section, out var handler))
+                {
+                    handler(contents.ToArray());
+                }
             }
-            else if (_sectionHandlers.TryGetValue(section, out var handler))
+            catch (RulesetParseError)
             {
-                handler(contents.ToArray());
+                throw;
+            }
+            catch (Exception failure) when (failure is IndexOutOfRangeException || failure is ArgumentOutOfRangeException ||
+                                           failure is FormatException || failure is InvalidCastException)
+            {
+                // Anything still escaping a handler is reported as the same error type
+                // rather than swallowed: the section is always known, even when the
+                // exact line is not, and the original failure stays as the inner exception.
+                throw RulesetParseError.FromHandlerFailure(_rulesetFile, section, SectionStartLine, failure);
             }
         }
 
