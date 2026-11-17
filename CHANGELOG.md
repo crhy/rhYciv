@@ -7,6 +7,13 @@ carry a shorter, user-facing summary of each release; this file is the full reco
 
 ## [Unreleased]
 
+### Diplomacy
+
+- The Foreign Advisor reports what the ministry already knows about every civilisation
+  still on the board — their court's rank, the treaty in force, the embassy, whether
+  the two have met, what each side knows that the other does not, and what it would
+  be worth putting to them — in one dialog instead of one line per negotiation (#174).
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at

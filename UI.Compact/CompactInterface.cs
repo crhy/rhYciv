@@ -263,6 +263,7 @@ public class CompactInterface(IMain main) : ClassicInterface(main)
                 new("Find &City|Shift+C", new Shortcut(Key.C, shift: true), Key.C, commandId: FindCity),
                 new("-", Shortcut.None, Key.None),
                 new("&Diplomacy|Ctrl+D", new Shortcut(Key.D, ctrl: true), Key.D, commandId: Diplomacy),
+                new("Foreign &Advisor", Shortcut.None, Key.A, commandId: ForeignAdvisor),
                 new("&REVOLUTION|Shift+R", new Shortcut(Key.R, shift: true), Key.R, commandId: Revolution)
             },
         },

@@ -1078,6 +1078,14 @@ When the moment came, the promised help did not. The treaty remains on paper, bu
 @button=Cancel
 Which of the civilizations you have met would you speak with?
 
+@FOREIGNADVISOR
+@title=Foreign Advisor
+@width=520
+@button=Ok
+The ministry's whole account at once: every court still on the board, what it thinks of you, the treaty that stands between you, whether your embassy sees into it, and what each side knows that the other does not. Read it before you sit down at a table, not instead of one.
+^
+%STRING0
+
 @GIVETECH
 @title=A Gift of Knowledge
 @width=420

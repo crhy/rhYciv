@@ -59,6 +59,21 @@ public static class DiplomacyFunctions
     public static bool HaveMet(Civilization a, Civilization b) => Between(a, b).Contact;
 
     /// <summary>
+    /// What stands between two civilisations when something has been signed
+    /// between them, and nothing when nothing has.
+    /// <para>
+    /// <see cref="Between"/> invents an empty relation on the spot, which is right
+    /// for anything about to write into it and wrong for anything only reading: a
+    /// screen that asks what the treaty is would otherwise sign one, and a report
+    /// asked twice would not be the same report twice. This is the read-only half
+    /// of the same accessor, spelled the way the Lua treaty proxy already reads
+    /// (<see cref="TreatiesProxy"/>).
+    /// </para>
+    /// </summary>
+    public static Relation? StandingBetween(Civilization from, Civilization to) =>
+        to.Id >= 0 && to.Id < from.Relations.Length ? from.Relations[to.Id] : null;
+
+    /// <summary>
     /// Whether these two are at war. The barbarians always are, with everyone: they
     /// never sign anything, so there is never a war to declare. Reading their
     /// (empty) relation instead said they were at peace, and their first attack
@@ -338,10 +353,19 @@ public static class DiplomacyFunctions
     }
 
     /// <summary>The treaties one civilisation can offer another, given where they stand.</summary>
-    public static IEnumerable<Proposal> AvailableProposals(Civilization from, Civilization to)
-    {
-        var relation = Between(from, to);
+    public static IEnumerable<Proposal> AvailableProposals(Civilization from, Civilization to) =>
+        AvailableProposals(Between(from, to));
 
+    /// <summary>
+    /// The same list, read off a relation that has already been found.
+    /// <para>
+    /// Split out so the Foreign Advisor can offer what it would be worth putting
+    /// to a civilisation without <see cref="Between"/> signing a relation between
+    /// two that have never dealt (#174).
+    /// </para>
+    /// </summary>
+    public static IEnumerable<Proposal> AvailableProposals(Relation relation)
+    {
         if (relation.War)
         {
             yield return Proposal.CeaseFire;
