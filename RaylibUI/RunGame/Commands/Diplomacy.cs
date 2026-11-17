@@ -182,7 +182,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     {
         var us = gameScreen.Player.Civilization;
         var relation = DiplomacyFunctions.Between(us, other);
-        var proposals = DiplomacyFunctions.AvailableProposals(us, other).ToList();
+        var proposals = DiplomacyFunctions.AvailableProposals(gameScreen.Game, us, other).ToList();
 
         var buttons = new List<string>();
         if (proposals.Any(IsTreaty))
@@ -202,6 +202,14 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             buttons.Add(DeclareWarButton);
         }
 
+        // Civ II's "Have a proposal to make" list carries "ask to share world maps",
+        // and it is only there when the two courts hold different pictures of the
+        // ground between them.
+        if (proposals.Contains(DiplomacyFunctions.Proposal.ShareWorldMaps))
+        {
+            buttons.Add(WorldMapsButton);
+        }
+
         buttons.Add(Farewell);
 
         Step("DIPLOMACYMENU", (button, _, _, _) =>
@@ -213,6 +221,9 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
                     break;
                 case GiftButton:
                     gameScreen.QueueAfterCurrentPopup(() => GiftMenu(other));
+                    break;
+                case WorldMapsButton:
+                    gameScreen.QueueAfterCurrentPopup(() => ShareMaps(other));
                     break;
                 case BreakAllianceButton:
                 case DeclareWarButton:
@@ -226,7 +237,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private void ProposeMenu(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
-        var treaties = DiplomacyFunctions.AvailableProposals(us, other).Where(IsTreaty).ToList();
+        var treaties = DiplomacyFunctions.AvailableProposals(gameScreen.Game, us, other).Where(IsTreaty).ToList();
         if (treaties.Count == 0)
         {
             Audience(other);
@@ -286,6 +297,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private const string CowerButton = "Cower in Fear";
     private const string GiftGoldButton = "Gold";
     private const string GiftTechButton = "Knowledge";
+    private const string WorldMapsButton = "World Maps";
     private const string NeverMind = "Never Mind";
 
     /// <summary>The one line of context the parley opens with.</summary>
@@ -444,6 +456,65 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             Step("GIFTSENT", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
             ReturnToAudience(other);
         }, replaceStrings: [other.Adjective], listBox: listbox);
+    }
+
+    /// <summary>
+    /// Both sides put their picture of the world on the table and take the other's.
+    /// <para>
+    /// Civ II's "Have a proposal to make" list carries "ask to share world maps", and
+    /// it is answered in the leader's own voice either way -- a refusal with a reason
+    /// in it, or an acceptance. The numbers are quoted before the player commits, because
+    /// the offer is only worth making when both courts hold ground the other has never
+    /// seen, and that is exactly what the two figures say.
+    /// </para>
+    /// </summary>
+    private void ShareMaps(Civilization other)
+    {
+        var us = gameScreen.Player.Civilization;
+        var game = gameScreen.Game;
+
+        var (ours, theirs) = DiplomacyFunctions.MapsEachSideWouldGain(game, us, other);
+        if (ours == 0 || theirs == 0)
+        {
+            // One court already sees everything the other has, so there is nothing
+            // to trade and the audience should not have offered it.
+            Step("PARLEYNOTHANKS", (_, _, _, _) => { });
+            ReturnToAudience(other);
+            return;
+        }
+
+        Step("DIPLOMACYMAPS", (button, _, _, _) =>
+        {
+            if (button != Labels.Ok)
+            {
+                ReturnToAudience(other);
+                return;
+            }
+
+            // Whether the trade happens is the other leader's call, and it is made
+            // on how they feel about us: a cold court turns it down with a sentence.
+            if (!DiplomacyFunctions.WouldAccept(game, us, other,
+                    DiplomacyFunctions.Proposal.ShareWorldMaps))
+            {
+                Step("MAPSREFUSED", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
+                ReturnToAudience(other);
+                return;
+            }
+
+            var changed = DiplomacyFunctions.ShareWorldMaps(game, us, other);
+
+            // The other side is told as well, so it keeps its own record of the
+            // exchange: a computer civilisation takes a map trade the way it takes a
+            // gift, and remembers the goodwill.
+            game.Players[other.Id].ProposalReceived(us,
+                new DiplomaticProposal { Kind = DiplomacyProposals.ShareWorldMaps });
+
+            SessionLog.Record($"shared world maps with {other.TribeName}: {changed} squares and cities");
+            Step("MAPSSHARED", (_, _, _, _) => { },
+                replaceStrings: [other.Adjective, theirs.ToString(), ours.ToString()]);
+            ReturnToAudience(other);
+            gameScreen.StatusPanel.Update();
+        }, replaceStrings: [other.Adjective, ours.ToString(), theirs.ToString()]);
     }
 
     public bool Checked => false;

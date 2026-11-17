@@ -1135,6 +1135,25 @@ The %STRING0 envoy waits. A treaty binds only as far as both sides mean to keep 
 @button=Ok
 A gift costs something now and buys goodwill that may be worth more later. Choose what to send.
 
+@DIPLOMACYMAPS
+@title=Share the World?
+@width=460
+@button=Ok
+@button=Never Mind
+The %STRING0 hold %STRING1 squares and cities your maps leave blank, and you hold %STRING2 of theirs. Share the world, and each court leaves the meeting with the other's picture as well as its own.
+
+@MAPSSHARED
+@title=The Maps Are Shared
+@width=460
+@button=Ok
+Very well, we shall share what we know of the geography. The %STRING0 have taken %STRING1 squares and cities into their memory of the world and left %STRING2 of their own with you. Both maps are the better for the meeting.
+
+@MAPSREFUSED
+@title=The Offer Is Declined
+@width=420
+@button=Ok
+We have no interest in sharing maps at this time. The %STRING0 keep their picture of the world to themselves; the audience goes on, and another arrangement may still be reached.
+
 @EMISSARYFORCE
 @title=An Audience Is Demanded
 @width=360

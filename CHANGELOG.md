@@ -7,6 +7,14 @@ carry a shorter, user-facing summary of each release; this file is the full reco
 
 ## [Unreleased]
 
+### Diplomacy
+
+- The Foreign Ministry offers to share world maps, as Civ II's "Have a proposal
+  to make" list does: each side keeps what it already believed about the ground
+  and leaves holding the other's picture of it, the number of squares and cities
+  each side would gain is quoted before the player commits, and a cold leader
+  declines in a sentence with a reason in it (#179).
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at

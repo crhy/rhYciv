@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Model.Core;
+using Model.Core.Mapping;
 using Model.Core.Player;
 using Model.Core.Units;
+using RhyCiv.Engine.MapObjects;
 
 namespace RhyCiv.Engine.Diplomacy;
 
@@ -37,6 +39,15 @@ public static class DiplomacyFunctions
     /// </summary>
     public const int CeaseFireDuration = 5;
     private const int PeaceAttitude = 45;
+
+    /// <summary>
+    /// How warmly a civilisation must feel to agree to trade its picture of the
+    /// world. A map trade is cheaper than an alliance and about as cheap as a peace
+    /// treaty: what is given away is ground already walked, which cannot be turned
+    /// against the receiver, so an acquaintance is enough -- a cold leader is not.
+    /// </summary>
+    private const int WorldMapTradeAttitude = 45;
+
     private const int AllianceAttitude = 75;
 
     /// <summary>
@@ -337,8 +348,15 @@ public static class DiplomacyFunctions
         Between(observer, host).Embassy = true;
     }
 
-    /// <summary>The treaties one civilisation can offer another, given where they stand.</summary>
-    public static IEnumerable<Proposal> AvailableProposals(Civilization from, Civilization to)
+    /// <summary>
+    /// The treaties one civilisation can offer another, given where they stand.
+    /// <para>
+    /// A map trade is offered only when there is something to trade: each side has
+    /// to hold at least one square or city the other does not, otherwise the two
+    /// pictures are the same picture and the offer is empty.
+    /// </para>
+    /// </summary>
+    public static IEnumerable<Proposal> AvailableProposals(IGame game, Civilization from, Civilization to)
     {
         var relation = Between(from, to);
 
@@ -362,6 +380,219 @@ public static class DiplomacyFunctions
 
         yield return Proposal.GiveGold;
         yield return Proposal.GiveTechnology;
+
+        var (fromWouldGain, toWouldGain) = MapsEachSideWouldGain(game, from, to);
+        if (fromWouldGain > 0 && toWouldGain > 0)
+        {
+            yield return Proposal.ShareWorldMaps;
+        }
+    }
+
+    /// <summary>
+    /// Both sides put their picture of the world on the table and take what the
+    /// other one has of it.
+    /// <para>
+    /// Civ II's "Have a proposal to make" list carries "ask to share world maps", and
+    /// the answer is a sentence with a reason in it: "Very well, we shall share the
+    /// knowledge of geography with you". There is something real to exchange because
+    /// each civilisation sees the map as its own memory of it --
+    /// <see cref="Tile.PlayerKnowledge"/> holds one record per civilisation per
+    /// square, and <see cref="City.WhoKnowsAboutIt"/> one flag per city -- so the
+    /// ground one side walked and the other never reached is worth trading.
+    /// </para>
+    /// <para>
+    /// A record is only refreshed for a civilisation that can currently see the
+    /// square, so a picture can be out of date without anybody knowing. The better
+    /// picture is the current one, and where neither is current neither is better:
+    /// two out-of-date records are swapped for nothing. An accurate record of an
+    /// empty square is not traded for a blank either -- both sides already know there
+    /// is nothing there, and counting that as a gift would make every unexplored
+    /// ocean an offer.
+    /// </para>
+    /// </summary>
+    public static int ShareWorldMaps(IGame game, Civilization a, Civilization b)
+    {
+        var (toA, toB) = TradeWorldMaps(game, a, b, apply: true);
+        return toA + toB;
+    }
+
+    /// <summary>
+    /// What each side would get out of the trade, without making the trade. The
+    /// Foreign Ministry quotes these numbers before the player commits, and
+    /// <see cref="AvailableProposals"/> offers the trade only when both are above
+    /// zero.
+    /// </summary>
+    public static (int toA, int toB) MapsEachSideWouldGain(IGame game, Civilization a, Civilization b) =>
+        TradeWorldMaps(game, a, b, apply: false);
+
+    /// <summary>
+    /// Walks the board once and counts what each side would take, applying it when
+    /// asked. One pass over the squares and one over the cities, so offering the
+    /// trade costs no more than reading the map.
+    /// </summary>
+    private static (int toA, int toB) TradeWorldMaps(IGame game, Civilization a, Civilization b, bool apply)
+    {
+        var toA = 0;
+        var toB = 0;
+
+        foreach (var map in game.Maps)
+        {
+            foreach (var tile in map.Tile)
+            {
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                // Read both pictures before writing either: a civilisation must never
+                // be handed its own record back because the other side was just given
+                // one of it.
+                var knownA = EntryFor(tile, a.Id);
+                var knownB = EntryFor(tile, b.Id);
+                var staleA = tile.KnowledgeIsStale(a.Id);
+                var staleB = tile.KnowledgeIsStale(b.Id);
+
+                if (BetterPicture(knownA, staleA, knownB, staleB))
+                {
+                    toB++;
+                    if (apply)
+                    {
+                        Record(tile, b.Id, CopyOf(knownA));
+                    }
+                }
+
+                if (BetterPicture(knownB, staleB, knownA, staleA))
+                {
+                    toA++;
+                    if (apply)
+                    {
+                        Record(tile, a.Id, CopyOf(knownB));
+                    }
+                }
+            }
+        }
+
+        var longest = Math.Max(a.Id, b.Id) + 1;
+        foreach (var city in game.AllCities)
+        {
+            var knowsA = city.WhoKnowsAboutIt.Length > a.Id && city.WhoKnowsAboutIt[a.Id];
+            var knowsB = city.WhoKnowsAboutIt.Length > b.Id && city.WhoKnowsAboutIt[b.Id];
+
+            if (knowsA == knowsB)
+            {
+                continue;
+            }
+
+            if (knowsA)
+            {
+                toB++;
+            }
+            else
+            {
+                toA++;
+            }
+
+            if (!apply)
+            {
+                continue;
+            }
+
+            var flags = city.WhoKnowsAboutIt;
+            if (flags.Length < longest)
+            {
+                var grown = new bool[longest];
+                Array.Copy(flags, grown, flags.Length);
+                city.WhoKnowsAboutIt = grown;
+                flags = grown;
+            }
+
+            // Only these two flags are touched; what a third civilisation believes
+            // about the place is none of this pair's business.
+            flags[a.Id] = true;
+            flags[b.Id] = true;
+        }
+
+        return (toA, toB);
+    }
+
+    private static PlayerTile? EntryFor(Tile tile, int civilizationId)
+    {
+        var knowledge = tile.PlayerKnowledge;
+        return knowledge != null && civilizationId < knowledge.Length ? knowledge[civilizationId] : null;
+    }
+
+    /// <summary>
+    /// Whether one civilisation's record of a square is worth giving to another:
+    /// the receiver has nothing, or the giver is current where the receiver is not.
+    /// Two current records, and two out-of-date ones, are no one's to give away.
+    /// A record that says nothing is not given to a civilisation that also says
+    /// nothing, which is the same belief by another name.
+    /// </summary>
+    private static bool BetterPicture(PlayerTile? giver, bool giverIsStale,
+        PlayerTile? receiver, bool receiverIsStale)
+    {
+        if (giver == null || (!SaysSomething(giver) && (receiver == null || !SaysSomething(receiver))))
+        {
+            return false;
+        }
+
+        if (receiver == null)
+        {
+            return true;
+        }
+
+        return !giverIsStale && receiverIsStale;
+    }
+
+    /// <summary>What a record of a square is worth trading for: something on it.</summary>
+    private static bool SaysSomething(PlayerTile? known) =>
+        known != null && (known.CityHere != null || known.Improvements.Count > 0);
+
+    /// <summary>
+    /// A copy of one civilisation's record of a square, for the other to keep. Never
+    /// the same object: two civilisations that shared one record would go on editing
+    /// each other's memory every time either was told about the ground again.
+    /// </summary>
+    private static PlayerTile CopyOf(PlayerTile known)
+    {
+        return new PlayerTile
+        {
+            CityHere = known.CityHere == null ? null : new CityInfo
+            {
+                Name = known.CityHere.Name,
+                Size = known.CityHere.Size,
+                OwnerId = known.CityHere.OwnerId
+            },
+            Improvements = known.Improvements
+                .Select(built => new ConstructedImprovement
+                {
+                    Improvement = built.Improvement,
+                    Level = built.Level,
+                    Group = built.Group
+                })
+                .ToList()
+        };
+    }
+
+    /// <summary>
+    /// Files one civilisation's record of a square, growing the board's knowledge
+    /// of it when the civilisation is new to that square.
+    /// </summary>
+    private static void Record(Tile tile, int civilizationId, PlayerTile copy)
+    {
+        var knowledge = tile.PlayerKnowledge;
+        if (knowledge == null || knowledge.Length <= civilizationId)
+        {
+            var grown = new PlayerTile[civilizationId + 1];
+            if (knowledge != null)
+            {
+                Array.Copy(knowledge, grown, knowledge.Length);
+            }
+
+            tile.PlayerKnowledge = grown;
+        }
+
+        tile.PlayerKnowledge![civilizationId] = copy;
     }
 
     /// <summary>
@@ -514,6 +745,7 @@ public static class DiplomacyFunctions
             Proposal.CeaseFire => attitude >= CeaseFireAttitude || standing < 0.6,
             Proposal.Peace => attitude >= PeaceAttitude && standing < 1.6,
             Proposal.Alliance => attitude >= AllianceAttitude,
+            Proposal.ShareWorldMaps => attitude >= WorldMapTradeAttitude,
             _ => true
         };
     }
@@ -544,6 +776,7 @@ public static class DiplomacyFunctions
         Alliance,
         DeclareWar,
         GiveGold,
-        GiveTechnology
+        GiveTechnology,
+        ShareWorldMaps
     }
 }

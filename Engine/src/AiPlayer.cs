@@ -1019,6 +1019,15 @@ namespace RhyCiv.Engine
                 case DiplomacyProposals.GiveTechnology:
                     DiplomacyFunctions.AdjustAttitude(Civilization, from, 15);
                     break;
+                case DiplomacyProposals.ShareWorldMaps:
+                    // What is traded is ground, not gold: this civilisation keeps
+                    // everything it already believed and leaves holding the other
+                    // side's picture of the map as well. Like a gift of knowledge it
+                    // costs the receiver nothing it did not already have, so it is
+                    // taken, and remembered.
+                    DiplomacyFunctions.ShareWorldMaps(game, Civilization, from);
+                    DiplomacyFunctions.AdjustAttitude(Civilization, from, 15);
+                    break;
             }
         }
 

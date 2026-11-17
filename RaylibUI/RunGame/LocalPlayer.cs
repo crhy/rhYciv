@@ -771,6 +771,16 @@ public class LocalPlayer : IPlayer
     {
         switch (proposal.Kind)
         {
+            case DiplomacyProposals.ShareWorldMaps:
+                // A computer civilisation offering to share maps is dealt with the
+                // way a gift is: the player keeps what they already believed about
+                // the world and gains the other side's picture of it. There is nothing
+                // to spend and nothing to agree to, so no dialog is opened.
+                DiplomacyFunctions.ShareWorldMaps(_gameScreen.Game, Civilization, from);
+                DiplomacyFunctions.RenewCeaseFire(_gameScreen.Game, Civilization, from);
+                DiplomacyFunctions.AdjustAttitude(Civilization, from, 10);
+                _gameScreen.StatusPanel.Update();
+                return;
             case DiplomacyProposals.GiveGold:
             case DiplomacyProposals.GiveTechnology:
                 DiplomacyFunctions.RenewCeaseFire(_gameScreen.Game, Civilization, from);
