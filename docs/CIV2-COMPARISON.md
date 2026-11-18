@@ -28,7 +28,7 @@ looked at.
 | Food produced, eaten, surplus, food box | verified | four cities, three governments |
 | Shields, support, production | verified | four cities |
 | Base trade from squares | verified | Cardiff, Kells, Carmarthen |
-| Trade route: standing bonus | verified, one gap | formula from two sources + Cardiff; the +1/+2 asymmetry is open |
+| Trade route: standing bonus | pinned by tests, one gap | formula from two sources + Cardiff; the figure is fixed by `RhyCiv.Tests/UnitActions/TradeRouteValueTests.cs`; the +1/+2 asymmetry is still open |
 | Trade route: delivery payment | **unverified** | still Civ I's formula |
 | Corruption | **wrong** | Kells 2 vs 0, Carmarthen 4 vs 1; distance term suspect |
 | Waste | **unverified** | never compared |
@@ -315,6 +315,14 @@ remainder, and k is a transport modifier (1.5 for a road along the route, 2 for 
 railroad) that this game does not work out yet and treats as 1. Distance does not
 enter it.
 
+The engine's standing value is now pinned by tests in
+`RhyCiv.Tests/UnitActions/TradeRouteValueTests.cs`: both ends of the same route
+pay the same figure, the 11-and-14 pair from issue #130 pays 1 between two of your
+own cities and 3 across civilisations, the remainder drops on a single division,
+distance does not enter the figure, and `TradeFromRoutes` adds each route once. Those
+tests pin `k` at 1 as well — they record that the road-or-railroad-along-the-route
+modifier is not modelled, they do not measure it.
+
 What this game had was `(distance + 10) * (Ta + Tb) / 24`, halved for the same
 continent and again for the same civilisation. That is **Civilization I's**
 formula, and not even that game's continuing-route formula — it is Civ I's
@@ -387,7 +395,14 @@ one real city in a real position.
    demanded commodity raises the standing route and not only the delivery, but the
    source consulted says the opposite, and one observation is not enough to
    overrule it. **Unresolved; needs either a second source or a second pair of
-   cities to measure.**
+   cities to measure.** Both candidate explanations are still unmeasured: the
+   demanded commodity raising the standing route per city, and the transport
+   modifier `k` being evaluated with each city as the source. This game models
+   neither — `RouteValue` is symmetric in the two cities and treats `k` as 1 —
+   and `RhyCiv.Tests/UnitActions/TradeRouteValueTests.cs` pins that as the rule
+   until a measurement says otherwise. **A second pair of cities screenshotted
+   in Civ II, each city's base trade read from its Citizens header, is what
+   would settle it.**
 
 3. **The delivery bonus**, which remains Civ I's and unmeasured.
 
