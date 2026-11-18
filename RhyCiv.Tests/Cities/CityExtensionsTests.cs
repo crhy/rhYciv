@@ -476,4 +476,248 @@ public class CityExtensionsTests
 
         Assert.False(city.MakeWorker(rules));
     }
+
+    // -----------------------------------------------------------------------
+    //  Waste and corruption, pinned across every government and distance (#129)
+    //
+    //  Waste has never been set beside Civ II's figure on any position under any
+    //  government, and it shares ComputeDistanceFactor with corruption, whose
+    //  distance term #127 shows is about three times too large. Civ II is not on
+    //  this machine, so nothing is corrected here: what lands is the table this
+    //  game produces today, in the same shape RHYCIV_REPORT prints beside
+    //  "shields", "support", "waste" and "production" (RaylibUI/Main.AutoStart.cs)
+    //  and that can be put next to a Civ II city screen. A later change to the
+    //  shared distance factor then shows up as a diff in these tests instead of a
+    //  silent change in the numbers a player is shown.
+    //
+    //  One city in every case, on a map whose ScaleFactor is 1.0 so a government's
+    //  Distance is already the effective distance factor:
+    //
+    //    * one worked square worth 102 shields / 100 trade / 5 food;
+    //    * the civ sits under Despotism (index 1, Level 0 in the shipped ruleset)
+    //      and the organisation level comes from the civ's own government, not from
+    //      the index passed to CalculateOutput, so the yields never move between
+    //      cases: the low-organisation penalty gives 101 shields, 99 trade, 4 food;
+    //    * one unit that needs support, so Support is 1, the waste base
+    //      (totalSheilds - Support) is exactly 100 and the corruption base
+    //      (totalTrade) is 99;
+    //    * no improvements, no wonders, no trade routes.
+    //
+    //  At distance 16 -- the Math.Min(16, distance) clamp -- that gives today:
+    //
+    //    government          waste   corruption
+    //    Anarchy (0)            60      59
+    //    Despotism (1)          30      47
+    //    Monarchy (2)           20      39
+    //    Communism (3)          15      33
+    //    Fundamentalism (4)     12      29
+    //    Republic (5)           10      26
+    //    Democracy (6)           8      23
+    //
+    //  which is 15 / (4 + gov * 4) applied to the shields base and 15 / (4 + gov)
+    //  to the trade base, each floored once at the end. The corruption factor falls
+    //  far more slowly than the waste factor, so from Despotism on this game pays a
+    //  city more for corruption than for waste.
+    // -----------------------------------------------------------------------
+
+    private (Mock<IGame> game, Rules rules, Civilization civ, City city) WasteFixture(int distance)
+    {
+        var rules = new Rules
+        {
+            Governments =
+            [
+                // The shipped ruleset's seven governments in its own order, with
+                // the Level RulesParser gives each index. Every one carries this
+                // case's fixed Distance, so the government index is the only thing
+                // moving the figures.
+                new Government { Name = "Anarchy", Level = 0, Distance = distance, SettlersConsumption = 1, UnitTypesAlwaysFree = Array.Empty<int>() },
+                new Government { Name = "Despotism", Level = 0, Distance = distance, SettlersConsumption = 1, UnitTypesAlwaysFree = Array.Empty<int>() },
+                new Government { Name = "Monarchy", Level = 1, Distance = distance, SettlersConsumption = 1, UnitTypesAlwaysFree = Array.Empty<int>() },
+                new Government { Name = "Communism", Level = 1, Distance = distance, SettlersConsumption = 2, UnitTypesAlwaysFree = Array.Empty<int>() },
+                new Government { Name = "Fundamentalism", Level = 1, Distance = distance, SettlersConsumption = 2, UnitTypesAlwaysFree = Array.Empty<int>() },
+                new Government { Name = "Republic", Level = 2, Distance = distance, SettlersConsumption = 2, UnitTypesAlwaysFree = Array.Empty<int>() },
+                new Government { Name = "Democracy", Level = 2, Distance = distance, SettlersConsumption = 2, UnitTypesAlwaysFree = Array.Empty<int>() }
+            ]
+        };
+
+        var civ = new Civilization { Id = 1, Government = 1 }; // Despotism
+        var map = new Map(true, 5) { XDim = 40, YDim = 100 }; // ScaleFactor = 4000 / 4000 = 1.0
+        map.Tile = new Tile[40, 100];
+        for (var y = 0; y < 100; y++)
+        {
+            for (var x = 0; x < 40; x++)
+            {
+                var tile = new Tile(x, y, new Terrain
+                {
+                    Name = "Plains",
+                    Type = TerrainType.Plains,
+                    Specials = Array.Empty<Special>(),
+                    Defense = 100
+                }, 0, map, x + y * 40, new bool[2]);
+                tile.SetVisible(civ.Id);
+                map.Tile[x, y] = tile;
+            }
+        }
+
+        var location = map.Tile[10, 4];
+        location.Terrain.Food = 5;
+        location.Terrain.Shields = 102;
+        location.Terrain.Trade = 100;
+
+        var city = new City { Owner = civ, Location = location, Size = 4, Name = "Wastebase" };
+        location.CityHere = city;
+        // Setting WorkedBy puts the square in WorkedTiles by itself, so it is
+        // added nowhere else.
+        location.WorkedBy = city;
+        civ.Cities.Add(city);
+
+        // NeedsSupport defaults to true, so this is the one unit the city pays for.
+        civ.Units.Add(new Unit { Owner = civ, HomeCity = city,
+            TypeDefinition = new UnitDefinition { Flags = new bool[20] } });
+
+        var game = new Mock<IGame>();
+        game.Setup(g => g.Rules).Returns(rules);
+        game.Setup(g => g.MaxDistance).Returns(100.0);
+        game.Setup(g => g.AllCivilizations).Returns(new List<Civilization> { civ });
+        return (game, rules, civ, city);
+    }
+
+    [Fact]
+    public void WasteUnderEveryGovernment()
+    {
+        var (game, rules, _, city) = WasteFixture(16);
+        var waste = new List<int>();
+
+        for (var government = 0; government < rules.Governments.Length; government++)
+        {
+            city.CalculateOutput(government, game.Object);
+            waste.Add(city.Waste);
+        }
+
+        Assert.Equal(new[] { 60, 30, 20, 15, 12, 10, 8 }, waste);
+
+        // The fixture overrides the shipped ruleset's own Distance values, which
+        // are 0 for Communism (Cosmic.CommunismEquivalentPalaceDistance) and for
+        // Democracy -- see RulesParser.DefaultDistanceFromIndex -- so in a real
+        // game under those two the distance branch is skipped and both waste and
+        // corruption are 0 however far the city is from the palace.
+        rules.Governments[3].Distance = 0;
+        rules.Governments[6].Distance = 0;
+        foreach (var government in new[] { 3, 6 })
+        {
+            city.CalculateOutput(government, game.Object);
+            Assert.Equal(0, city.Waste);
+            Assert.Equal(0, city.Corruption);
+        }
+    }
+
+    [Fact]
+    public void CorruptionUnderEveryGovernment()
+    {
+        // The same fixture: #127's suspect distance term feeds both figures, so
+        // both are pinned together and move together.
+        var (game, rules, _, city) = WasteFixture(16);
+        var corruption = new List<int>();
+
+        for (var government = 0; government < rules.Governments.Length; government++)
+        {
+            city.CalculateOutput(government, game.Object);
+            corruption.Add(city.Corruption);
+        }
+
+        Assert.Equal(new[] { 59, 47, 39, 33, 29, 26, 23 }, corruption);
+    }
+
+    [Fact]
+    public void WasteGrowsWithDistanceThenClamps()
+    {
+        var (game, rules, civ, city) = WasteFixture(1);
+        var wasteByDistance = new List<int>();
+
+        for (var distance = 1; distance <= 24; distance++)
+        {
+            rules.Governments[1].Distance = distance; // Despotism, ScaleFactor 1.0
+            city.CalculateOutput(1, game.Object);
+            wasteByDistance.Add(city.Waste);
+        }
+
+        // Rises every step up to the clamp: 1, 3, 5 ... 28 for distances 1..15.
+        for (var distance = 1; distance < 16; distance++)
+        {
+            Assert.True(wasteByDistance[distance] > wasteByDistance[distance - 1],
+                $"waste must still grow from distance {distance} to {distance + 1}, " +
+                $"got {wasteByDistance[distance - 1]} then {wasteByDistance[distance]}");
+        }
+
+        // Math.Min(16, distance) in CityExtensions flattens everything from 16 on:
+        // 16 * 15 / (4 + 1 * 4) = 30, and distances 17..24 pay exactly that.
+        Assert.Equal(30, wasteByDistance[15]);
+        for (var distance = 17; distance <= 24; distance++)
+        {
+            Assert.Equal(wasteByDistance[15], wasteByDistance[distance - 1]);
+        }
+
+        // Every distance above came from the fixed branch, where the government
+        // carries a Distance. The branch #127 suspects is the other one: a government
+        // whose Distance is -1 -- Anarchy, Despotism, Monarchy, Fundamentalism and
+        // Republic in the shipped ruleset -- measures the city from its owner's palace
+        // and then multiplies by Map.ScaleFactor. Pinned as well, so a change to that
+        // measurement or to the scale factor lands as a diff rather than a quiet move
+        // in what the player is shown: a palace three rows away on this flat map
+        // measures 0^2 + 3^2 = 9 today (Utilities.DistanceTo squares the Euclidean
+        // distance when the map is flat, which is #127's "roughly three times too
+        // large"), and 9 is the distance both figures are read from.
+        var palace = new City { Owner = civ, Location = city.Location.Map.Tile[10, 7], Size = 1 };
+        palace.Location.CityHere = palace;
+        palace.AddImprovement(new Improvement { Type = 1, Effects = { [Effects.Capital] = 0 } });
+        civ.Cities.Add(palace);
+
+        rules.Governments[1].Distance = -1;
+        city.CalculateOutput(1, game.Object);
+
+        // waste 100 * min(16, 9) * 15/20 / 100 = 16.875 -> 16
+        // corruption 99 * min(32, 9) * 15/5 / 100 = 26.73 -> 26
+        Assert.Equal(16, city.Waste);
+        Assert.Equal(26, city.Corruption);
+    }
+
+    [Fact]
+    public void WasteIsZeroForTheCapital()
+    {
+        var (game, rules, _, city) = WasteFixture(16);
+        city.AddImprovement(new Improvement { Type = 1, Effects = { [Effects.Capital] = 0 } });
+
+        city.CalculateOutput(1, game.Object);
+
+        // ComputeDistanceFactor returns 0 for a capital, and the whole distance
+        // branch -- waste and corruption alike -- is skipped.
+        Assert.Equal(0, city.Waste);
+        Assert.Equal(0, city.Corruption);
+        Assert.Equal(101, city.TotalProduction);
+        Assert.Equal(100, city.Production);
+    }
+
+    [Fact]
+    public void ProductionAccountsForWaste()
+    {
+        var (game, rules, _, city) = WasteFixture(16);
+        var production = new List<int>();
+
+        for (var government = 0; government < rules.Governments.Length; government++)
+        {
+            city.CalculateOutput(government, game.Object);
+            Assert.Equal(city.TotalProduction - city.Support - city.Waste, city.Production);
+            production.Add(city.Production);
+        }
+
+        // 101 shields, one unit in support, and the waste table above come off:
+        // what the shield box shows is the city's production with waste taken out.
+        Assert.Equal(new[] { 40, 70, 80, 85, 88, 90, 92 }, production);
+
+        // The same identity holds for the capital, where waste is 0.
+        city.AddImprovement(new Improvement { Type = 1, Effects = { [Effects.Capital] = 0 } });
+        city.CalculateOutput(1, game.Object);
+        Assert.Equal(city.TotalProduction - city.Support - city.Waste, city.Production);
+        Assert.Equal(100, city.Production);
+    }
 }
