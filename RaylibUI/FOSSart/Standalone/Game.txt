@@ -778,7 +778,7 @@ Once opened, this route will tie the fortunes of two cities together. Confirm th
 @button=Ok
 ^%NUMBER0 gold to the treasury
 ^%NUMBER1 towards the current research
-The caravan from %STRING0 is unloaded in %STRING1. What it carried is sold, and what its drivers learned on the road goes to your scholars.
+The %STRING2 caravan from %STRING0 is unloaded in %STRING1. What it carried is sold, and what its drivers learned on the road goes to your scholars.
 
 @NOTRADEHERE
 @title=No Business Here

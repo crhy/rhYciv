@@ -99,6 +99,64 @@ public class CaravanActionsTests
     }
 
     [Fact]
+    public void ADeliveryPaysMoreWhenTheCitiesAreFartherApart()
+    {
+        // The one-off delivery payment is the only place distance still enters,
+        // and it is still Civilization I's shape: (distance + 10) * (T1 + T2) /
+        // 24, then times DeliveryMultiplier = 8. Pinned here with the two cities
+        // producing 12 and 14 trade, foreign to one another and on different
+        // islands so nothing halves it, so rhY can paste the figures beside Civ
+        // II's screenshots of the same delivery:
+        //   distance 1: (1 + 10) * 26 / 24 = 11 -> 11 * 8 = 88 gold
+        //   distance 8: (8 + 10) * 26 / 24 = 19 -> 19 * 8 = 152 gold
+        var near = Delivery(1, homeTrade: 12, destinationTrade: 14);
+        var far = Delivery(8, homeTrade: 12, destinationTrade: 14);
+
+        var nearPayment = CaravanActions.DeliveryBonus(near.Caravan, near.Home, near.Destination);
+        var farPayment = CaravanActions.DeliveryBonus(far.Caravan, far.Home, far.Destination);
+
+        Assert.Equal(88, nearPayment);
+        Assert.Equal(152, farPayment);
+        Assert.True(farPayment > nearPayment,
+            "Distance genuinely belongs in a delivery payment: the long journey " +
+            "should be the worth one, whatever it is worth.");
+    }
+
+    [Fact]
+    public void ADeliveryBetweenOwnCitiesPaysHalf()
+    {
+        // The same delivery into a city of your own civilisation is halved -- and
+        // halved before the multiplier, so the remainder is dropped first and the
+        // halves only line up when the figure is even. Trade 12 and 14, distance
+        // 14, different islands:
+        //   to a stranger: (14 + 10) * 26 / 24 = 26 -> 26 * 8 = 208 gold
+        //   to your own:   26 / 2 = 13          -> 13 * 8 = 104 gold
+        var stranger = Delivery(14, homeTrade: 12, destinationTrade: 14);
+        var own = Delivery(14, homeTrade: 12, destinationTrade: 14, foreignDestination: false);
+
+        Assert.Equal(208, CaravanActions.DeliveryBonus(stranger.Caravan, stranger.Home, stranger.Destination));
+        Assert.Equal(104, CaravanActions.DeliveryBonus(own.Caravan, own.Home, own.Destination));
+    }
+
+    [Fact]
+    public void ADeliveryToADemandingCityPaysDouble()
+    {
+        // A destination that wants the commodity the caravan carries pays twice
+        // over, on top of everything above. Trade 12 and 14, distance 8, foreign
+        // city on its own island:
+        //   not wanted: (8 + 10) * 26 / 24 = 19 -> 19 * 8 = 152 gold
+        //   wanted:     152 * 2 = 304 gold
+        var world = Delivery(8, homeTrade: 12, destinationTrade: 14);
+        var unwanted = CaravanActions.DeliveryBonus(world.Caravan, world.Home, world.Destination);
+
+        world.Destination.CommodityDemanded = [new Commodity { Id = world.Caravan.CaravanCommodity }];
+        var wanted = CaravanActions.DeliveryBonus(world.Caravan, world.Home, world.Destination);
+
+        Assert.Equal(152, unwanted);
+        Assert.Equal(304, wanted);
+    }
+
+    [Fact]
     public void AnOpenRouteBringsItsCityTradeEveryTurn()
     {
         var world = World();
@@ -123,6 +181,47 @@ public class CaravanActionsTests
     }
 
     private record TestWorld(MockGame Game, City Home, City OwnNeighbour, City Foreign, Unit Caravan);
+    private record DeliveryWorld(City Home, City Destination, Unit Caravan);
+
+    /// <summary>
+    /// A home city and a destination exactly <c>distance</c> squares apart on the
+    /// same row, with the trade each of them produces and nothing else in play:
+    /// different islands, so the payment is not halved for proximity, and a foreign
+    /// destination unless asked otherwise. The delivery payment tests need the
+    /// distance and both trade figures known exactly, which the world below cannot
+    /// give them -- its cities sit where the route tests need them.
+    /// </summary>
+    private static DeliveryWorld Delivery(int distance, int homeTrade, int destinationTrade,
+        bool foreignDestination = true)
+    {
+        var map = new Map(true, 0) { Tile = new Tile[40, 20], XDim = 40, YDim = 20 };
+        Fill(map);
+
+        var us = new Civilization { Id = 0, TribeName = "Americans", Adjective = "American", Alive = true };
+        var them = new Civilization { Id = 1, TribeName = "Romans", Adjective = "Roman", Alive = true };
+
+        // Both cities on row 4, an even row, where the doubled columns make one
+        // square of distance exactly one column of x: the offset is the distance.
+        var home = CityAt(map, us, "Washington", 2, 4, island: 1, trade: homeTrade);
+        var destination = CityAt(map, foreignDestination ? them : us, "Rome", 2 + distance, 4,
+            island: 2, trade: destinationTrade);
+
+        var caravan = new Unit
+        {
+            Owner = us,
+            HomeCity = home,
+            CaravanCommodity = 3,
+            TypeDefinition = new UnitDefinition
+            {
+                Name = "Caravan", Cost = 50, AIrole = AiRoleType.Trade,
+                Flags = Enumerable.Repeat(false, 13).ToArray()
+            }
+        };
+        us.Units.Add(caravan);
+        caravan.CurrentLocation = destination.Location;
+
+        return new DeliveryWorld(home, destination, caravan);
+    }
 
     /// <summary>
     /// Two civilisations on two islands: the player's capital with a neighbour two

@@ -900,16 +900,39 @@ public class LocalPlayer : IPlayer
             }
 
             var delivery = CaravanActions.EstablishTradeRoute(_gameScreen.Game, caravan, destination);
-            SessionLog.Record($"caravan from {home.Name} traded with {destination.Name} " +
-                              $"for {delivery.Gold} gold");
+            // Civ II says the whole thing when the caravan arrives -- "Silk caravan
+            // from Cardiff arrives in Caernarfon. Trade route established. Revenue:
+            // 10 gold." -- so this line is written in the same order with the same
+            // words, and carries the revenue figure the popup below shows. The
+            // payment itself is still Civ I's shape and unmeasured; what this buys
+            // is that the two games can be read side by side.
+            SessionLog.Record($"caravan {CommodityName(caravan)} from {home.Name} arrives in " +
+                              $"{destination.Name}. Trade route established. Revenue: {delivery.Gold} gold");
 
             _gameScreen.StatusPanel.Update();
             _gameScreen.ShowPopup("TRADEDELIVERED",
-                replaceStrings: [home.Name, destination.Name],
+                replaceStrings: [home.Name, destination.Name, CommodityName(caravan)],
                 replaceNumbers: [delivery.Gold, delivery.Science]);
         },
         replaceStrings: [home.Name, destination.Name],
         replaceNumbers: [refusal == null ? value : 0, bonus]);
+    }
+
+    /// <summary>
+    /// What this caravan is carrying, by name rather than by index. Civ II names
+    /// the cargo in its arrival message, and a bare number would not read beside
+    /// a screenshot of that message.
+    /// </summary>
+    private string CommodityName(Unit caravan)
+    {
+        var commodities = _gameScreen.Game.Rules.CaravanCommoditie;
+        if (commodities.Length == 0)
+        {
+            return "trade";
+        }
+
+        // The same wrap the route itself uses when it names what travels along it.
+        return commodities[Math.Abs(caravan.CaravanCommodity) % commodities.Length].Name;
     }
 
     /// <summary>
