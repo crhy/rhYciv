@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using RhyCiv.Engine;
+using RhyCiv.Engine.Diagnostics;
 using RhyCiv.Engine.IO;
 using RhyCiv.Engine.MapObjects;
 using Model;
@@ -60,6 +61,10 @@ namespace RaylibUI
 
             Raylib.SetConfigFlags(flags);
             Window.Init(1600, 900, "rhYciv");
+            // The state the window actually got, not what was asked for: a crash
+            // report is read on its own, and an unanswered driver question cannot
+            // be settled from an intent.
+            SessionLog.Graphics($"multisampling={(wantMsaa ? "on (RHYCIV_MSAA)" : "off (default)")}");
 
             DisplayScale.Update();
             var appIcon = Image.Load(AssetPaths.Resolve("FOSSart/rhyciv-app-icon.png"));

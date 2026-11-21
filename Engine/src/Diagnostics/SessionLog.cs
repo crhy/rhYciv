@@ -114,6 +114,26 @@ public static class SessionLog
     }
 
     /// <summary>
+    /// Records how the graphics device was actually set up, as opposed to what the
+    /// game asked for. Call it once the window exists and the mode is known.
+    /// </summary>
+    /// <remarks>
+    /// The crash reports promoted from a session record are the only evidence there
+    /// is about the driver question -- a hard crash leaves no stack, no stderr, and
+    /// on most setups no core dump -- and today they carry no graphics state at all,
+    /// so the one question worth asking ("was multisampling on?") cannot be answered
+    /// from any report the game writes. Header lines are written at startup, before
+    /// the window exists, so this is a record line rather than a header line.
+    /// </remarks>
+    public static void Graphics(string description)
+    {
+        lock (Gate)
+        {
+            Write($"graphics {description}");
+        }
+    }
+
+    /// <summary>
     /// Marks the session as having ended properly, so the next launch does not
     /// report it as a crash.
     /// </summary>
@@ -188,10 +208,12 @@ public static class SessionLog
         var header = new StringBuilder()
             .AppendLine("rhYciv: the previous session ended without shutting down.")
             .AppendLine()
-            .AppendLine("No managed exception was recorded, so this was most likely a fault in a")
-            .AppendLine("native library or the graphics driver, which terminates the process before")
-            .AppendLine("any handler can run. What follows is what the game was doing; the last line")
-            .AppendLine("is the last thing it completed.")
+            .AppendLine("No managed exception was recorded, so the process died below the reach of")
+            .AppendLine("any handler. A fault in a native library or the graphics driver is one")
+            .AppendLine("possible cause; it is not a proven one, and nothing in this report proves")
+            .AppendLine("it. What follows is what the game was doing. The graphics line gives the")
+            .AppendLine("mode the window actually got, which is the only way to tell here whether")
+            .AppendLine("multisampling was on; the last line is the last thing it completed.")
             .AppendLine()
             .ToString();
 

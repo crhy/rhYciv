@@ -103,4 +103,66 @@ public class SessionLogTests : IDisposable
         Assert.Contains("turn 12 begins", recent);
         Assert.Contains("UNIT_ORDER_FORTIFY", recent);
     }
+
+    [Fact]
+    public void ACrashReport_NamesTheMultisamplingState()
+    {
+        // The crash reports are the only evidence about the driver question, and
+        // they used to carry no graphics state, so the one question worth asking
+        // ("was multisampling on?") could not be answered from one.
+        SessionLog.Begin("0.0.0-test");
+        SessionLog.Graphics("multisampling=on (RHYCIV_MSAA)");
+        SessionLog.Record("did something");
+        // No End(): the process died where a native fault would have killed it.
+
+        var report = SessionLog.Begin("0.0.0-test");
+
+        Assert.NotNull(report);
+        Assert.Contains("multisampling=on", File.ReadAllText(report));
+    }
+
+    [Fact]
+    public void ACrashReport_OffStateIsRecorded()
+    {
+        // Off is the default now, so the common report has to say so as plainly;
+        // a missing line is not the same as an off line, and a reader cannot tell
+        // the two apart.
+        SessionLog.Begin("0.0.0-test");
+        SessionLog.Graphics("multisampling=off (default)");
+        SessionLog.Record("did something");
+
+        var report = SessionLog.Begin("0.0.0-test");
+
+        Assert.NotNull(report);
+        Assert.Contains("multisampling=off (default)", File.ReadAllText(report));
+    }
+
+    [Fact]
+    public void TheCrashReport_DoesNotStateTheDriverAsTheCause()
+    {
+        // The report used to name the graphics driver as the likely cause as fact,
+        // which read like a finding while nothing in the report could support it.
+        // Multisampling is now off by default, so the crash may well not be the
+        // driver at all, and only the graphics line below can say.
+        SessionLog.Begin("0.0.0-test");
+        SessionLog.Graphics("multisampling=off (default)");
+        SessionLog.Record("did something");
+
+        var report = SessionLog.Begin("0.0.0-test");
+
+        Assert.NotNull(report);
+        var contents = File.ReadAllText(report);
+        Assert.DoesNotContain("most likely a fault in a native library", contents);
+        Assert.Contains("not a proven one", contents);
+    }
+
+    [Fact]
+    public void Graphics_WithoutAnOpenSession_DoesNotThrow()
+    {
+        // Callers sit in startup code, where diagnostics must never be the reason
+        // the game cannot start.
+        SessionLog.Graphics("multisampling=off (default)");
+        SessionLog.End();
+        SessionLog.Graphics("multisampling=off (default)");
+    }
 }
