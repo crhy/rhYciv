@@ -299,6 +299,119 @@ public class MovementFunctionsTests
 
     #endregion
 
+    #region Zone of control culprit Tests
+
+    [Fact]
+    public void EnemiesNextTo_ReturnsTheEnemyWhoseZoneCoversTheTile()
+    {
+        // Arrange
+        var tile = _map.TileC2(5, 5);
+        var neighbours = tile.Neighbours().ToList();
+
+        var enemy = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        enemy.CurrentLocation = neighbours[0];
+
+        var friendly = CreateTestUnit(UnitGas.Ground, _civ);
+        friendly.CurrentLocation = neighbours[1];
+
+        var carried = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        carried.CurrentLocation = neighbours[2];
+        carried.InShip = CreateTestUnit(UnitGas.Sea, _enemyCiv);
+
+        var otherDomain = CreateTestUnit(UnitGas.Air, _enemyCiv);
+        otherDomain.CurrentLocation = neighbours[3];
+
+        // Act
+        var result = MovementFunctions.EnemiesNextTo(tile, _civ, UnitGas.Ground).ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Same(enemy, result[0]);
+    }
+
+    [Fact]
+    public void Moveto_ZocBlock_NamesTheEnemyThatBlocksIt()
+    {
+        // Arrange: one enemy whose zone covers both the tile the unit stands on
+        // and the tile it is trying to reach.
+        var tileFrom = _map.TileC2(2, 2);
+        var tileTo = _map.TileC2(2, 0);
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = tileFrom;
+        unit.X = tileFrom.X;
+        unit.Y = tileFrom.Y;
+        var enemy = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        enemy.CurrentLocation = CommonNeighbours(tileFrom, tileTo).First();
+        var player = (MockPlayer)_game.Players[0];
+        player.ActiveUnit = unit;
+
+        // Act
+        MovementFunctions.TryMoveNorth(_game);
+
+        // Assert
+        Assert.Equal(tileFrom, unit.CurrentLocation);
+        Assert.Equal(BlockedReason.Zoc, player.LastBlockedReason);
+        Assert.Same(enemy, player.LastBlockedBy);
+    }
+
+    [Fact]
+    public void Moveto_ZocBlock_ReportsTheDestinationSideEnemyWhenBothSidesHaveOne()
+    {
+        // Arrange: an enemy covering only the tile the unit leaves, and another
+        // covering the destination. The destination-side enemy is the culprit.
+        var tileFrom = _map.TileC2(2, 2);
+        var tileTo = _map.TileC2(2, 0);
+        var common = CommonNeighbours(tileFrom, tileTo).ToList();
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = tileFrom;
+        unit.X = tileFrom.X;
+        unit.Y = tileFrom.Y;
+
+        var toSideEnemy = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        toSideEnemy.CurrentLocation = common[0];
+
+        var fromSideEnemy = CreateTestUnit(UnitGas.Ground, _enemyCiv);
+        fromSideEnemy.CurrentLocation = tileFrom.Neighbours()
+            .First(t => t != tileFrom && t != tileTo && !tileTo.Neighbours().Contains(t));
+
+        var player = (MockPlayer)_game.Players[0];
+        player.ActiveUnit = unit;
+
+        // Act
+        MovementFunctions.TryMoveNorth(_game);
+
+        // Assert
+        Assert.Equal(BlockedReason.Zoc, player.LastBlockedReason);
+        Assert.Same(toSideEnemy, player.LastBlockedBy);
+    }
+
+    [Fact]
+    public void Moveto_ZocBlock_LeavesCausedByNullForOtherRefusals()
+    {
+        // Arrange: the EdgeOfMap refusal reports no enemy culprit.
+        var unit = CreateTestUnit(UnitGas.Ground, _civ);
+        unit.CurrentLocation = _map.TileC2(2, 0);
+        unit.X = 2;
+        unit.Y = 0;
+        var player = (MockPlayer)_game.Players[0];
+        player.ActiveUnit = unit;
+
+        // Act
+        MovementFunctions.TryMoveNorth(_game);
+
+        // Assert
+        Assert.Equal(BlockedReason.EdgeOfMap, player.LastBlockedReason);
+        Assert.Null(player.LastBlockedBy);
+    }
+
+    private IEnumerable<Tile> CommonNeighbours(Tile tileFrom, Tile tileTo)
+    {
+        var to = tileTo.Neighbours().ToList();
+        return tileFrom.Neighbours().Where(t => t != tileFrom && t != tileTo && to.Contains(t));
+    }
+
+    #endregion
+
     #region GetPossibleMoves Tests
 
     [Fact]

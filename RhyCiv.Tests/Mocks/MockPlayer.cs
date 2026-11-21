@@ -27,6 +27,7 @@ public class MockPlayer : IPlayer
 
     public bool MoveBlockedCalled { get; private set; }
     public BlockedReason LastBlockedReason { get; private set; }
+    public Unit? LastBlockedBy { get; private set; }
 
     public void CivilDisorder(City city)
     {
@@ -195,10 +196,11 @@ public class MockPlayer : IPlayer
     {
     }
 
-    public void MoveBlocked(Unit unit, BlockedReason blockedReason)
+    public void MoveBlocked(Unit unit, BlockedReason blockedReason, Unit? causedBy = null)
     {
         MoveBlockedCalled = true;
         LastBlockedReason = blockedReason;
+        LastBlockedBy = causedBy;
     }
 
     public void GoodyHutTriggered(Unit unit, GoodyHutOutcomeResult outcome)
