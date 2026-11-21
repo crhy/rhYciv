@@ -146,7 +146,9 @@ namespace Model.Core.Player
         /// </summary>
         /// <param name="unit"></param>
         /// <param name="blockedReason"></param>
-        void MoveBlocked(Unit unit, BlockedReason blockedReason);
+        /// <param name="causedBy">The enemy unit responsible, when one is known; for example the
+        /// unit whose zone of control refused a move.</param>
+        void MoveBlocked(Unit unit, BlockedReason blockedReason, Unit? causedBy = null);
 
         /// <summary>
         /// Called when a unit triggers a goody hut on the tile it moved to.

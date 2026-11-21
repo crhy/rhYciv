@@ -871,7 +871,7 @@ namespace RhyCiv.Engine
         {
         }
 
-        public void MoveBlocked(Unit unit, BlockedReason blockedReason)
+        public void MoveBlocked(Unit unit, BlockedReason blockedReason, Unit? causedBy = null)
         {
         }
 

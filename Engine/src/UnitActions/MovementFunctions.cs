@@ -668,7 +668,12 @@ namespace RhyCiv.Engine.UnitActions
             var tileTo = map.TileC2(destX, destY);
             if (!unit.IgnoreZonesOfControl && !IsFriendlyTile(tileTo, unit.Owner) && IsNextToEnemy(tileFrom, unit.Owner, unit.Domain) && IsNextToEnemy(tileTo, unit.Owner, unit.Domain))
             {
-                game.Players[unit.Owner.Id].MoveBlocked(unit, BlockedReason.Zoc);
+                // Name the enemy that refused the move: the player cannot see the
+                // zone, so the engine says which unit owns it. Prefer the
+                // destination side; fall back to the tile the unit stands on.
+                var causedBy = EnemiesNextTo(tileTo, unit.Owner, unit.Domain).FirstOrDefault()
+                               ?? EnemiesNextTo(tileFrom, unit.Owner, unit.Domain).FirstOrDefault();
+                game.Players[unit.Owner.Id].MoveBlocked(unit, BlockedReason.Zoc, causedBy);
                 return;
             }
 
@@ -1346,8 +1351,18 @@ namespace RhyCiv.Engine.UnitActions
 
         internal static bool IsNextToEnemy(Tile tile, Civilization civ, UnitGas domain)
         {
-            return tile.Neighbours().Any(t =>
-                t.UnitsHere.Any(u => u.Owner != civ && u.InShip == null && u.Domain == domain));
+            return EnemiesNextTo(tile, civ, domain).Any();
+        }
+
+        /// <summary>
+        /// The enemy units whose zone of control covers a tile. The same units
+        /// <see cref="IsNextToEnemy"/> only counts; a blocked move reports the
+        /// first of them as the culprit.
+        /// </summary>
+        internal static IEnumerable<Unit> EnemiesNextTo(Tile tile, Civilization civ, UnitGas domain)
+        {
+            return tile.Neighbours().SelectMany(t => t.UnitsHere)
+                .Where(u => u.Owner != civ && u.InShip == null && u.Domain == domain);
         }
 
         public static IEnumerable<Tile> GetPossibleMoves(Tile tile, Unit unit)

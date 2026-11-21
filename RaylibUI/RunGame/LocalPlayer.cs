@@ -1234,10 +1234,10 @@ public class LocalPlayer : IPlayer
 
     private (Unit? Unit, BlockedReason Reason) _lastBlocked;
 
-    public void MoveBlocked(Unit unit, BlockedReason blockedReason)
+    public void MoveBlocked(Unit unit, BlockedReason blockedReason, Unit? causedBy = null)
     {
-        OnUnitEvent?.Invoke(this, new MovementBlockedEventArgs(unit, blockedReason));
-        ReportBlockedMove(unit, blockedReason);
+        OnUnitEvent?.Invoke(this, new MovementBlockedEventArgs(unit, blockedReason, causedBy));
+        ReportBlockedMove(unit, blockedReason, causedBy);
     }
 
     /// <summary>
@@ -1246,13 +1246,19 @@ public class LocalPlayer : IPlayer
     /// Repeats are suppressed - a unit bumping the same zone of control every turn
     /// should not stack up popups.
     /// </summary>
-    private void ReportBlockedMove(Unit unit, BlockedReason blockedReason)
+    private void ReportBlockedMove(Unit unit, BlockedReason blockedReason, Unit? causedBy = null)
     {
         var message = blockedReason switch
         {
-            BlockedReason.Zoc =>
-                $"Your {unit.Name} cannot move directly between two squares that are both " +
-                "next to an enemy unit. Move to a square you already occupy, or attack.",
+            // Name the culprit when the engine could point at one: the zone of
+            // control is invisible, so without a name the player just sees a unit
+            // that refuses to move.
+            BlockedReason.Zoc => causedBy == null
+                ? $"Your {unit.Name} cannot move directly between two squares that are both " +
+                  "next to an enemy unit. Move to a square you already occupy, or attack."
+                : $"Your {unit.Name} cannot move directly between two squares that are both " +
+                  $"next to the {causedBy.Owner.TribeName} {causedBy.Name} at ({causedBy.X}, {causedBy.Y}). " +
+                  "Move to a square you already occupy, or attack.",
             BlockedReason.ZeroAttackStrength =>
                 $"Your {unit.Name} has no attack strength and cannot move onto an enemy unit.",
             BlockedReason.CannotAttackAirUnits =>
