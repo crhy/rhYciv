@@ -255,18 +255,20 @@ namespace RhyCiv.Engine
         /// Civ II stalls a city at <see cref="CosmicRules.ToExceedCitySizeAqueductNeeded"/>
         /// without an Aqueduct and at <see cref="CosmicRules.SewerNeeded"/> without
         /// a Sewer System. A city already over a cap does not shrink, it simply
-        /// cannot grow further until the works are built.
+        /// cannot grow further until the works are built. The improvements that lift
+        /// each cap are configured through <see cref="CosmicRules.AqueductImprovementType"/>
+        /// and <see cref="CosmicRules.SewerImprovementType"/> rather than assumed.
         /// </summary>
         public static bool CanGrow(this City city, Rules rules)
         {
             if (city.Size >= rules.Cosmic.SewerNeeded &&
-                !city.ImprovementExists((int)ImprovementType.SewerSystem))
+                !city.ImprovementExists(rules.Cosmic.SewerImprovementType))
             {
                 return false;
             }
 
             return city.Size < rules.Cosmic.ToExceedCitySizeAqueductNeeded ||
-                   city.ImprovementExists((int)ImprovementType.Aqueduct);
+                   city.ImprovementExists(rules.Cosmic.AqueductImprovementType);
         }
 
         public static void ShrinkCity(this City city, IGame game)

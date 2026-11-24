@@ -64,5 +64,20 @@ namespace Model.Core.GameRules
         public int RiverMovement { get; set; } = 1;
         public int AlpineMovement { get; set; } = 1;
         public int RailroadMovement { get; set; } = 0;
+
+        // The improvement that lifts the aqueduct size cap and the one that lifts the
+        // sewer size cap. They default to the hardcoded ids ImprovementType.Aqueduct (9)
+        // and ImprovementType.SewerSystem (23) so today's behaviour is preserved, and a
+        // scenario can remap them through the cosmic script API (see CosmicScripts and
+        // CityExtensions.CanGrow). The Model assembly cannot reference the Engine
+        // ImprovementType enum (Engine references Model, not the reverse), so the enum's
+        // pinned numeric value is used.
+        //
+        // IMPORTANT: these are appended at the end on purpose. RulesParser.ProcessCosmicRules
+        // maps the standalone @COSMIC section onto CosmicRules properties positionally by
+        // declaration order; inserting a property in the middle would shift every later
+        // rule and silently corrupt the ruleset. Do not move these above the movement block.
+        public int AqueductImprovementType { get; set; } = 9;
+        public int SewerImprovementType { get; set; } = 23;
     }
 }

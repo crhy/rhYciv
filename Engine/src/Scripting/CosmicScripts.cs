@@ -210,17 +210,23 @@ public class CosmicScripts(Game game)
 
     /// <summary>
     /// The city size that cannot be exceeded without an Aquaduct.
-    ///
-    /// TODO: link to aquaduct improvement
     /// </summary>
     public int sizeAquaduct { get => game.Rules.Cosmic.ToExceedCitySizeAqueductNeeded; set => game.Rules.Cosmic.ToExceedCitySizeAqueductNeeded = value; }
 
     /// <summary>
+    /// The improvement id that lifts the aquaduct size cap.
+    /// </summary>
+    public int aqueductImprovement { get => game.Rules.Cosmic.AqueductImprovementType; set => game.Rules.Cosmic.AqueductImprovementType = value; }
+
+    /// <summary>
     /// The city size that cannot be exceeded without a Sewer System.
-    ///
-    /// TODO: link to sewer improvement
     /// </summary>
     public int sizeSewer { get => game.Rules.Cosmic.SewerNeeded; set => game.Rules.Cosmic.SewerNeeded = value; }
+
+    /// <summary>
+    /// The improvement id that lifts the sewer size cap.
+    /// </summary>
+    public int sewerImprovement { get => game.Rules.Cosmic.SewerImprovementType; set => game.Rules.Cosmic.SewerImprovementType = value; }
 
     /// <summary>
     /// The city size at which the first unhappy citizen appears at Chieftain difficulty.
