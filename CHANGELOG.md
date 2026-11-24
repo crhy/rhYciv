@@ -45,6 +45,13 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   through diplomacy be moved in the same turn it was bought. Unticked, Civ II's
   rule stands and the bought unit's turn is already over (#196).
 
+### Scripting
+
+- A scenario script can wake a unit up: `unit:activate()` clears its orders and its
+  spent moves, and for a unit the player owns that still has movement left it selects
+  it on the map, exactly as the turn cycle does. Dead units, and units owned by a
+  computer player or the barbarians, are not selected (#11).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
