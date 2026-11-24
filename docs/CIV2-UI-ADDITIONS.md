@@ -45,7 +45,7 @@ by `ASSET-PROVENANCE.md`, not by this compatibility matrix.
 | 28 | Improved unit-list scrolling/navigation | Implemented in the shared list control with wheel, arrows, Home/End, and Page Up/Down. |
 | 29 | Cancel/Escape in Change Production | Implemented by the modal production dialog. |
 | 30 | Production shield cost and maintenance | Implemented, including scenario shield-row size. |
-| 31 | Enhanced City Status advisor | Partially implemented: city total, additional resource data, wonder coloring, and accurate costs are present; sortable columns and direct production editing remain. |
+| 31 | Enhanced City Status advisor | Partially implemented: city total, additional resource data, wonder coloring, accurate costs, and changing what a city is producing from the advisor are present; sortable columns remain. |
 | 32 | Mass specialist changes | Implemented: Shift+wheel and Shift+click change every specialist. Specialist types and their output now survive saves. |
 | 33 | Suppress simple popups into map overlay | Pending a native notification overlay and configurable classification. |
 | 34 | Correct proprietary portrait/throne DLLs | Not applicable and intentionally not distributed; rhYciv uses replacement FOSS art. |

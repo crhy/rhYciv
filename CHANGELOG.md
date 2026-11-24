@@ -16,6 +16,17 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   came back, which stopped a whole test run from printing a result about one run
   in five.
 
+### The city
+
+- **The City Status advisor changes production.** The advisor that lists every city
+  on the board now says what each is at work on, and picking one of your own offers
+  the projects it could take on — the same list, the same costs and the same warning
+  the city window's Change button raises, without the window. The engine makes the
+  change and charges its penalty for crossing between a unit, a building and a
+  wonder; only a project the advisor offered, and which the engine still agrees this
+  city can build, is applied. Anything else is refused with the city still making
+  what it was (#12).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
