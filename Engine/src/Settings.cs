@@ -129,6 +129,11 @@ namespace RhyCiv.Engine
         /// already over is Civ II; letting it be moved the turn it is bought is
         /// the rule the player asks for in #196.
         /// </para>
+        /// <para>
+        /// Giving the units in one area their orders together is a rule the player
+        /// opts into as well: it changes the order the game walks the army in, and
+        /// Civ II's own order is what a player who has not asked should get.
+        /// </para>
         /// </summary>
         public static bool GlobalWarmingEnabled { get; private set; }
 
@@ -141,16 +146,21 @@ namespace RhyCiv.Engine
         /// <inheritdoc cref="GlobalWarmingEnabled"/>
         public static bool BoughtUnitsMoveAtOnce { get; private set; }
 
+        /// <inheritdoc cref="GlobalWarmingEnabled"/>
+        public static bool NearbyUnitsFirstEnabled { get; private set; }
+
         /// <summary>
         /// Records the advanced settings and writes them out. They persist between
         /// sessions: somebody who has turned the cheat menu on is not asked again
         /// next time they start the game.
         /// </summary>
+        /// <param name="nearbyUnitsFirst">Defaults to off, as every one of these does.</param>
         public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu,
-            bool boughtUnitsMoveAtOnce = false)
+            bool boughtUnitsMoveAtOnce = false, bool nearbyUnitsFirst = false)
         {
             if (GlobalWarmingEnabled == globalWarming && CheatMenuEnabled == cheatMenu &&
-                EditorMenuEnabled == editorMenu && BoughtUnitsMoveAtOnce == boughtUnitsMoveAtOnce)
+                EditorMenuEnabled == editorMenu && BoughtUnitsMoveAtOnce == boughtUnitsMoveAtOnce &&
+                NearbyUnitsFirstEnabled == nearbyUnitsFirst)
             {
                 return;
             }
@@ -159,6 +169,7 @@ namespace RhyCiv.Engine
             CheatMenuEnabled = cheatMenu;
             EditorMenuEnabled = editorMenu;
             BoughtUnitsMoveAtOnce = boughtUnitsMoveAtOnce;
+            NearbyUnitsFirstEnabled = nearbyUnitsFirst;
             Save();
         }
 
@@ -284,6 +295,7 @@ namespace RhyCiv.Engine
             CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
             EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
             BoughtUnitsMoveAtOnce = ReadFlag(root, nameof(BoughtUnitsMoveAtOnce));
+            NearbyUnitsFirstEnabled = ReadFlag(root, nameof(NearbyUnitsFirstEnabled));
         }
 
         /// <summary>An advanced setting, absent from the file until it is turned on.</summary>
@@ -451,6 +463,7 @@ namespace RhyCiv.Engine
             writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
             writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
             writer.WriteBoolean(nameof(BoughtUnitsMoveAtOnce), BoughtUnitsMoveAtOnce);
+            writer.WriteBoolean(nameof(NearbyUnitsFirstEnabled), NearbyUnitsFirstEnabled);
             writer.WriteStartArray(nameof(SeenTutorials));
             foreach (var tutorial in SeenTutorials)
             {

@@ -147,6 +147,15 @@ namespace RhyCiv.Engine
 
         private Unit? NextUnit(IPlayer player, List<Unit> units)
         {
+            // The order the army is walked in. With the advanced setting on, the
+            // next unit comes from the neighbourhood of the square the player is
+            // working on; with it off, the order below is exactly what it always
+            // was.
+            if (Settings.NearbyUnitsFirstEnabled)
+            {
+                return NearbyUnit(player, units);
+            }
+
             if (player.WaitingList is { Count: > 0 })
             {
                 return
@@ -169,6 +178,92 @@ namespace RhyCiv.Engine
                            t => t.UnitsHere.Where(u => u.Owner == _activeCiv && u.AwaitingOrders))
                        .FirstOrDefault() ?? units.FirstOrDefault(u => u.AwaitingOrders);
 
+        }
+
+        /// <summary>
+        /// The next unit to be given its orders, taken from the area the player is
+        /// working on rather than from wherever the unit list happens to keep it.
+        /// <para>
+        /// Reported as: "you move one unit, then it jumps to some totally different
+        /// part of the map to move another unit, even though I had several unmoved
+        /// units in that same area." The selector looked at the active square and
+        /// its eight neighbours and, finding nothing there, took the first awaiting
+        /// unit in list order -- which is another continent. The area is spent
+        /// before the selector leaves it.
+        /// </para>
+        /// <para>
+        /// This is a rule beyond ordinary Civ II play, so it sits behind an
+        /// Advanced Settings checkbox and is off unless the player asks for it.
+        /// </para>
+        /// </summary>
+        private Unit? NearbyUnit(IPlayer player, List<Unit> units)
+        {
+            var inReach = FirstUnitWithinReach(player);
+            if (inReach != null)
+            {
+                return inReach;
+            }
+
+            // Nothing of ours awaiting orders anywhere on this map. A unit the walk
+            // cannot reach -- standing on another map, or never placed -- is still
+            // better offered than left out of the turn, so the old fallbacks stay
+            // behind it, last resort rather than first answer.
+            return units.FirstOrDefault(u => u.AwaitingOrders && !player.WaitingList.Contains(u)) ??
+                   (player.WaitingList.Count > 0 ? ResetWaiting(player) : null);
+        }
+
+        /// <summary>
+        /// The first of this civilisation's awaiting units found by walking outward
+        /// from the active square one ring at a time, so the whole neighbourhood is
+        /// finished before anything further away is considered. Squares within a
+        /// ring are taken in (Y, X) order, which keeps the answer the same from
+        /// one call to the next. Only the civilisation's own units are considered,
+        /// as the squares around the active one always were.
+        /// </summary>
+        private Unit? FirstUnitWithinReach(IPlayer player)
+        {
+            var start = ActiveTile;
+            if (start == null)
+            {
+                return null;
+            }
+
+            var seen = new HashSet<Tile> { start };
+            var ring = new List<Tile> { start };
+
+            // Each ring only adds squares not already reached, so the walk stops
+            // once the map is covered rather than circling a wrapping world.
+            while (ring.Count > 0)
+            {
+                foreach (var tile in ring.OrderBy(t => (t.Y, t.X)))
+                {
+                    var candidate = tile.UnitsHere
+                        .Where(u => u.Owner == _activeCiv && u.AwaitingOrders &&
+                                    !player.WaitingList.Contains(u))
+                        .FirstOrDefault();
+
+                    if (candidate != null)
+                    {
+                        return candidate;
+                    }
+                }
+
+                var next = new List<Tile>();
+                foreach (var tile in ring)
+                {
+                    foreach (var neighbour in tile.Neighbours())
+                    {
+                        if (seen.Add(neighbour))
+                        {
+                            next.Add(neighbour);
+                        }
+                    }
+                }
+
+                ring = next;
+            }
+
+            return null;
         }
 
         /// <summary>

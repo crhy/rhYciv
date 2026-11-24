@@ -362,6 +362,8 @@ Global warming
 Cheat menu
 Editor menu
 Use a bought unit right away
+
+Give nearby units their orders together
 Show the tutorial advice again
 @MESSAGEOPTIONS
 @title=City Report Options

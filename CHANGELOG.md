@@ -40,6 +40,14 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   "Resource Map", "Units Supported", "Units Present" and the orange "Supplies"/"Demands"
   pair no longer overlap each other or the tile map (#45).
 
+### Rules
+
+- Ticking "Give nearby units their orders together" in Advanced Settings makes
+  the game finish the area the player is working on before it offers a unit
+  anywhere else, instead of jumping to whichever unit happens to come first in
+  the list. Off by default, so the order Civ II asks in is untouched unless the
+  player asks (#170).
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at
