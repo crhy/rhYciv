@@ -143,6 +143,30 @@ public static class DiplomacyFunctions
             _ => "No Treaty"
         };
 
+    /// <summary>
+    /// A civilisation as its own line in the Foreign Minister's list: who they are,
+    /// and the four facts that decide what they will do.
+    /// <para>
+    /// Civ II gives each civilisation one line carrying the leader, then what they
+    /// think of us, the treaty in force, whether we have an embassy, and their
+    /// treasury behind it:
+    ///
+    ///   Consul Ishmael of the Babylonians (Worshipful, Alliance, No Embassy, $1,234)
+    ///
+    /// The treasury is the fourth fact: it is what they can afford to put up as
+    /// tribute, and what a gift of gold can be asked of them, so the player reads it
+    /// before deciding whether to deal. It is formatted with thousands separators so
+    /// it reads like Civ II's own numbers.
+    /// </para>
+    /// </summary>
+    public static string ForeignMinisterLine(Civilization civ, Civilization us)
+    {
+        var embassy = HasEmbassyWith(us, civ) ? "Embassy" : "No Embassy";
+        return $"{civ.LeaderTitle} {civ.LeaderName} of the {civ.TribeName} " +
+               $"({AttitudeName(civ, us)}, " +
+               $"{StandingName(us, civ)}, {embassy}, ${civ.Money:N0})";
+    }
+
     public static void AdjustAttitude(Civilization from, Civilization to, int change)
     {
         var attitude = Math.Clamp(Attitude(from, to) + change, 1, 100);

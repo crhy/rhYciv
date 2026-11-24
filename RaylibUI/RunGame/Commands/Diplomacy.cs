@@ -79,22 +79,19 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     /// </summary>
     private string Describe(Civilization civ)
     {
-        var us = gameScreen.Player.Civilization;
-
         // Civ II's Foreign Minister gives each civilisation one line carrying
-        // three facts -- what they think of us, the treaty in force, and whether
-        // we have an embassy -- behind the leader's name and title:
+        // what they think of us, the treaty in force, whether we have an embassy,
+        // and the treasury they can be asked for -- behind the leader's name and
+        // title:
         //
-        //   Consul Ishmael of the Babylonians (Worshipful, Alliance, No Embassy)
+        //   Consul Ishmael of the Babylonians (Worshipful, Alliance, No Embassy, $1,234)
         //
-        // This listed the tribe and the treaty and nothing else, so the two things
-        // that decide whether a proposal will be accepted, and whether their
-        // affairs can be seen at all, were both invisible from the one screen that
-        // exists to show them.
-        var embassy = DiplomacyFunctions.HasEmbassyWith(us, civ) ? "Embassy" : "No Embassy";
-        return $"{civ.LeaderTitle} {civ.LeaderName} of the {civ.TribeName} " +
-               $"({DiplomacyFunctions.AttitudeName(civ, us)}, " +
-               $"{DiplomacyFunctions.StandingName(us, civ)}, {embassy})";
+        // This listed the tribe and the treaty and nothing else, so the treasury
+        // that decides what a gift can be asked of them was invisible from the one
+        // screen that exists to show it. The line is built in the engine so the
+        // same formatting reaches both this list and its test.
+        var us = gameScreen.Player.Civilization;
+        return DiplomacyFunctions.ForeignMinisterLine(civ, us);
     }
 
     /// <summary>
