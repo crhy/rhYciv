@@ -146,6 +146,11 @@ Your people have not yet learned to build railroads.
 @width=300
 @button=Ok
 Your people have not yet learned to farm this intensively.
+@NEEDSUPERMARKET
+@title=Supermarket Needed
+@width=340
+@button=Ok
+Your people will not farm this intensively until they have a market to send it to.
 @CONSTRUCTION
 @title=Construction Needed
 @width=300

@@ -7,6 +7,7 @@ using RhyCiv.Engine.IO;
 using RhyCiv.Engine.MapObjects;
 using Model.Core;
 using Model.Core.Advances;
+using Model.Core.Cities;
 using Model.Core.GameRules;
 using Model.Core.Mapping;
 
@@ -56,6 +57,16 @@ namespace RhyCiv.Engine.Terrains
                     !AdvanceFunctions.HasTech(civilization, nextLevel.RequiredTech))
                 {
                     return new UnitActionAssessment(false, nextLevel.BuildLabel, errorPopup: nextLevel.MissingRequiredTechMessage);
+                }
+
+                // The cheap test above runs first; this one scans the civilisation's
+                // cities, so it stays after it. Civ II's farmland needs a Supermarket
+                // as well as Refrigeration. The narrowest honest rule the engine can
+                // state: the civilisation owns the improvement somewhere.
+                if (nextLevel.RequiredCityImprovement != 0 &&
+                    !civilization.Cities.Any(c => c.ImprovementExists(nextLevel.RequiredCityImprovement)))
+                {
+                    return new UnitActionAssessment(false, nextLevel.BuildLabel, errorPopup: nextLevel.MissingRequiredImprovementMessage);
                 }
 
                 return new UnitActionAssessment(true, LabelFrom(nextLevel));
@@ -136,9 +147,11 @@ namespace RhyCiv.Engine.Terrains
                         {
                             Name = Labels.For(LabelIndex.Farmland),
                             RequiredTech = (int)AdvanceType.Refrigerat,
+                            RequiredCityImprovement = (int)ImprovementType.Supermarket,
                             BuildLabel = Labels.For(LabelIndex.ImproveFarmland),
                             EnabledMessage = "NEWFARMLAND",
-                            MissingRequiredTechMessage = "FARMLAND"
+                            MissingRequiredTechMessage = "FARMLAND",
+                            MissingRequiredImprovementMessage = "NEEDSUPERMARKET"
                         }
                     },
                     AllCitys = true,

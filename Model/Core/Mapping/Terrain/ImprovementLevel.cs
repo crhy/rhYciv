@@ -13,9 +13,23 @@ namespace Model.Core.Mapping
         public int RequiredTech { get; set; }
 
         /// <summary>
+        /// A city improvement the civilisation must own somewhere before this
+        /// level may be built, or 0 (ImprovementType.Nothing) for none. Only
+        /// Farmland uses it: in Civ II farmland needs a Supermarket as well as
+        /// Refrigeration, and every other level is untouched by the default.
+        /// </summary>
+        public int RequiredCityImprovement { get; set; }
+
+        /// <summary>
         /// Error popup to show when build is attempted without required tech
         /// </summary>
         public string MissingRequiredTechMessage { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Error popup to show when build is attempted without the required city
+        /// improvement
+        /// </summary>
+        public string MissingRequiredImprovementMessage { get; set; } = string.Empty;
         
         /// <summary>
         /// Message to show when required tech is gained
