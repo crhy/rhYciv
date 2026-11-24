@@ -1,5 +1,8 @@
 using System.Numerics;
 using Model;
+using Raylib_CSharp.Colors;
+using Raylib_CSharp.Interact;
+using Raylib_CSharp.Rendering;
 using RaylibUI.BasicTypes;
 using RaylibUI.BasicTypes.Controls;
 using Button = RaylibUI.Controls.Button;
@@ -17,6 +20,19 @@ public class DynamicSizingDialog : BaseDialog
     private ControlGroup? _buttons;
 
     private readonly IUserInterface? _active;
+
+    // The screen size the last Resize was given, so a drag can relay out with it.
+    private int _screenWidth, _screenHeight;
+
+    // The bottom-right corner the player drags to size the dialog by hand.
+    private ResizeGrip? _grip;
+
+    /// <summary>
+    /// The content height the player has chosen by dragging the corner, or 0 for the
+    /// auto-fit the dialog worked out for itself (the default, and every existing
+    /// advisor). A non-zero value wins over the auto-fit up to the screen height.
+    /// </summary>
+    public int ManualHeight { get; set; }
 
     protected DynamicSizingDialog(Main host, string title, int requestedWidth, Point? position = null) :
         base(host, position)
@@ -46,6 +62,9 @@ public class DynamicSizingDialog : BaseDialog
         {
             return;
         }
+
+        _screenWidth = width;
+        _screenHeight = height;
 
         _innerPanel = innerPanel;
         _innerPanel.MaxControlRows = 999;
@@ -122,6 +141,27 @@ public class DynamicSizingDialog : BaseDialog
             _maxHeight = imageBox.GetPreferredHeight();
         }
 
+        // A hand-sized advisor. When the player has set a manual content height it wins
+        // over the auto-fit, clamped between the smallest scrollable panel (one row) and
+        // what is left of the screen. The inner panel keeps scrolling its content when
+        // that content is taller than the height the player chose. A manual height of 0
+        // leaves the auto-fit above untouched, so every existing advisor is byte-identical.
+        if (ManualHeight != 0)
+        {
+            int minScroll = _innerPanel.TableLayout.GetHeight(0, 1);
+            if (minScroll <= 0)
+            {
+                minScroll = 1;
+            }
+
+            int screenMax = height - LayoutPadding.Top - LayoutPadding.Bottom;
+            int target = ClampHeight(ManualHeight, minScroll, screenMax);
+
+            _innerPanel.MaxControlRows = _innerPanel.TableLayout.MaxRowsWithin(0, target);
+            _innerPanel.OnResize();
+            _maxHeight = target;
+        }
+
         var menu = Controls.OfType<ControlGroup>().FirstOrDefault();
         if (menu is not null)
         {
@@ -138,6 +178,19 @@ public class DynamicSizingDialog : BaseDialog
 
         SetLocation(width, Width, height, Height);
         BackgroundImage = ImageUtils.PaintDialogBase(_active, Width, Height, LayoutPadding);
+
+        // The corner the player drags to set ManualHeight. Drawn in the active theme's
+        // colours, sitting in the bottom-right of the dialog's own border.
+        if (_active is not null)
+        {
+            _grip ??= new ResizeGrip(this, _active.Look.HeaderLabelColour);
+            if (!Controls.Contains(_grip))
+            {
+                Controls.Add(_grip);
+            }
+
+            _grip.Location = new Vector2(Width - ResizeGrip.Size, Height - ResizeGrip.Size);
+        }
     }
 
     public override int Width => _innerPanel.Width + PaddingSide;
@@ -152,5 +205,75 @@ public class DynamicSizingDialog : BaseDialog
     protected bool ButtonExists(string text)
     {
         return _buttons?.Controls?.OfType<Button>().Any(b => b.Text == text) ?? false;
+    }
+
+    /// <summary>
+    /// Resolves a requested content height. A manual height of 0 means "auto-fit" and is
+    /// handed back unchanged; any other value is clamped into [min, max].
+    /// </summary>
+    public static int ClampHeight(int manual, int min, int max)
+    {
+        if (manual == 0)
+        {
+            return 0;
+        }
+
+        if (max < min)
+        {
+            return min;
+        }
+
+        return Math.Clamp(manual, min, max);
+    }
+
+    /// <summary>
+    /// Grows (negative shrinks) the manual content height by a drag delta and lays out
+    /// again, so a corner drag feeds straight back into Resize.
+    /// </summary>
+    public void GrowHeight(int deltaPixels)
+    {
+        var baseHeight = ManualHeight != 0 ? ManualHeight : _maxHeight;
+        ManualHeight = baseHeight + deltaPixels;
+
+        if (_screenWidth > 0)
+        {
+            Resize(_screenWidth, _screenHeight);
+        }
+    }
+
+    private sealed class ResizeGrip : BaseControl
+    {
+        public const int Size = 22;
+
+        private readonly DynamicSizingDialog _dialog;
+        private readonly Color _colour;
+
+        public ResizeGrip(DynamicSizingDialog dialog, Color colour) : base(dialog)
+        {
+            _dialog = dialog;
+            _colour = colour;
+            Width = Size;
+            Height = Size;
+        }
+
+        public override void OnMouseMove(Vector2 moveAmount)
+        {
+            if (Input.IsMouseButtonDown(MouseButton.Left))
+            {
+                _dialog.GrowHeight((int)Math.Round(moveAmount.Y));
+            }
+        }
+
+        public override void Draw(bool pulse)
+        {
+            int x = (int)Bounds.X;
+            int y = (int)Bounds.Y;
+            for (int i = 0; i < 3; i++)
+            {
+                int inset = i * 5;
+                Graphics.DrawLine(x + Size - 3 - inset, y + 3 + inset,
+                    x + Size - 8 - inset, y + Size - 3 - inset, _colour);
+            }
+        }
     }
 }

@@ -72,4 +72,27 @@ public class TableLayout
     {
         return _maxHeights.Skip(startingRow).Take(maxRows).Sum();
     }
+
+    /// <summary>
+    /// How many whole rows from <paramref name="startingRow"/> fit within <paramref name="maxHeight"/>.
+    /// Always at least one row, so a panel can still be shown and scrolled when even the
+    /// first row is taller than the space. Requires CalculateDimensions to have run.
+    /// </summary>
+    public int MaxRowsWithin(int startingRow, int maxHeight)
+    {
+        int total = 0;
+        int count = 0;
+        for (int row = startingRow; row < RowCount && row < _maxHeights.Length; row++)
+        {
+            if (count > 0 && total + _maxHeights[row] > maxHeight)
+            {
+                break;
+            }
+
+            total += _maxHeights[row];
+            count++;
+        }
+
+        return Math.Max(1, count);
+    }
 }
