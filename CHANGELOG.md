@@ -39,6 +39,12 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   tile-yield path (`TileResourceExtensions.GetTrade`), so the worked-window tile
   map and the city's totals move together (#28).
 
+### Rules
+
+- Ticking "Use a bought unit right away" in Advanced Settings lets a unit bought
+  through diplomacy be moved in the same turn it was bought. Unticked, Civ II's
+  rule stands and the bought unit's turn is already over (#196).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules

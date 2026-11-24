@@ -125,7 +125,9 @@ namespace RhyCiv.Engine
         /// into a changed climate is faithful to Civ II but it is not something to
         /// have happen to somebody who did not ask for it. The cheat and editor
         /// menus are development tools, and a menu bar with them on it is not the
-        /// one the game is meant to be played with.
+        /// one the game is meant to be played with. A bought unit whose turn is
+        /// already over is Civ II; letting it be moved the turn it is bought is
+        /// the rule the player asks for in #196.
         /// </para>
         /// </summary>
         public static bool GlobalWarmingEnabled { get; private set; }
@@ -136,15 +138,19 @@ namespace RhyCiv.Engine
         /// <inheritdoc cref="GlobalWarmingEnabled"/>
         public static bool EditorMenuEnabled { get; private set; }
 
+        /// <inheritdoc cref="GlobalWarmingEnabled"/>
+        public static bool BoughtUnitsMoveAtOnce { get; private set; }
+
         /// <summary>
         /// Records the advanced settings and writes them out. They persist between
         /// sessions: somebody who has turned the cheat menu on is not asked again
         /// next time they start the game.
         /// </summary>
-        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu)
+        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu,
+            bool boughtUnitsMoveAtOnce = false)
         {
             if (GlobalWarmingEnabled == globalWarming && CheatMenuEnabled == cheatMenu &&
-                EditorMenuEnabled == editorMenu)
+                EditorMenuEnabled == editorMenu && BoughtUnitsMoveAtOnce == boughtUnitsMoveAtOnce)
             {
                 return;
             }
@@ -152,6 +158,7 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = globalWarming;
             CheatMenuEnabled = cheatMenu;
             EditorMenuEnabled = editorMenu;
+            BoughtUnitsMoveAtOnce = boughtUnitsMoveAtOnce;
             Save();
         }
 
@@ -276,6 +283,7 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = ReadFlag(root, nameof(GlobalWarmingEnabled));
             CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
             EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
+            BoughtUnitsMoveAtOnce = ReadFlag(root, nameof(BoughtUnitsMoveAtOnce));
         }
 
         /// <summary>An advanced setting, absent from the file until it is turned on.</summary>
@@ -442,6 +450,7 @@ namespace RhyCiv.Engine
             writer.WriteBoolean(nameof(GlobalWarmingEnabled), GlobalWarmingEnabled);
             writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
             writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
+            writer.WriteBoolean(nameof(BoughtUnitsMoveAtOnce), BoughtUnitsMoveAtOnce);
             writer.WriteStartArray(nameof(SeenTutorials));
             foreach (var tutorial in SeenTutorials)
             {
