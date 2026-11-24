@@ -31,9 +31,11 @@ public static class DifficultyRules
 
     /// <summary>
     /// Barbarian attack strength, as a percentage. A Chieftain barbarian landing
-    /// is a nuisance; a Deity barbarian landing is an invasion.
+    /// is a nuisance; a Deity barbarian landing is still an invasion. The top
+    /// level no longer reaches 150%, so a single raider cannot two-shot a pair
+    /// of fortified city defenders on Deity.
     /// </summary>
-    private static readonly int[] BarbarianAttack = [25, 50, 75, 100, 125, 150];
+    private static readonly int[] BarbarianAttack = [25, 50, 75, 100, 110, 125];
 
     /// <summary>
     /// The extra shields a computer city gets at the top levels -- Civ II's

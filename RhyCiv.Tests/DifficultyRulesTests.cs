@@ -60,13 +60,13 @@ public class DifficultyRulesTests
     }
 
     [Fact]
-    public void BarbariansHitAQuarterAsHardOnChieftainAndHalfAsHardAgainOnDeity()
+    public void BarbariansHitAQuarterAsHardOnChieftainAndAQuarterAsHardAgainOnDeity()
     {
         var barbarians = new Civilization { Id = 0, PlayerType = PlayerType.Barbarians };
 
         Assert.Equal(1, DifficultyRules.AttackStrength(Game(DifficultyType.Chieftain), barbarians, 4));
         Assert.Equal(4, DifficultyRules.AttackStrength(Game(DifficultyType.King), barbarians, 4));
-        Assert.Equal(6, DifficultyRules.AttackStrength(Game(DifficultyType.Deity), barbarians, 4));
+        Assert.Equal(5, DifficultyRules.AttackStrength(Game(DifficultyType.Deity), barbarians, 4));
     }
 
     [Fact]
@@ -75,6 +75,18 @@ public class DifficultyRulesTests
         var civ = new Civilization { Id = 1, PlayerType = PlayerType.Ai };
 
         Assert.Equal(4, DifficultyRules.AttackStrength(Game(DifficultyType.Deity), civ, 4));
+    }
+
+    [Fact]
+    public void BarbarianDeityAttackStaysBelowAFortifiedDefender()
+    {
+        var barbarians = new Civilization { Id = 0, PlayerType = PlayerType.Barbarians };
+
+        var deity = DifficultyRules.AttackStrength(Game(DifficultyType.Deity), barbarians, 1);
+        var chieftain = DifficultyRules.AttackStrength(Game(DifficultyType.Chieftain), barbarians, 1);
+
+        Assert.True(deity <= 1.25);
+        Assert.True(chieftain <= 0.25);
     }
 
     private static MockGame Game(DifficultyType level) => new() { Difficulty = (int)level };
