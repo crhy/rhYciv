@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Android head project for the mobile port (#116). It is deliberately NOT
+    part of rhYciv.sln so the desktop build, CI and tests are untouched.
+
+    Build: ~/.dotnet/dotnet build Android/rhYciv.Android.csproj
+    Requires: the dotnet android workload, ANDROID_HOME (SDK + NDK) and JDK 17.
+
+    This stage only proves the APK pipeline: the engine, model and UI code
+    compile and link for net9.0-android, the native raylib library is
+    embedded in the APK, and MainActivity reports the raylib version it
+    loaded. The raylib game loop itself cannot run under the Android Java
+    activity yet (see docs/MOBILE-PORT.md).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <!-- Android packaging emits framework warnings that would fail the repo-wide
+      warnings-as-errors gate; keep the game code strict but not the packaging. -->
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RaylibUI\RaylibUI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- libraylib.so built for arm64-v8a with the Android NDK.
+      Reproduce with scripts/build_raylib_android.sh. -->
+    <AndroidNativeLibrary Include="native/libraylib.so" />
+  </ItemGroup>
+</Project>
