@@ -26,6 +26,7 @@ using System.Text.RegularExpressions;
 using Model.Controls.Civilopedia;
 using Model.Core.Cities;
 using Model.Core.GameRules;
+using RhyCiv.UI.Classic.CityWindow;
 
 namespace RhyCiv.UI.Classic;
 
@@ -253,172 +254,12 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
     {
         if (_cityWindowLayout != null) return _cityWindowLayout;
 
-        float buttonHeight = 24;
-
-        const float buyButtonWidth = 68;
-        const int infoButtonWidth = 57;
-
-        _cityWindowLayout = new CityWindowLayout(new BitmapStorage("city", new Rectangle(0, 0, 640, 421)))
-        {
-            Height = 421, Width = 636,
-            InfoPanel = new InfoPanel
-            {
-                Box = new Rectangle(193, 215, 242, 198),
-                UnitsPresent = new UnitBox
-                {
-                    // Below the panel's heading, not on top of it: the box shared its
-                    // origin with the "Units Present" label, so the first row of units
-                    // was drawn over the words.
-                    Box = new Rectangle(0, 15, 232, 84),
-                    Rows = 2,
-                    Columns = 5
-                }
-            },
-            TileMap = new Rectangle(7, 65, 188, 137),
-            FoodStorage = new Rectangle(437, 0, 195, 163),
-            CitizensBox = new Rectangle(3, 2, 433, 44),
-            Production = new()
-            {
-                Type = "Box",
-                Box = new Rectangle(437, 165, 195, 191),
-                IconLocation = new(97.5f, 18)
-            },
-            Improvements = new ImprovementsBox()
-            {
-                Box = new Rectangle(5, 306, 170, 108),
-                Rows = 9,
-                LabelColor = Color.White,
-                LabelColorShadow = Color.Black,
-                ShadowOffset = new Vector2(1, 0)
-            },
-            Resources = new ResourceProduction
-            {
-                TitlePosition = new Rectangle(199, 46, 238, 15),
-                Resources = new List<ResourceArea>
-                {
-                    new ConsumableResourceArea(name: "Food",
-                        bounds: new Rectangle(203, 75, 230, 13),
-                        getDisplayDetails: (val, type) =>
-                        {
-                            return type switch
-                            {
-                                OutputType.Consumption => Labels.For(LabelIndex.Food),
-                                OutputType.Loss => Labels.For(LabelIndex.Hunger),
-                                OutputType.Surplus => Labels.For(LabelIndex.Surplus),
-                                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-                            } + ":" + val;
-                        })
-                    {
-                        BarTop = new Color(154, 220, 88, 255),
-                        BarBottom = new Color(28, 74, 16, 255)
-                    },
-                    new ConsumableResourceArea(name: "Trade",
-                        bounds: new Rectangle(206, 116, 224, 16),
-                        getDisplayDetails: (val, type) =>
-                        {
-                            return type switch
-                            {
-                                OutputType.Consumption => Labels.For(LabelIndex.Trade),
-                                OutputType.Loss => Labels.For(LabelIndex.Corruption),
-                                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-                            } + ":" + val;
-                        }, noSurplus: true)
-                    {
-                        BarTop = new Color(255, 214, 96, 255),
-                        BarBottom = new Color(132, 76, 4, 255)
-                    },
-                    new ConsumableResourceArea(name: "Shields",
-                        bounds: new Rectangle(199, 181, 238, 16),
-                        getDisplayDetails: (val, type) =>
-                        {
-                            return type switch
-                            {
-                                OutputType.Consumption => Labels.For(LabelIndex.Support),
-                                OutputType.Loss => val > 0
-                                    ? Labels.For(LabelIndex.Waste)
-                                    : Labels.For(LabelIndex.Shortage),
-                                OutputType.Surplus => Labels.For(LabelIndex.Production),
-                                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-                            } + ":" + Math.Abs(val);
-                        },
-                        labelBelow: true
-                    )
-                    {
-                        BarTop = new Color(118, 148, 240, 255),
-                        BarBottom = new Color(14, 26, 88, 255)
-                    },
-                    new SharedResourceArea(new Rectangle(206, 140, 224, 16), true)
-                    {
-                        BarTop = new Color(252, 150, 72, 255),
-                        BarBottom = new Color(112, 34, 6, 255),
-                        Resources =
-                        [
-                            new()
-                            {
-                                Name = "Tax",
-                                GetResourceLabel = (val, city) =>
-                                    city.Owner.TaxRate + "% " + Labels.For(LabelIndex.Tax) + ":" + val,
-                                Icon = ResourceIcon("gold")
-                            },
-
-                            new()
-                            {
-                                Name = "Lux",
-                                GetResourceLabel = (val, city) =>
-                                    city.Owner.LuxRate + "% " + Labels.For(LabelIndex.Lux) + ":" + val,
-                                Icon = ResourceIcon("lux")
-                            },
-
-                            new()
-                            {
-                                Name = "Science",
-                                GetResourceLabel = (val, city) =>
-                                    city.Owner.LuxRate + "% " + Labels.For(LabelIndex.Sci) + ":" + val,
-                                Icon = ResourceIcon("science")
-                            }
-                        ]
-                    }
-                }
-            },
-            UnitSupport = new UnitBox
-            {
-                // Likewise clear of its own heading, and one row rather than two: the
-                // panel is 58 tall, so two rows left each unit half the height of one
-                // in the Units Present box beside it.
-                Box = new Rectangle(7, 229, 184, 54),
-                Rows = 1,
-                Columns = 4
-            },
-        };
-
-        _cityWindowLayout.Buttons.Add("Buy", new(Labels.For(LabelIndex.Buy), new(5, 16, buyButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("Change", new(Labels.For(LabelIndex.Change), new(120, 16, buyButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("Info", new(Labels.For(LabelIndex.Info), new(459, 364, infoButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("Map", new(Labels.For(LabelIndex.Map), new(517, 364, infoButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("Rename", new(Labels.For(LabelIndex.Rename), new(575, 364, infoButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("Happy", new(Labels.For(LabelIndex.Happy), new(459, 389, infoButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("View", new(Labels.For(LabelIndex.View), new(517, 389, infoButtonWidth, buttonHeight)));
-        _cityWindowLayout.Buttons.Add("Exit", new("Exit", new(575, 389, infoButtonWidth, buttonHeight)));
-
-        // The classic city dialog was dark, so its section headings were gold on
-        // near-black. This build's panel is light stone and gold on it is all but
-        // invisible, so the headings are dark with a light shadow instead.
-        var headingColour = new Color(46, 34, 16, 255);
-        var headingShadow = new Color(245, 240, 226, 200);
-
-        _cityWindowLayout.Labels.Add("FoodStorage", new(Labels.For(LabelIndex.FoodStorage), new(437, 0, 195, 12), new Color(75, 155, 35, 255), Color.Black));
-        _cityWindowLayout.Labels.Add("CityImprovements", new(Labels.For(LabelIndex.CityImprovements), new(3, 291, 189, 12), headingColour, headingShadow));
-        _cityWindowLayout.Labels.Add("UnitsPresent", new(Labels.For(LabelIndex.UnitsPresent), new(0, 0, 232, 12), headingColour, headingShadow));
-        _cityWindowLayout.Labels.Add("UnitsSupported", new(Labels.For(LabelIndex.UnitsSupported), new(3, 215, 189, 12), headingColour, headingShadow));
-        _cityWindowLayout.Labels.Add("ItemInProduction", new("", new(0, 4, 195, 12), new Color(63, 79, 167, 255), Color.Black));
-        // Inset by 5 on both sides: these two sit at the bottom of the Units
-        // Present panel, and at x=0 the text rendered hard against its border.
-        _cityWindowLayout.Labels.Add("Supplies", new(Labels.For(LabelIndex.Supplies), new(5, 130, 222, 12), new Color(227, 83, 15, 255), new Color(67, 67, 67, 255)));
-        _cityWindowLayout.Labels.Add("Demands", new(Labels.For(LabelIndex.Demands), new(5, 143, 222, 12), new Color(227, 83, 15, 255), new Color(67, 67, 67, 255)));
-        _cityWindowLayout.Labels.Add("ResourceMap", new(Labels.For(LabelIndex.ResourceMap), new(0, 125, 189, 12), headingColour, headingShadow));
-        _cityWindowLayout.Labels.Add("Citizens", new(Labels.For(LabelIndex.Citizens), new(0, 46, 189, 12), headingColour, headingShadow));
-
-
+        // The classic numbers were positions on Civ II's 640x421 "city" sheet, which
+        // the standalone art set does not ship. With the picture missing every label
+        // and panel was anchored to nothing, and the headings landed on top of each
+        // other and of the boxes they named. The standalone layout states the same
+        // regions in the window's own coordinates, clear of their boxes.
+        _cityWindowLayout = StandaloneCityWindowLayout.Create();
         return _cityWindowLayout;
     }
 
@@ -431,7 +272,7 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
     /// </summary>
     public const int ResourceIconSize = 96;
 
-    private static BitmapStorage ResourceIcon(string name) =>
+    internal static BitmapStorage ResourceIcon(string name) =>
         new(System.IO.Path.Combine("Icons", "Resources", $"{name}.png"));
 
     public IList<ResourceImage> ResourceImages { get; } = new List<ResourceImage>

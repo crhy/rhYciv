@@ -31,6 +31,15 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   `scripts/check_background_art.py` fails the gate if a flat placeholder comes
   back (#3).
 
+### Interface
+
+- The city window is laid out in its own coordinates instead of against Civ II's
+  640x421 "city" sheet, which the standalone art set does not ship. Nothing sits
+  outside the window, no heading lands on top of another heading or on top of the
+  body of the box it names, and the panels are pairwise clear — so "Citizens",
+  "Resource Map", "Units Supported", "Units Present" and the orange "Supplies"/"Demands"
+  pair no longer overlap each other or the tile map (#45).
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at
