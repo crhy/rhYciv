@@ -24,6 +24,14 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   refuses one whose court is colder than Uncooperative. The one-way gift of knowledge
   is unchanged, and exchanging world maps is still missing (#201).
 
+### Movement
+
+- A unit standing in a city may leave it for any empty tile, however close the
+  nearest enemy is. Zones of control hold the square a unit arrives on, not the
+  city square it came from, so the city exit is now offered by the move list,
+  the move itself and Go To alike. This is ordinary Civ II play, so it is not
+  behind an Advanced Settings checkbox. (#159)
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
