@@ -19,6 +19,9 @@
     <ProjectReference Include="..\Engine\RhyCiv.Engine.csproj" />
     <ProjectReference Include="..\UI.Classic\UI.Classic.csproj" />
     <ProjectReference Include="..\RaylibUtils\RaylibUtils.csproj" />
+    <!-- The City Status advisor's one change of project is the advisor's own rule
+         about what a city may be told to build, so it is tested where it is written. -->
+    <ProjectReference Include="..\RaylibUI\RaylibUI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
