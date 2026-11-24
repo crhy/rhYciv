@@ -10,6 +10,7 @@ using System.Linq;
 using Model.Core.Cities;
 using Model.Core.GameRules;
 using Model.Core.Production;
+using RhyCiv.Engine.Enums;
 
 namespace RhyCiv.Engine.Production
 {
@@ -117,6 +118,17 @@ namespace RhyCiv.Engine.Production
         {
             if (!city.ImprovementExists(Improvement.Type))
             {
+                // Civ II lets a city raise only one power plant -- Power, Hydro,
+                // Nuclear or Solar -- and only if it has a Factory first
+                // (docs/CIV2-PARITY-DEEP-AUDIT.md TR2, crhy/rhYciv#28). Without
+                // the limit the four +25% plants stack in one city. The membership
+                // list is one place so this rule and the tests cannot drift.
+                if (IsPowerPlant(Improvement.Type) &&
+                    (HoldsAnyPowerPlant(city) || !city.ImprovementExists((int)ImprovementType.Factory)))
+                {
+                    return false;
+                }
+
                 // Ocean improvements can't be built inland. The cheap test comes
                 // first: asking whether the city is coastal walks its neighbours,
                 // and for the great majority of buildings the answer does not
@@ -129,6 +141,24 @@ namespace RhyCiv.Engine.Production
             }
             return false;
         }
+
+        /// <summary>
+        /// The four power plants Civ II treats as one mutually exclusive group
+        /// (Power / Hydro / Nuclear / Solar Plant). Named once, here, so the
+        /// one-per-city rule above and its tests share a single definition.
+        /// </summary>
+        private static readonly int[] PowerPlants =
+        [
+            (int)ImprovementType.PowerPlant,
+            (int)ImprovementType.HydroPlant,
+            (int)ImprovementType.NuclearPlant,
+            (int)ImprovementType.SolarPlant,
+        ];
+
+        private static bool IsPowerPlant(int improvementType) => PowerPlants.Contains(improvementType);
+
+        private static bool HoldsAnyPowerPlant(City city) =>
+            PowerPlants.Any(type => city.ImprovementExists(type));
 
         public override string GetDescription()
         {
