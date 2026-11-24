@@ -7,6 +7,12 @@ carry a shorter, user-facing summary of each release; this file is the full reco
 
 ## [Unreleased]
 
+### Fixed
+
+- The goody-hut barbarian horde's size (#161: always a pair on Villages Only
+  and Roving Bands, three on Restless Tribes and Raging Hordes) is now pinned
+  by a regression test, so the lone-warrior regression cannot come back.
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at

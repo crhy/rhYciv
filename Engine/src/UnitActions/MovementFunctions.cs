@@ -1173,18 +1173,15 @@ namespace RhyCiv.Engine.UnitActions
                 return;
             }
 
-            // #161: hut barbarians regressed from 2 to 1 on VillagesOnly/Roving
-            // Bands because `BarbarianActivity+1` capped at 1 for activity 0.
-            // Civ II hut hordes are at least a pair (2) and scale to 3 on
-            // Restless/Raging — matches the old always-2 behaviour for the
-            // common Roving Bands case and the Restless/Raging 3-horde.
+            // #161: the horde size is BarbarianHordeSize(game) below; pinned by
+            // GoodyHutBarbarianTests so it cannot silently regress again.
             var spawnTiles = hutTile.Neighbours()
                 .Where(tile => tile.Type != TerrainType.Ocean)
                 .Where(tile => !tile.Terrain.Impassable)
                 .Where(tile => tile.CityHere == null)
                 .Where(tile => tile.UnitsHere.All(u => u.Owner == barbarianCiv))
                 .OrderBy(tile => Math.Abs(tile.X - triggeringUnit.X) + Math.Abs(tile.Y - triggeringUnit.Y))
-                .Take(Math.Max(2, Math.Min(3, game.BarbarianActivity + 1)))
+                .Take(BarbarianHordeSize(game))
                 .ToList();
 
             if (spawnTiles.Count == 0)
@@ -1217,6 +1214,21 @@ namespace RhyCiv.Engine.UnitActions
                     ? "A barbarian warrior appears near the village!"
                     : "A barbarian horde appears near the village!";
         }
+
+        /// <summary>
+        /// How many barbarians a goody hut unleashes (#161).
+        /// <para>
+        /// Hut barbarians once regressed from 2 to 1 on VillagesOnly/Roving
+        /// Bands because `BarbarianActivity+1` capped at 1 for activity 0.
+        /// Civ II hut hordes are at least a pair (2) and scale to 3 on
+        /// Restless/Raging — matches the old always-2 behaviour for the
+        /// common Roving Bands case and the Restless/Raging 3-horde, the
+        /// same pair→3 scaling as the uprising PartySize in
+        /// BarbarianUprisings.
+        /// </para>
+        /// </summary>
+        internal static int BarbarianHordeSize(IGame game) =>
+            Math.Max(2, Math.Min(3, game.BarbarianActivity + 1));
 
         /// <summary>
         /// Gives the mercenaries a soldier's uniform.
