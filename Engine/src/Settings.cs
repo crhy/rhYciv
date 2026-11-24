@@ -107,6 +107,14 @@ namespace RhyCiv.Engine
         /// <summary>Pre-defork name of the <see cref="GameDataPath"/> settings key.</summary>
         private const string LegacyGameDataPathKey = "Civ2Path";
 
+        /// <summary>
+        /// The settings key for the map-overlay toggle. It is stored as a disable flag
+        /// because, unlike the other advanced settings, the toggle is on by default:
+        /// the key is absent from the file until a player turns the overlay off, and an
+        /// absent key means the overlay stays on.
+        /// </summary>
+        private const string MapOverlayNotificationsDisabledKey = "MapOverlayNotificationsDisabled";
+
         // Game settings from App.config
         public static string GameDataPath { get; private set; } = string.Empty;
         
@@ -137,14 +145,25 @@ namespace RhyCiv.Engine
         public static bool EditorMenuEnabled { get; private set; }
 
         /// <summary>
+        /// Whether simple informational events are shown as a non-blocking overlay on
+        /// the map instead of interrupting play with a modal popup (Civ2-UI-Additions
+        /// row 33). It changes only how a message is displayed -- never a unit, city or
+        /// the AI -- so unlike the other advanced settings it is on by default and the
+        /// player turns it off to get the old popups back. Which events count as simple
+        /// is decided by <see cref="Notifications.MapOverlayNotificationPolicy"/>.
+        /// </summary>
+        public static bool MapOverlayNotificationsEnabled { get; private set; } = true;
+
+        /// <summary>
         /// Records the advanced settings and writes them out. They persist between
         /// sessions: somebody who has turned the cheat menu on is not asked again
         /// next time they start the game.
         /// </summary>
-        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu)
+        public static void SetAdvancedSettings(bool globalWarming, bool cheatMenu, bool editorMenu,
+            bool mapOverlayNotifications = true)
         {
             if (GlobalWarmingEnabled == globalWarming && CheatMenuEnabled == cheatMenu &&
-                EditorMenuEnabled == editorMenu)
+                EditorMenuEnabled == editorMenu && MapOverlayNotificationsEnabled == mapOverlayNotifications)
             {
                 return;
             }
@@ -152,6 +171,7 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = globalWarming;
             CheatMenuEnabled = cheatMenu;
             EditorMenuEnabled = editorMenu;
+            MapOverlayNotificationsEnabled = mapOverlayNotifications;
             Save();
         }
 
@@ -276,6 +296,8 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = ReadFlag(root, nameof(GlobalWarmingEnabled));
             CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
             EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
+            // Absent means the overlay is still on; only an explicit true disables it.
+            MapOverlayNotificationsEnabled = !ReadFlag(root, MapOverlayNotificationsDisabledKey);
         }
 
         /// <summary>An advanced setting, absent from the file until it is turned on.</summary>
@@ -442,6 +464,9 @@ namespace RhyCiv.Engine
             writer.WriteBoolean(nameof(GlobalWarmingEnabled), GlobalWarmingEnabled);
             writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
             writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
+            // Stored as a disable flag so the overlay's default-on state stays implicit
+            // in the file: nothing is written until a player turns it off.
+            writer.WriteBoolean(MapOverlayNotificationsDisabledKey, !MapOverlayNotificationsEnabled);
             writer.WriteStartArray(nameof(SeenTutorials));
             foreach (var tutorial in SeenTutorials)
             {
