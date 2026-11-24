@@ -24,7 +24,19 @@ public class AboutGame(GameScreen gameScreen) : IGameCommand
         return true;
     }
 
-    public void Action() => gameScreen.ShowPopup("ABOUT", replaceStrings: [BuildVersion]);
+    public void Action() => gameScreen.ShowPopup("ABOUT", replaceStrings: [VersionAndLinks]);
+
+    /// <summary>
+    /// The About popup's one filler: the build version, and under it the four
+    /// community links the project wants surfaced in game (crhy/rhYciv#107).
+    /// Verbatim strings keep the invite URLs exactly as written.
+    /// </summary>
+    private static string VersionAndLinks =>
+        $"{BuildVersion}\n\n" +
+        "rhYciv.org\n" +
+        "rhYciv.com\n" +
+        @"Discord: https://discord.gg/wyWN7HrcHX" + "\n" +
+        @"Telegram: https://t.me/+JaW5Iy5CTN9hNmRh";
 
     /// <summary>
     /// The version the build was stamped with, from Directory.Build.props. The
