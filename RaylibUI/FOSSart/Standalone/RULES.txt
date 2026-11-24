@@ -364,7 +364,7 @@ Plains, 1, 2, 1, 1, 0, yes, 1, 5, 0, no, 0, 0, 0, Gra, no ; Pla
 Grassland, 1, 2, 2, 0, 0, yes, 1, 5, 0, no, 0, 0, 0, Hil, no ; Gra
 Forest, 2, 3, 1, 2, 0, no, 0, 0, 0, no, 0, 0, 0, Gra, no ; For
 Hills, 2, 4, 1, 0, 0, yes, 1, 10, 0, yes, 3, 10, 0, Pla, no ; Hil
-Mountains, 3, 6, 0, 1, 0, no, 0, 0, 0, yes, 1, 10, 0, Hil, no ; Mou
+Mountains, 3, 6, 0, 1, 0, no, 0, 0, 0, yes, 2, 10, 0, Hil, no ; Mou
 Tundra, 1, 2, 1, 0, 0, yes, 1, 5, 0, no, 0, 0, 0, Des, no ; Tun
 Glacier, 2, 2, 0, 0, 0, no, 0, 0, 0, yes, 1, 10, 0, Tun, no ; Gla
 Swamp, 2, 3, 1, 0, 0, no, 0, 0, 0, no, 0, 0, 0, Pla, no ; Swa
