@@ -52,6 +52,13 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   it on the map, exactly as the turn cycle does. Dead units, and units owned by a
   computer player or the barbarians, are not selected (#11).
 
+### Research
+
+- A civilisation's research cost is now measured against the strongest living
+  civilisation, not against whichever civilisation happened to carry the same number
+  as its power rank, so the price of the next advance no longer depends on an
+  unrelated tribe's progress (#9).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
