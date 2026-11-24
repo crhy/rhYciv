@@ -116,6 +116,13 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   from that enemy instead of walking into it; barbarians that have company still
   gather into a horde as before (#7).
 
+### Map
+
+- A resource special on grassland is painted over the grass shield instead of
+  never being drawn at all (#178). The shield and the special were an if/else
+  pair, so the bison and the rest of the grazing markers were invisible on the
+  terrain that carries them.
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules
