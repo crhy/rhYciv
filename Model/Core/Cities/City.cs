@@ -16,6 +16,27 @@ namespace Model.Core.Cities
         public bool ImprovementSold { get; set; }
 
         /// <summary>
+        /// The turn this city last received an airlift, or -1 when it has not
+        /// received one.
+        /// <para>
+        /// The Civilopedia sells the Airport as an air-power and rapid-transport
+        /// hub and promises "one unit per turn to move rapidly between cities
+        /// equipped with Airports" (docs/CIVILOPEDIA-TEXT.md:884), and the game's
+        /// own text for a city that has already taken its lift is @ALREADYAIRLIFT
+        /// (docs/PROMPT-EVENT-TEXT.md:951): "This city has already committed its
+        /// airlift capacity." Both make the capacity one lift per city per turn,
+        /// which is what this marker counts.
+        /// </para>
+        /// <para>
+        /// -1 rather than 0 for "never", because turn 0 is a real turn: a city
+        /// airlifted into on the game's first turn would otherwise look free again
+        /// for the rest of that turn. Per-turn state, so like ProductionChanged it
+        /// is not written to a save.
+        /// </para>
+        /// </summary>
+        public int AirliftTurn { get; set; } = -1;
+
+        /// <summary>
         /// Whether this city has already paid the penalty for switching what it
         /// builds this turn. Civ II charges it once, so flipping back and forth in
         /// one turn costs no more than a single change.

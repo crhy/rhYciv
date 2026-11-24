@@ -433,7 +433,7 @@ public class CompatAlternateInterface(IMain main) : ClassicInterface(main)
                 new("&Unload|u", new Shortcut(Key.U), Key.U, UnloadOrder),
                 new("&Go To|g", new Shortcut(Key.G), Key.G, GotoOrder),
                 new("&Paradrop|p", new Shortcut(Key.P), Key.P, ParadropOrder, omitIfNoCommand: true),
-                new("Air&lift|l", new Shortcut(Key.L), Key.L, omitIfNoCommand: true),
+                new("Air&lift|l", new Shortcut(Key.L), Key.L, AirliftOrder, omitIfNoCommand: true),
                 new("Teleport|n", new Shortcut(Key.N), Key.None, omitIfNoCommand: true),
                 new("Set &Home City|h", new Shortcut(Key.H), Key.H, SetHomeCityOrder),
                 new("&Fortify|f", new Shortcut(Key.F), Key.F, FortifyOrder),

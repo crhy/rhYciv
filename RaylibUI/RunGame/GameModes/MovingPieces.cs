@@ -95,6 +95,14 @@ public class MovingPieces : IGameMode
     /// </summary>
     public Unit? AwaitingParadrop { get; set; }
 
+    /// <summary>
+    /// Set by the Airlift order while the player picks a destination city. As with
+    /// a paradrop, the next left click is the target rather than a move; here it
+    /// has to be a friendly city with an airbase that has not already taken a lift
+    /// this turn.
+    /// </summary>
+    public Unit? AwaitingAirlift { get; set; }
+
     public bool MapClicked(Tile tile, MouseButton mouseButton)
     {
         if (AwaitingParadrop is { } jumper)
@@ -103,6 +111,22 @@ public class MovingPieces : IGameMode
             if (mouseButton == MouseButton.Left && ParadropFunctions.TryParadrop(_gameScreen.Game, jumper, tile))
             {
                 if (!jumper.AwaitingOrders)
+                {
+                    _gameScreen.Game.ChooseNextUnit();
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        if (AwaitingAirlift is { } lifter)
+        {
+            AwaitingAirlift = null;
+            if (mouseButton == MouseButton.Left && AirliftFunctions.TryAirlift(_gameScreen.Game, lifter, tile))
+            {
+                if (!lifter.AwaitingOrders)
                 {
                     _gameScreen.Game.ChooseNextUnit();
                 }
