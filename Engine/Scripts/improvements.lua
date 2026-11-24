@@ -59,7 +59,13 @@ civ.getImprovement(22).Effects.Add(civ.core.Effects.TaxMultiplier, 50)
 civ.getImprovement(22).Effects.Add(civ.core.Effects.LuxMultiplier, 50)
 --Sewer System,             12, 2,    San,
 --Supermarket,               8, 3,    Rfg,
-civ.getImprovement(24).addTerrainEffect({ Resource = civ.core.Resources.Food, Value=1, Improvement = civ.core.Improvements.Irrigation, Level=1 })
+-- Civ II: the Supermarket gives +50% food from farmland, not a flat +1 from
+-- irrigation. The terrain improvement is Irrigation (id 6) and its second level
+-- (Level = 1) is farmland -- plain irrigation is Level 0, so it is not matched.
+-- Action = 2 is CityTerrainEffect.Multiply (Add = 0, AddExtra = 1, Multiply = 2);
+-- there is no named civ.core.TerrainEffectActions map on this branch, so the
+-- number is passed directly. Value = 150 makes it food * 150 / 100.
+civ.getImprovement(24).addTerrainEffect({ Resource = civ.core.Resources.Food, Value = 150, Action = 2, Improvement = civ.core.Improvements.Irrigation, Level = 1 })
 --Superhighways,            20, 5,    Aut,
 --Research Lab,             16, 3,    Cmp,
 civ.getImprovement(26).Effects.Add(civ.core.Effects.ScienceMultiplier, 50)
