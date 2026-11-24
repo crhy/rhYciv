@@ -9,6 +9,7 @@ using RhyCiv.Engine.Events;
 using RhyCiv.Engine.IO;
 using RhyCiv.Engine.Production;
 using RhyCiv.Engine.MapObjects;
+using RhyCiv.Engine.Notifications;
 using Model.Controls;
 using Model.Controls.Civilopedia;
 using Model.Core;
@@ -87,6 +88,19 @@ public class LocalPlayer : IPlayer
     {
         if (!Reports.AnnounceOrderRestored)
         {
+            return;
+        }
+
+        // Row 33 representative: "order restored" is a simple announcement the player
+        // never answers, so with the map-overlay advanced setting on it is routed to the
+        // non-blocking map corner rather than the modal city dialog below. With the
+        // setting off, or for any event the policy treats as blocking, the helper returns
+        // null and the old popup is kept.
+        var notification = MapOverlayNotificationPolicy.TryQueueNotification("RESTORED",
+            $"{city.Name}: order restored.", Settings.MapOverlayNotificationsEnabled);
+        if (notification is not null)
+        {
+            _gameScreen.QueueMapOverlayNotification(notification);
             return;
         }
 

@@ -39,13 +39,13 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
             checkboxStates: (List<bool>)
             [
                 Settings.GlobalWarmingEnabled, Settings.CheatMenuEnabled, Settings.EditorMenuEnabled,
-                false
+                Settings.MapOverlayNotificationsEnabled, false
             ]);
     }
 
     private void DialogClick(string button, int _, IList<bool>? checkboxes, IDictionary<string, string>? _2)
     {
-        if (button != Labels.Ok || checkboxes is not { Count: >= 4 })
+        if (button != Labels.Ok || checkboxes is not { Count: >= 5 })
         {
             return;
         }
@@ -53,7 +53,7 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
         // Not a setting so much as a button that looks like one: ticking it puts
         // the tutorial back for somebody who wants to see it again, and it is
         // unticked the next time this dialog opens because it has already happened.
-        if (checkboxes[3])
+        if (checkboxes[4])
         {
             Settings.ForgetTutorials();
         }
@@ -61,7 +61,7 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
         var menusChanged = Settings.CheatMenuEnabled != checkboxes[1] ||
                            Settings.EditorMenuEnabled != checkboxes[2];
 
-        Settings.SetAdvancedSettings(checkboxes[0], checkboxes[1], checkboxes[2]);
+        Settings.SetAdvancedSettings(checkboxes[0], checkboxes[1], checkboxes[2], checkboxes[3]);
 
         if (menusChanged)
         {

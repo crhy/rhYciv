@@ -361,6 +361,7 @@ Enter closest city screen
 Global warming
 Cheat menu
 Editor menu
+Map overlay notifications
 Show the tutorial advice again
 @MESSAGEOPTIONS
 @title=City Report Options

@@ -17,6 +17,8 @@ using RaylibUI.RunGame.Commands.Orders;
 using RaylibUI.RunGame.GameControls;
 using RaylibUI.RunGame.GameControls.CityControls;
 using RaylibUI.RunGame.GameControls.Mapping;
+using RaylibUI.RunGame.GameControls.Notifications;
+using RhyCiv.Engine.Notifications;
 using RaylibUI.RunGame.GameControls.Menu;
 using RaylibUI.RunGame.GameModes;
 using RaylibUI.Initialization;
@@ -41,6 +43,14 @@ public class GameScreen : BaseScreen
     private GameMenu _menu;
     private readonly IList<IGameCommand> _commands;
     private bool _ToTPanelLayout, _minimapGlobe, _showGrid;
+
+    /// <summary>
+    /// Display-only corner notifications for the simple events that Civ2-UI-Additions
+    /// row 33 suppresses out of the modal popups. It owns no input and changes no game
+    /// state; whether an event is routed here at all is decided by the engine's
+    /// <see cref="MapOverlayNotificationPolicy"/> and gated on the advanced setting.
+    /// </summary>
+    private readonly MapOverlayNotifications _notifications = new();
 
     public IGameMode ActiveMode
     {
@@ -838,6 +848,34 @@ public class GameScreen : BaseScreen
         ReleaseCityNews();
         ReleaseQueuedPopup();
         base.Draw(pulse);
+        DrawMapOverlayNotifications();
+    }
+
+    /// <summary>
+    /// Queues a display-only corner notification for an event the engine classified as
+    /// simple. It never blocks, pauses or waits on an answer -- the caller has already
+    /// decided this event no longer needs a modal popup.
+    /// </summary>
+    public void QueueMapOverlayNotification(MapOverlayNotification notification)
+    {
+        _notifications.Enqueue(notification);
+    }
+
+    /// <summary>
+    /// Draws the notification stack over the map, in the map's own corner. Drawn after
+    /// the base pass so it sits above the terrain and city labels, and given the map's
+    /// rectangle so it never covers the panels beside it.
+    /// </summary>
+    private void DrawMapOverlayNotifications()
+    {
+        if (_mapControl is null)
+        {
+            return;
+        }
+
+        _notifications.Draw(Main.ActiveInterface.Look.DefaultFont,
+            (int)_mapControl.Location.X, (int)_mapControl.Location.Y,
+            _mapControl.Width, _mapControl.Height);
     }
 
     public void ToggleMapLayout()
