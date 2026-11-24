@@ -10,3 +10,4 @@ Working notes, decisions and standing orders for this project, kept by Claude Co
 - [rhyciv-generated-art-direction](rhyciv-generated-art-direction.md): rhY wants procedurally generated rhYciv tile art to look hand-made and physically plausible, not ruler-straight or merely layered.
 - [rhyciv-playability-first](rhyciv-playability-first.md): On rhYciv, playability and responsiveness outrank every other kind of work, and are fixed before new features or polish.
 - [rhyciv-release-gate](rhyciv-release-gate.md): rhYciv releases are tested by rhY as a locally built flatpak before anything is pushed.
+- [rhyciv-superhighways-tile-trade](rhyciv-superhighways-tile-trade.md): On rhYciv, a tile's yield rules belong in the tile-yield path so the worked window and the city's totals cannot disagree, and rules that are ordinary Civ II play get no Advanced Settings toggle.
