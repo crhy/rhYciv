@@ -1019,6 +1019,17 @@ namespace RhyCiv.Engine
                 case DiplomacyProposals.GiveTechnology:
                     DiplomacyFunctions.AdjustAttitude(Civilization, from, 15);
                     break;
+                case DiplomacyProposals.ExchangeKnowledge:
+                    // A trade rather than a gift: both courts end up knowing everything
+                    // either of them knew. It costs the receiver nothing, so a court that
+                    // is merely cool towards the proposer refuses it and loses nothing by
+                    // doing so; one that agrees remembers the goodwill, as for a gift.
+                    Answer(from, DiplomacyFunctions.Proposal.ExchangeKnowledge, () =>
+                    {
+                        DiplomacyFunctions.ExchangeKnowledge(game, Civilization, from);
+                        DiplomacyFunctions.AdjustAttitude(Civilization, from, 15);
+                    });
+                    break;
             }
         }
 

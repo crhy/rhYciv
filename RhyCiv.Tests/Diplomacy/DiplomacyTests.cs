@@ -1,6 +1,11 @@
+using RhyCiv.Engine;
+using RhyCiv.Engine.Advances;
 using RhyCiv.Engine.Diplomacy;
 using RhyCiv.Tests.Mocks;
+using RhyCiv.Tests.TestFiles;
 using Model.Core;
+using Model.Core.Advances;
+using Model.Core.GameRules;
 using Model.Core.Player;
 
 namespace RhyCiv.Tests.Diplomacy;
@@ -254,6 +259,184 @@ public class DiplomacyTests
 
         Assert.False(DiplomacyFunctions.UnderTreaty(us, them));
         Assert.False(DiplomacyFunctions.UnderTreaty(them, us));
+    }
+
+    /// <summary>
+    /// An exchange is raised only where both courts have something to give.
+    /// <para>
+    /// Civ II's parley offers a gift of knowledge and an exchange of knowledge as
+    /// different things, and the difference matters: a trade that would move one
+    /// way only is a gift, and the gift is already on the menu.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void TheExchangeIsOfferedOnlyWhenEachSideHoldsSomethingTheOtherLacks()
+    {
+        var (game, _) = World();
+        game.Rules = new Rules
+        {
+            Advances =
+            [
+                new Advance { Index = 0, Name = "Pottery" },
+                new Advance { Index = 1, Name = "Writing" },
+                new Advance { Index = 2, Name = "Mathematics" }
+            ]
+        };
+
+        var us = game.AllCivilizations[0];
+        var them = game.AllCivilizations[1];
+        us.Advances = new bool[3];
+        them.Advances = new bool[3];
+
+        var offered = () => DiplomacyFunctions.AvailableProposals(game, us, them)
+            .Contains(DiplomacyFunctions.Proposal.ExchangeKnowledge);
+
+        // Neither court knows anything: there is nothing to trade.
+        Assert.False(offered());
+
+        // One court holds Pottery and the other nothing. That is a gift, and a gift
+        // is already on the menu; an exchange here would promise the player something
+        // the other side cannot give back.
+        us.Advances[0] = true;
+        Assert.False(offered());
+
+        // Both hold Pottery: still nothing to move.
+        them.Advances[0] = true;
+        Assert.False(offered());
+
+        // The other side holds Writing as well, but has nothing of its own to give
+        // back for it -- the trade would still run one way.
+        them.Advances[1] = true;
+        Assert.False(offered());
+
+        // Now each holds something the other has never learned.
+        us.Advances[2] = true;
+        Assert.True(offered());
+    }
+
+    /// <summary>
+    /// The trade itself: both courts end up knowing everything either knew, and
+    /// an advance they already share is not "given" at all.
+    /// </summary>
+    [Fact]
+    public void AnExchangeLeavesBothSidesHoldingTheUnionOfWhatEitherKnew()
+    {
+        var (game, _, _) = CleanRoomGameFactory.CreateGame();
+        var us = game.GetPlayerCiv;
+        var them = game.AllCivilizations.First(civ => civ.PlayerType == PlayerType.Ai);
+
+        // Two advances apiece, one of which they both already hold: the shared
+        // one has nothing to do with the trade, and re-giving it would re-run
+        // every effect it carries.
+        var shared = game.Rules.Advances[0].Index;
+        var ours = game.Rules.Advances[1].Index;
+        var theirs = game.Rules.Advances[2].Index;
+
+        Knows(game, us, shared);
+        Knows(game, us, ours);
+        Knows(game, them, shared);
+        Knows(game, them, theirs);
+
+        var exchanged = DiplomacyFunctions.ExchangeKnowledge(game, us, them);
+
+        // Only what changed hands, and in ascending advance-index order.
+        Assert.Equal(new List<int> { ours, theirs }, exchanged);
+
+        foreach (var index in new List<int> { shared, ours, theirs })
+        {
+            Assert.True(AdvanceFunctions.HasTech(us, index),
+                $"Both courts should hold advance {index} after the exchange.");
+            Assert.True(AdvanceFunctions.HasTech(them, index),
+                $"Both courts should hold advance {index} after the exchange.");
+        }
+
+        // And the trade invented nothing: an advance neither side held is still
+        // held by neither.
+        foreach (var advance in game.Rules.Advances)
+        {
+            if (advance.Index == shared || advance.Index == ours || advance.Index == theirs)
+            {
+                continue;
+            }
+
+            Assert.False(AdvanceFunctions.HasTech(us, advance.Index),
+                $"The exchange handed {us.TribeName} advance {advance.Index}, which neither side held.");
+            Assert.False(AdvanceFunctions.HasTech(them, advance.Index),
+                $"The exchange handed {them.TribeName} advance {advance.Index}, which neither side held.");
+        }
+    }
+
+    /// <summary>
+    /// A court weighs an exchange by how it feels about the proposer, and an
+    /// exchange asks less of a friendship than a treaty does: it costs the
+    /// receiver nothing and leaves them knowing more.
+    /// </summary>
+    [Fact]
+    public void AHostileCourtRefusesAnExchangeThatANeutralOneTakes()
+    {
+        var (game, _) = World();
+        var us = game.AllCivilizations[0];
+        var them = game.AllCivilizations[1];
+
+        // Neutral: the middle of Civ II's hundred-point scale, where a court has
+        // formed no opinion.
+        Assert.True(DiplomacyFunctions.WouldAccept(game, us, them,
+            DiplomacyFunctions.Proposal.ExchangeKnowledge));
+
+        // Cold enough to be called Hostile, and the offer is turned down -- Civ
+        // II's "we have no interest in exchanging knowledge at this time".
+        DiplomacyFunctions.AdjustAttitude(them, us, -30);
+        Assert.Equal("Hostile", DiplomacyFunctions.AttitudeName(them, us));
+        Assert.False(DiplomacyFunctions.WouldAccept(game, us, them,
+            DiplomacyFunctions.Proposal.ExchangeKnowledge));
+    }
+
+    /// <summary>
+    /// A computer civilisation that accepts an exchange trades both ways: the
+    /// receipt is where the trade happens, not merely where it is remembered.
+    /// </summary>
+    [Fact]
+    public void AComputerCivilisationReceivingAnExchangeTradesBothWays()
+    {
+        var (game, _, _) = CleanRoomGameFactory.CreateGame();
+        var us = game.GetPlayerCiv;
+        var them = game.AllCivilizations.First(civ => civ.PlayerType == PlayerType.Ai);
+
+        var ours = game.Rules.Advances[0].Index;
+        var theirs = game.Rules.Advances[1].Index;
+        Knows(game, us, ours);
+        Knows(game, them, theirs);
+
+        // The script engine is not reached on this path, so it stays out of the
+        // way of the test.
+        var receiver = new AiPlayer(them.Id, them, null, game, null);
+        receiver.ProposalReceived(us, new DiplomaticProposal
+        {
+            Kind = DiplomacyProposals.ExchangeKnowledge
+        });
+
+        Assert.True(AdvanceFunctions.HasTech(us, theirs),
+            "The player should have taken what the computer civilisation knew.");
+        Assert.True(AdvanceFunctions.HasTech(them, ours),
+            "The computer civilisation should have taken what the player knew.");
+    }
+
+    /// <summary>
+    /// Puts an advance into a civilisation's own list. A loaded game keeps that
+    /// list only as long as the highest advance the civilisation holds -- a civilisation
+    /// holding none has an empty array -- so it has to be grown before an index into
+    /// it means anything, which is what <c>GiveAdvance</c> does when it grants one.
+    /// </summary>
+    private static void Knows(IGame game, Civilization civ, int advanceIndex)
+    {
+        if (civ.Advances.Length < game.Rules.Advances.Length)
+        {
+            var grown = new bool[game.Rules.Advances.Length];
+            Array.Copy(civ.Advances, grown, civ.Advances.Length);
+            civ.Advances = grown;
+        }
+
+        civ.Advances[advanceIndex] = true;
     }
 
     private static (MockGame Game, MockPlayer[] Players) World()

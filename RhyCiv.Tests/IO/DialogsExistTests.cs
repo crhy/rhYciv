@@ -66,7 +66,11 @@ public class DialogsExistTests
 
     private static IEnumerable<(string Name, string File)> ReferencedDialogs(string repository)
     {
-        var asked = new Regex(@"(?:ShowPopup|ShowCityDialog)\(\s*""([A-Z0-9_]+)""");
+        // The parley, and a few other commands, raise their steps through a local
+        // helper that hands the dialog name straight to ShowPopup. A step named
+        // only there was invisible to this walk, so the guard that the Diplomat
+        // needed so badly would not have caught a missing step in the audience.
+        var asked = new Regex(@"(?:ShowPopup|ShowCityDialog|Step)\(\s*""([A-Z0-9_]+)""");
 
         // Only the source projects. Walking the whole repository wanders into the
         // Flatpak build tree, which contains a sandbox root the tests cannot read.

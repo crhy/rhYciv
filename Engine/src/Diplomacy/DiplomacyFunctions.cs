@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RhyCiv.Engine.Advances;
 using Model.Core;
 using Model.Core.Player;
 using Model.Core.Units;
@@ -38,6 +39,15 @@ public static class DiplomacyFunctions
     public const int CeaseFireDuration = 5;
     private const int PeaceAttitude = 45;
     private const int AllianceAttitude = 75;
+
+    /// <summary>
+    /// How warmly a court must feel towards the proposer before it will trade
+    /// knowledge. An exchange asks less of a friendship than a treaty does -- it
+    /// costs the receiver nothing and leaves them knowing more -- so anyone down
+    /// to Uncooperative will deal, and Icy or colder will not. That colder half
+    /// is Civ II's "we have no interest in exchanging knowledge at this time".
+    /// </summary>
+    private const int ExchangeAttitude = 34;
 
     /// <summary>
     /// The relation from one civilisation towards another, created on demand.
@@ -338,7 +348,7 @@ public static class DiplomacyFunctions
     }
 
     /// <summary>The treaties one civilisation can offer another, given where they stand.</summary>
-    public static IEnumerable<Proposal> AvailableProposals(Civilization from, Civilization to)
+    public static IEnumerable<Proposal> AvailableProposals(IGame game, Civilization from, Civilization to)
     {
         var relation = Between(from, to);
 
@@ -362,6 +372,66 @@ public static class DiplomacyFunctions
 
         yield return Proposal.GiveGold;
         yield return Proposal.GiveTechnology;
+
+        // Civ II's parley offers an exchange as well as a gift, and raises it only
+        // where both courts have something the other has never learned: a trade
+        // that would move one way only is already covered by the gift above.
+        if (EachHoldsSomethingTheOtherLacks(game, from, to))
+        {
+            yield return Proposal.ExchangeKnowledge;
+        }
+    }
+
+    /// <summary>
+    /// Whether each of these two holds at least one advance the other lacks, which
+    /// is what makes an exchange worth putting on the menu at all.
+    /// </summary>
+    private static bool EachHoldsSomethingTheOtherLacks(IGame game, Civilization a, Civilization b) =>
+        game.Rules.Advances.Any(advance =>
+            AdvanceFunctions.HasTech(a, advance.Index) && !AdvanceFunctions.HasTech(b, advance.Index)) &&
+        game.Rules.Advances.Any(advance =>
+            AdvanceFunctions.HasTech(b, advance.Index) && !AdvanceFunctions.HasTech(a, advance.Index));
+
+    /// <summary>
+    /// The mutual trade Civ II's parley asks for: each court takes what the other
+    /// knows and keeps what it has. Unlike the one-way gift of knowledge nothing
+    /// is given up, which is why it is offered only when both sides would gain.
+    /// <para>
+    /// Advances cross in ascending index order, so the same pair of civilisations
+    /// always trades in the same sequence however the ruleset happens to hold them.
+    /// </para>
+    /// </summary>
+    /// <returns>The indices that changed hands; empty when there was nothing to trade.</returns>
+    public static List<int> ExchangeKnowledge(IGame game, Civilization a, Civilization b)
+    {
+        var exchanged = new List<int>();
+
+        foreach (var advance in game.Rules.Advances.OrderBy(advance => advance.Index))
+        {
+            var index = advance.Index;
+            var aHolds = AdvanceFunctions.HasTech(a, index);
+            var bHolds = AdvanceFunctions.HasTech(b, index);
+
+            // Both know it, or neither does: either way there is nothing to move,
+            // and an advance neither side holds is never given to both.
+            if (aHolds == bHolds)
+            {
+                continue;
+            }
+
+            var receiver = aHolds ? b : a;
+            game.GiveAdvance(index, receiver);
+
+            // GiveAdvance refuses an advance whose group the receiving leader has
+            // barred. Recording such an index as exchanged would put something in
+            // the log and on the screen that never happened.
+            if (AdvanceFunctions.HasTech(receiver, index))
+            {
+                exchanged.Add(index);
+            }
+        }
+
+        return exchanged;
     }
 
     /// <summary>
@@ -500,7 +570,9 @@ public static class DiplomacyFunctions
     /// It weighs how it feels about the proposer against how the war is going: a
     /// civilisation that is losing will take a cease-fire it would otherwise
     /// refuse, and one that is winning will not. An alliance is asked of a friend
-    /// or not at all.
+    /// or not at all, and an exchange of knowledge asks less of a friendship than
+    /// a treaty does, since it costs the receiver nothing and leaves them knowing
+    /// more.
     /// </para>
     /// </summary>
     public static bool WouldAccept(IGame game, Civilization proposer, Civilization receiver, Proposal proposal)
@@ -514,6 +586,7 @@ public static class DiplomacyFunctions
             Proposal.CeaseFire => attitude >= CeaseFireAttitude || standing < 0.6,
             Proposal.Peace => attitude >= PeaceAttitude && standing < 1.6,
             Proposal.Alliance => attitude >= AllianceAttitude,
+            Proposal.ExchangeKnowledge => attitude >= ExchangeAttitude,
             _ => true
         };
     }
@@ -544,6 +617,7 @@ public static class DiplomacyFunctions
         Alliance,
         DeclareWar,
         GiveGold,
-        GiveTechnology
+        GiveTechnology,
+        ExchangeKnowledge
     }
 }

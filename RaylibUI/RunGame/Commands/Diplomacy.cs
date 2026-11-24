@@ -182,7 +182,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     {
         var us = gameScreen.Player.Civilization;
         var relation = DiplomacyFunctions.Between(us, other);
-        var proposals = DiplomacyFunctions.AvailableProposals(us, other).ToList();
+        var proposals = DiplomacyFunctions.AvailableProposals(gameScreen.Game, us, other).ToList();
 
         var buttons = new List<string>();
         if (proposals.Any(IsTreaty))
@@ -191,6 +191,14 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
         }
 
         buttons.Add(GiftButton);
+
+        // Civ II's throne room asks to exchange knowledge beside offering a gift,
+        // and means something different by each: a gift is one-way, an exchange
+        // leaves both courts knowing everything either of them knew.
+        if (proposals.Contains(DiplomacyFunctions.Proposal.ExchangeKnowledge))
+        {
+            buttons.Add(ExchangeKnowledgeButton);
+        }
 
         if (relation.Alliance)
         {
@@ -214,6 +222,9 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
                 case GiftButton:
                     gameScreen.QueueAfterCurrentPopup(() => GiftMenu(other));
                     break;
+                case ExchangeKnowledgeButton:
+                    gameScreen.QueueAfterCurrentPopup(() => ExchangeKnowledge(other));
+                    break;
                 case BreakAllianceButton:
                 case DeclareWarButton:
                     gameScreen.QueueAfterCurrentPopup(() => DeclareWar(other));
@@ -226,7 +237,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private void ProposeMenu(Civilization other)
     {
         var us = gameScreen.Player.Civilization;
-        var treaties = DiplomacyFunctions.AvailableProposals(us, other).Where(IsTreaty).ToList();
+        var treaties = DiplomacyFunctions.AvailableProposals(gameScreen.Game, us, other).Where(IsTreaty).ToList();
         if (treaties.Count == 0)
         {
             Audience(other);
@@ -286,6 +297,7 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
     private const string CowerButton = "Cower in Fear";
     private const string GiftGoldButton = "Gold";
     private const string GiftTechButton = "Knowledge";
+    private const string ExchangeKnowledgeButton = "Exchange Knowledge";
     private const string NeverMind = "Never Mind";
 
     /// <summary>The one line of context the parley opens with.</summary>
@@ -444,6 +456,68 @@ public class Diplomacy(GameScreen gameScreen) : IGameCommand
             Step("GIFTSENT", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
             ReturnToAudience(other);
         }, replaceStrings: [other.Adjective], listBox: listbox);
+    }
+
+    /// <summary>
+    /// The mutual trade: what each court would take, and then the trade itself.
+    /// <para>
+    /// Civ II's parley asks for this by name -- "ask to exchange knowledge" --
+    /// beside the one-way gift, and the difference is that nobody gives anything
+    /// up. So both halves are listed before the bargain is struck: the player sees
+    /// what the other court gains as well as what they gain themselves, which is
+    /// the whole reason the offer is raised only when both sides would gain.
+    /// </para>
+    /// </summary>
+    private void ExchangeKnowledge(Civilization other)
+    {
+        var us = gameScreen.Player.Civilization;
+        var game = gameScreen.Game;
+
+        var toThem = game.Rules.Advances
+            .Where(advance => AdvanceFunctions.HasTech(us, advance.Index) &&
+                              !AdvanceFunctions.HasTech(other, advance.Index))
+            .OrderBy(advance => advance.Name)
+            .ToList();
+        var toUs = game.Rules.Advances
+            .Where(advance => AdvanceFunctions.HasTech(other, advance.Index) &&
+                              !AdvanceFunctions.HasTech(us, advance.Index))
+            .OrderBy(advance => advance.Name)
+            .ToList();
+
+        if (toThem.Count == 0 || toUs.Count == 0)
+        {
+            // Nothing to trade one way, so this is a gift after all, and the gift
+            // menu is where that belongs. The audience does not offer the exchange
+            // in this case; the player can only get here by the menu changing under
+            // them while the dialog was open.
+            ReturnToAudience(other);
+            return;
+        }
+
+        Step("DIPLOMACYEXCHANGE", (button, _, _, _) =>
+        {
+            if (button != Labels.Ok)
+            {
+                ReturnToAudience(other);
+                return;
+            }
+
+            var exchanged = DiplomacyFunctions.ExchangeKnowledge(game, us, other);
+
+            // The other court books the goodwill, as it does for a gift received.
+            game.Players[other.Id].ProposalReceived(us,
+                new DiplomaticProposal { Kind = DiplomacyProposals.ExchangeKnowledge });
+
+            SessionLog.Record($"exchanged knowledge with {other.TribeName}: " +
+                              $"{exchanged.Count} advances");
+            Step("EXCHANGEDONE", (_, _, _, _) => { }, replaceStrings: [other.Adjective]);
+            ReturnToAudience(other);
+            gameScreen.StatusPanel.Update();
+        },
+        replaceStrings: [other.Adjective,
+            string.Join(", ", toThem.Select(advance => advance.Name)),
+            string.Join(", ", toUs.Select(advance => advance.Name))],
+        buttons: [Labels.Ok, NeverMind]);
     }
 
     public bool Checked => false;
