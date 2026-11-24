@@ -316,6 +316,14 @@ Our %STRING0 await your direction.
 @button=Ok
 @button=Cancel
 Which city?
+@SAVEOVERWRITE
+@title=Overwrite the Chronicle?
+@width=360
+@button=Ok
+@button=Cancel
+%STRING0 already holds a saved game.
+^Ok replaces it with the game as it stands now.
+^Cancel keeps that chronicle and lets you choose another name.
 @SAVEOK
 @title=Game Saved
 @width=360

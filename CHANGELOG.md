@@ -48,6 +48,14 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   the list. Off by default, so the order Civ II asks in is untouched unless the
   player asks (#170).
 
+### Saving and loading
+
+- The Save Game dialog asks before it replaces a save. A name already holding a
+  game raised "Overwrite the Chronicle?" with Ok and Cancel: Ok writes, Cancel
+  leaves the old save untouched and lets another name be chosen. Closes the
+  "Prompt before overwriting an existing save" criterion of #10; the other four
+  criteria on that issue remain open.
+
 ### Stability
 
 - A barbarian raider is refused a target it is not allowed to attack — a ship at

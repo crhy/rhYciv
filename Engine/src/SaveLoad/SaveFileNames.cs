@@ -6,7 +6,7 @@ using Model.Core;
 namespace RhyCiv.Engine.SaveLoad;
 
 /// <summary>
-/// The name offered in the Save Game dialog.
+/// The name offered in the Save Game dialog, and whether a name is already taken.
 /// </summary>
 public static class SaveFileNames
 {
@@ -34,6 +34,30 @@ public static class SaveFileNames
 
         var year = game.Date.GameYearString(game.TurnNumber, "").Replace(".", string.Empty);
         return Sanitise($"{initials}_{year}.sav".ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Whether a save already sits at <paramref name="path"/>.
+    /// <para>
+    /// This exists so the player can be asked before a save is replaced. The Save
+    /// Game dialog used to write over whatever was there the moment Enter was
+    /// pressed, and there is no undo: an evening's work could be traded for the
+    /// state of the game at the instant a key went down. The dialog asks first, and
+    /// this is what it asks with.
+    /// </para>
+    /// <para>
+    /// A file that exists but holds nothing has no save to lose, so it does not
+    /// earn an interruption.
+    /// </para>
+    /// </summary>
+    public static bool Occupied(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        return new FileInfo(path).Length > 0;
     }
 
     /// <summary>
