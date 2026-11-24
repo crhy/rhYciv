@@ -145,71 +145,120 @@ public static class UnitExtensions
             df /= 2;
         }
 
-        if (tile.CityHere != null)
-        {
-            if (attackingUnit.Domain == UnitGas.Air)
-            {
-                if (defendingUnit is { Domain: UnitGas.Air, FuelRange: 1 })
-                {
-                    // TODO: Message box about fighters scrambling for defence
-                    if (attackingUnit.FuelRange != 1)
-                    {
-                        df *= 4;
-                    }
-                    else
-                    {
-                        df *= 2;
-                    }
-                }
-                else
-                {
-                    int samBonus = 0;
-                    int sdiBonus = 0;
-                    foreach (var improvement in tile.CityHere.Improvements)
-                    {
-                        if (improvement.Effects.TryGetValue(Effects.AirDefence, out var sam))
-                        {
-                            samBonus += sam;
-                        }
-
-                        if (improvement.Effects.TryGetValue(Effects.MissileDefence, out var missile))
-                        {
-                            sdiBonus += missile;
-                        }
-                    }
-
-                    // Effect of SAM batteries (only when attacked from air)
-                    if (samBonus > 0)
-                    {
-                        //TODO: SAM message?
-                        df += df * samBonus / 100m;
-                    }
-
-                    if (sdiBonus > 0 &&
-                        attackingUnit.TypeDefinition.Effects.TryGetValue(UnitEffect.SDIVulnerable,
-                            out var sdimulti) && sdimulti > 0)
-                    {
-                        df += df * sdiBonus * sdimulti / 100m;
-                    }
-                }
-            }
-            else if (attackingUnit.Domain == UnitGas.Sea)
-            {
-                var seaDefence =
-                    tile.CityHere.Improvements.Sum(i => i.Effects.GetValueOrDefault(Effects.SeaDefence, 0));
-                if (seaDefence > 0)
-                {
-                    //TODO: Coastal fortress message
-                    df += df * seaDefence / 100m;
-                }
-            }
-        }
+        // The city's own defences: fighters scrambling to meet an air attack, SAM
+        // batteries, SDI against a warhead, the coastal guns against a ship. The
+        // bonus is named as well as paid, so the player can be told which of them
+        // saved the stack (see CityDefenseBonus).
+        df *= CityDefenseBonusOf(defendingUnit, attackingUnit, tile).Multiplier;
 
         // Effect of terrain
         df *= tile.Defense;
 
         return (double)df;
     }
+
+    /// <summary>
+    /// Which of Civ II's city defences applies to this attack, and how much it
+    /// adds.
+    /// <para>
+    /// Every one of these was already paid -- the numbers are pinned by tests and
+    /// unchanged here. What was missing was the name: a stack held by a SAM battery
+    /// or a coastal fortress looked, from the map, exactly like a stack that had
+    /// simply happened to survive, which is a poor way to learn a rule the Civilopedia
+    /// states. The multiplier is returned rather than applied so <see cref="DefenseFactor"/>
+    /// can keep its own order of multiplications, and so the caller that only wants
+    /// the name does not have to redo the arithmetic.
+    /// </para>
+    /// <para>
+    /// A city carrying both SAM batteries and SDI pays both against an attacker
+    /// that SDI can hurt -- the batteries answer the conventional air attack, SDI
+    /// the nuclear one -- and the stronger of the two is the one named.
+    /// </para>
+    /// </summary>
+    private static (decimal Multiplier, DefenseBonusKind Kind) CityDefenseBonusOf(Unit defendingUnit, Unit attackingUnit, Tile tile)
+    {
+        if (tile.CityHere == null)
+        {
+            return (1m, DefenseBonusKind.None);
+        }
+
+        if (attackingUnit.Domain == UnitGas.Air)
+        {
+            // A fighter based in the city is launched to meet the attacker: x4
+            // against anything that is not another fighter, x2 against one. Nothing
+            // else the city carries applies on top of the scramble.
+            if (defendingUnit is { Domain: UnitGas.Air, FuelRange: 1 })
+            {
+                return (attackingUnit.FuelRange == 1 ? 2m : 4m, DefenseBonusKind.FighterScramble);
+            }
+
+            int samBonus = 0;
+            int sdiBonus = 0;
+            foreach (var improvement in tile.CityHere.Improvements)
+            {
+                if (improvement.Effects.TryGetValue(Effects.AirDefence, out var sam))
+                {
+                    samBonus += sam;
+                }
+
+                if (improvement.Effects.TryGetValue(Effects.MissileDefence, out var missile))
+                {
+                    sdiBonus += missile;
+                }
+            }
+
+            decimal multiplier = 1m;
+            var kind = DefenseBonusKind.None;
+            decimal samMultiplier = 1m;
+
+            // Effect of SAM batteries (only when attacked from air)
+            if (samBonus > 0)
+            {
+                samMultiplier = 1m + samBonus / 100m;
+                multiplier *= samMultiplier;
+                kind = DefenseBonusKind.SamBattery;
+            }
+
+            if (sdiBonus > 0 &&
+                attackingUnit.TypeDefinition.Effects.TryGetValue(UnitEffect.SDIVulnerable,
+                    out var sdimulti) && sdimulti > 0)
+            {
+                var sdiMultiplier = 1m + sdiBonus * sdimulti / 100m;
+                multiplier *= sdiMultiplier;
+
+                if (samBonus == 0 || sdiMultiplier > samMultiplier)
+                {
+                    kind = DefenseBonusKind.MissileDefence;
+                }
+            }
+
+            return (multiplier, kind);
+        }
+
+        if (attackingUnit.Domain == UnitGas.Sea)
+        {
+            var seaDefence =
+                tile.CityHere.Improvements.Sum(i => i.Effects.GetValueOrDefault(Effects.SeaDefence, 0));
+            if (seaDefence > 0)
+            {
+                return (1m + seaDefence / 100m, DefenseBonusKind.CoastalFortress);
+            }
+        }
+
+        return (1m, DefenseBonusKind.None);
+    }
+
+    /// <summary>
+    /// The name of the city defence standing between this attacker and this defender.
+    /// <para>
+    /// Asked once for the defender the combat resolver has already chosen, and
+    /// carried on the combat event so the player can be told what held the attack
+    /// back. <see cref="DefenseFactor"/> answers how hard the defender is to shift;
+    /// this answers why.
+    /// </para>
+    /// </summary>
+    public static DefenseBonusKind CityDefenseBonus(Unit defendingUnit, Unit attackingUnit, Tile tile) =>
+        CityDefenseBonusOf(defendingUnit, attackingUnit, tile).Kind;
 
     /// <summary>
     /// Civ II has no explicit "is a horse" flag. A mounted attacker is a land unit

@@ -9,6 +9,7 @@ using RhyCiv.Engine.Events;
 using RhyCiv.Engine.IO;
 using RhyCiv.Engine.Production;
 using RhyCiv.Engine.MapObjects;
+using DefenseBonusKind = RhyCiv.Engine.Units.DefenseBonusKind;
 using Model.Controls;
 using Model.Controls.Civilopedia;
 using Model.Core;
@@ -1234,7 +1235,77 @@ public class LocalPlayer : IPlayer
 
     public void CombatHappened(CombatEventArgs combatEventArgs)
     {
+        // The event goes out first: the attack animation is driven from it, and the
+        // message is only a caption on a fight the player is already watching.
         OnUnitEvent?.Invoke(this, combatEventArgs);
+        ReportDefenseBonus(combatEventArgs);
+    }
+
+    /// <summary>The last defence worth announcing, and where it was.</summary>
+    private (Tile? Tile, DefenseBonusKind Bonus) _lastBonus;
+
+    /// <summary>
+    /// Say which of the city's defences turned an attack back.
+    /// <para>
+    /// The bonuses have always been paid -- SAM batteries, SDI defence, the coastal
+    /// guns and fighters scrambling out of a city all multiply what they protect --
+    /// but nothing said so. A stack that survived because one of them was under it
+    /// looked exactly like a stack that survived on its own strength, which is a
+    /// poor way to learn a rule the Civilopedia states.
+    /// </para>
+    /// <para>
+    /// Repeats are suppressed the way a blocked move is. The event carries a snapshot
+    /// of the defender rather than the unit, so the square stands in for the garrison
+    /// on it: the same city turning back the same kind of attack turn after turn
+    /// should not stack up popups.
+    /// </para>
+    /// </summary>
+    private void ReportDefenseBonus(CombatEventArgs combatEventArgs)
+    {
+        if (combatEventArgs.DefenseBonus == DefenseBonusKind.None)
+        {
+            return;
+        }
+
+        var tile = combatEventArgs.Defender.CurrentLocation;
+        var city = tile.CityHere;
+        var where = string.IsNullOrEmpty(city?.Name) ? "the city" : city!.Name;
+
+        var message = combatEventArgs.DefenseBonus switch
+        {
+            DefenseBonusKind.FighterScramble =>
+                $"Fighters based in {where} scrambled to meet the attack. The units under them were " +
+                "far harder to shift than they looked.",
+            DefenseBonusKind.SamBattery =>
+                $"SAM batteries in {where} strengthened the units under them against the attack from the " +
+                "air.",
+            DefenseBonusKind.MissileDefence =>
+                $"SDI defence in {where} blunted the nuclear attack on the units under it.",
+            DefenseBonusKind.CoastalFortress =>
+                $"The coastal guns in {where} answered the attack arriving by sea.",
+            _ => null
+        };
+
+        if (message == null || (_lastBonus.Tile == tile && _lastBonus.Bonus == combatEventArgs.DefenseBonus))
+        {
+            return;
+        }
+
+        _lastBonus = (tile, combatEventArgs.DefenseBonus);
+
+        var elements = new DialogElements
+        {
+            Name = "DEFENSEBONUS_DYNAMIC",
+            Title = "Defended",
+            Width = 420,
+            Button = [Labels.Ok],
+            Text = [message],
+            LineStyles = [TextStyles.Left]
+        };
+
+        CivDialog? dialog = null;
+        dialog = new CivDialog(_gameScreen.Main, elements, (_, _, _, _) => _gameScreen.CloseDialog(dialog));
+        _gameScreen.ShowDialog(dialog, stack: true);
     }
 
     private (Unit? Unit, BlockedReason Reason) _lastBlocked;

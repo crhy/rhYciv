@@ -487,6 +487,12 @@ namespace RhyCiv.Engine.UnitActions
                 }
             }
 
+            // Which of the defender's city bonuses it is standing behind. Asked once,
+            // for the defender that was just chosen, and carried on the event: the
+            // player hears what held the attack back rather than watching a stack
+            // that ought to have died sit there and wonder why it did not.
+            var defenseBonus = UnitExtensions.CityDefenseBonus(defender, attacker, tile);
+
             // Calculate odds of attacker winning combat (a round of battle)
             // The barbarians hit as hard as the difficulty says they do: a quarter
             // strength on Chieftain, half as hard again on Deity. This is most of
@@ -561,6 +567,7 @@ namespace RhyCiv.Engine.UnitActions
 
 
             var combatEventArgs = new CombatEventArgs(UnitEventType.Attack, attacker, defender, combatRoundsAttackerWins, attackerHitpoints, defenderHitpoints);
+            combatEventArgs.DefenseBonus = defenseBonus;
 
             for (int civId = 0; civId < tile.Visibility.Length; civId++)
             {

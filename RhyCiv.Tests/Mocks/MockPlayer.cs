@@ -28,6 +28,9 @@ public class MockPlayer : IPlayer
     public bool MoveBlockedCalled { get; private set; }
     public BlockedReason LastBlockedReason { get; private set; }
 
+    public bool CombatCalled { get; private set; }
+    public CombatEventArgs? LastCombat { get; private set; }
+
     public void CivilDisorder(City city)
     {
     }
@@ -193,6 +196,8 @@ public class MockPlayer : IPlayer
 
     public void CombatHappened(CombatEventArgs combatEventArgs)
     {
+        CombatCalled = true;
+        LastCombat = combatEventArgs;
     }
 
     public void MoveBlocked(Unit unit, BlockedReason blockedReason)
