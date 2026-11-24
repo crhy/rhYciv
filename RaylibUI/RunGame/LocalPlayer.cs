@@ -644,6 +644,17 @@ public class LocalPlayer : IPlayer
     }
 
     /// <summary>
+    /// A rival reached an advance before we did. The engine has written the
+    /// whole sentence: it names the discoverers once we have met them, and
+    /// leaves them in a faraway land until then.
+    /// </summary>
+    public void AdvanceDiscoveredByRival(string notice)
+    {
+        SessionLog.Record(notice);
+        _gameScreen.ShowPopup("ADVANCEDISCOVEREDBYRIVAL", replaceStrings: [notice]);
+    }
+
+    /// <summary>
     /// The anarchy after a revolution has run out and a government has to be
     /// chosen. Not answering leaves the civilisation in anarchy and asks again next
     /// turn, which is the right way round: anarchy is a state, not a deadline.

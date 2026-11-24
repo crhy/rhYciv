@@ -16,6 +16,13 @@ carry a shorter, user-facing summary of each release; this file is the full reco
   came back, which stopped a whole test run from printing a result about one run
   in five.
 
+### Rules
+
+- The first civilisation to discover Philosophy now carries two further
+  advances away with it for nothing — the cheapest two it could legally take —
+  and every other civilisation is told when somebody beats it there: named if
+  they have been met, a faraway land if not (#197, #202).
+
 ## [0.2.3] — 2026-09-24
 
 ### Rules

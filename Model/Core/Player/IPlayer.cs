@@ -37,6 +37,14 @@ namespace Model.Core.Player
         void NotifyAdvanceResearched(int advance);
 
         /// <summary>
+        /// Another civilisation has discovered an advance before this one, and
+        /// this is the notice telling them. The whole sentence arrives ready to
+        /// read: the discoverers are named once they have been met, and stay in
+        /// a faraway land until then.
+        /// </summary>
+        void AdvanceDiscoveredByRival(string notice);
+
+        /// <summary>
         /// The anarchy following a revolution is over and a government has to be
         /// chosen. The player is expected to answer by calling
         /// <c>GovernmentFunctions.AdoptGovernment</c>; until they do, the

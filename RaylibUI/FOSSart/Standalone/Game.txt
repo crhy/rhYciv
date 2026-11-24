@@ -1276,6 +1276,12 @@ Your civilization has reached beyond the established tree of knowledge. Research
 @button=Ok
 Smoke, industry, and pollution have accumulated beyond the planet's ability to quietly absorb them. Coastlines, rainfall, and fertile land now begin to change.
 
+@ADVANCEDISCOVEREDBYRIVAL
+@title=A Discovery Elsewhere
+@width=380
+@button=Ok
+%STRING0
+
 @GOLDENAGE
 @title=A Golden Age Begins
 @width=360

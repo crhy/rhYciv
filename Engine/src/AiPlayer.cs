@@ -275,6 +275,12 @@ namespace RhyCiv.Engine
         {
         }
 
+        public void AdvanceDiscoveredByRival(string notice)
+        {
+            // The scripts read the world as it is, including what rivals have
+            // come to know; a sentence written for a player is noise here.
+        }
+
         /// <summary>
         /// A computer civilisation takes the most advanced government it can form,
         /// which is the order the rules list them in. It has no reason to dither:

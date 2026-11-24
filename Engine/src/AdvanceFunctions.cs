@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RhyCiv.Engine.Diplomacy;
 using RhyCiv.Engine.Enums;
 using RhyCiv.Engine.MapObjects;
 using RhyCiv.Engine.Production;
@@ -8,6 +9,7 @@ using RhyCiv.Engine.Terrains;
 using Model.Constants;
 using Model.Core;
 using Model.Core.Advances;
+using Model.Core.GameRules;
 
 namespace RhyCiv.Engine.Advances
 {
@@ -114,6 +116,108 @@ namespace RhyCiv.Engine.Advances
             if (GetAdvanceGroupAccess(civilization, game.Rules.Advances[advanceIndex]) == AdvanceGroupAccess.Prohibited) return;
 
             ApplyCivAdvance(game, advanceIndex, civilization, research, civilization.Id);
+        }
+
+        /// <summary>
+        /// How many advances the first civilisation to discover Philosophy gets
+        /// for nothing.
+        /// </summary>
+        public const int PhilosophyFreeAdvances = 2;
+
+        /// <summary>
+        /// Philosophy, found by name rather than by <c>(int)AdvanceType</c>: the
+        /// legacy enum numbers it 60, but the loaded rules keep their own order
+        /// and there Philosophy sits at 59 -- the same trap that made Monarchy
+        /// (#169) read as Monotheism. Names hold whatever order a ruleset
+        /// chooses to list them in.
+        /// </summary>
+        private const string PhilosophyAdvanceName = "Philosophy";
+
+        private static int? PhilosophyIndex(Rules rules) =>
+            rules.Advances
+                .FirstOrDefault(advance => string.Equals(advance.Name, PhilosophyAdvanceName,
+                    StringComparison.OrdinalIgnoreCase)) is { } advance ? advance.Index : null;
+
+        /// <summary>
+        /// Whether an advance index is the loaded rules' Philosophy.
+        /// </summary>
+        public static bool IsPhilosophy(this IGame game, int advanceIndex) =>
+            PhilosophyIndex(game.Rules) == advanceIndex;
+
+        /// <summary>
+        /// Whether this civilisation is the one that discovered Philosophy first.
+        /// The first discovery is the only one that writes a name into the
+        /// record, so everybody who comes after reads the name already there.
+        /// </summary>
+        public static bool PhilosophyDiscoveredBy(this IGame game, Civilization civ)
+        {
+            var philosophy = PhilosophyIndex(game.Rules);
+            return philosophy is not null && Researched(game)[philosophy.Value].DiscoveredBy == civ.Id;
+        }
+
+        /// <summary>
+        /// The two advances the first discoverer of Philosophy is owed, granted
+        /// on top of Philosophy itself. They are the cheapest two the
+        /// civilisation could legally take: research here is paid per
+        /// civilisation, not per advance -- every advance costs the same -- so
+        /// the rules' own order decides which two are cheapest, and any advance
+        /// the civilisation already knows or is barred from is skipped.
+        /// <para>
+        /// A civilisation that reaches Philosophy after somebody else is told
+        /// about the discovery, not paid for it: the name in the record is not
+        /// theirs. <see cref="GiveAdvance"/> is the only mutator here, so a free
+        /// advance the civilisation is barred from is refused there rather than
+        /// sneaking past this list.
+        /// </para>
+        /// </summary>
+        public static void PhilosophyFreeAdvanceGrant(this IGame game, Civilization civ)
+        {
+            var philosophy = PhilosophyIndex(game.Rules);
+            if (philosophy is null || !game.PhilosophyDiscoveredBy(civ))
+            {
+                return;
+            }
+
+            var free = game.Rules.Advances
+                .Where(advance => advance.Index != philosophy.Value &&
+                                  !HasTech(civ, advance.Index) &&
+                                  GetAdvanceGroupAccess(civ, advance) != AdvanceGroupAccess.Prohibited)
+                .OrderBy(advance => advance.Index)
+                .Take(PhilosophyFreeAdvances)
+                .ToList();
+
+            foreach (var advance in free)
+            {
+                game.GiveAdvance(advance.Index, civ);
+            }
+        }
+
+        /// <summary>
+        /// What a civilisation that was beaten to Philosophy is told about it:
+        /// the discovery happened somewhere, and the discoverers are named only
+        /// once they have been met. Null while nobody has discovered Philosophy,
+        /// for the civilisation that discovered it, and for anybody the record
+        /// has no name for.
+        /// </summary>
+        public static string? PhilosophyDiscoveredNotice(this IGame game, Civilization civ)
+        {
+            var philosophy = PhilosophyIndex(game.Rules);
+            if (philosophy is null)
+            {
+                return null;
+            }
+
+            var discovererId = Researched(game)[philosophy.Value].DiscoveredBy;
+            if (discovererId < 0 || discovererId == civ.Id ||
+                discovererId >= game.AllCivilizations.Count)
+            {
+                return null;
+            }
+
+            var discoverer = game.AllCivilizations[discovererId];
+            return DiplomacyFunctions.HaveMet(civ, discoverer)
+                ? $"The {discoverer.TribeName} have discovered Philosophy."
+                : "Philosophy has been discovered in a faraway land.";
         }
 
         private static void ApplyCivAdvance(IGame game, int advanceIndex, Civilization civilization, AdvanceResearch research,

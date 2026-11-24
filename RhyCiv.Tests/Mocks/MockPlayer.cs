@@ -81,6 +81,10 @@ public class MockPlayer : IPlayer
     {
     }
 
+    public List<string> RivalDiscoveryNotices { get; } = new();
+
+    public void AdvanceDiscoveredByRival(string notice) => RivalDiscoveryNotices.Add(notice);
+
     public void FoodShortage(City city)
     {
     }

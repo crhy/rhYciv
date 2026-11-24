@@ -346,6 +346,32 @@ namespace RhyCiv.Engine
                 game.GiveAdvance(completedAdvance, activeCiv);
                 activeCiv.Science = Math.Max(0, activeCiv.Science - currentScienceCost);
 
+                // The first civilisation to discover Philosophy takes two
+                // advances with it for free, and every other civilisation is
+                // told somebody got there first. Both belong at the
+                // completed-advance moment rather than inside GiveAdvance:
+                // Philosophy taken with a diplomat or kept from a conquered
+                // city neither pays out nor speaks.
+                if (game.IsPhilosophy(completedAdvance))
+                {
+                    game.PhilosophyFreeAdvanceGrant(activeCiv);
+                    if (game.PhilosophyDiscoveredBy(activeCiv))
+                    {
+                        foreach (var other in game.AllCivilizations)
+                        {
+                            if (other.Id == activeCiv.Id || !other.Alive)
+                            {
+                                continue;
+                            }
+
+                            if (game.PhilosophyDiscoveredNotice(other) is { } notice)
+                            {
+                                game.Players[other.Id].AdvanceDiscoveredByRival(notice);
+                            }
+                        }
+                    }
+                }
+
                 // What to research next has to be worked out after the advance is
                 // granted, so its own unlocks are on the list. Both of these push a
                 // window and the last one pushed is the one the player meets first,
