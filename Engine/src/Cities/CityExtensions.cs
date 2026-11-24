@@ -189,6 +189,15 @@ namespace RhyCiv.Engine
 
         private static int FreeSupport(this City city, Government government)
         {
+            // The per-city "support troops" option (#158): when it is on this city
+            // grants no free support at all, so every homed unit is left on support
+            // whatever the government's free-unit budget -- including the -1 case
+            // that would otherwise give as many free units as the city has size.
+            if (city.SupportTroopsInCity)
+            {
+                return 0;
+            }
+
             var support = government.NumberOfFreeUnitsPerCity;
             return support == -1 ? city.Size : support;
         }

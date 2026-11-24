@@ -127,6 +127,27 @@ public class CityExtensionsTests
     }
 
     [Fact]
+    public void CityWithSupportTroopsFlagForcesEveryUnitToNeedSupport()
+    {
+        // The per-city "support troops" option (#158) grants this city no free
+        // support at all, so even a government that frees as many units as the
+        // city has size (-1) leaves every homed unit on support.
+        var (_, rules, civ, _) = SetupGame();
+        var city = new City { Owner = civ, Size = 2, SupportTroopsInCity = true };
+        var govt = rules.Governments[0];
+        govt.NumberOfFreeUnitsPerCity = -1;
+
+        var unit1 = new Unit { Owner = civ, HomeCity = city, TypeDefinition = new UnitDefinition { Flags = new bool[20] } };
+        var unit2 = new Unit { Owner = civ, HomeCity = city, TypeDefinition = new UnitDefinition { Flags = new bool[20] } };
+        civ.Units.AddRange(new[] { unit1, unit2 });
+
+        city.SetUnitSupport(govt);
+
+        Assert.True(unit1.NeedsSupport);
+        Assert.True(unit2.NeedsSupport);
+    }
+
+    [Fact]
     public void GetFoodStorage_ReturnsCorrectValue()
     {
         var city = new City();

@@ -36,6 +36,7 @@ public class CityWindow : BaseDialog
     private const float _scaleMin = 1.0f;
     private const float _scaleDelta = 0.5f;
     private readonly UnitSupportBox _unitSupportBox;
+    private readonly SupportTroopsCheckbox? _supportTroopsCheckbox;
     private readonly CityLabel _supportLabel;
     private readonly CityLabel _citizensLabel;
     private readonly Color _citizensLabelColor;
@@ -123,6 +124,19 @@ public class CityWindow : BaseDialog
         Controls.Add(_supportLabel);
         _unitSupportBox = new UnitSupportBox(this);
         Controls.Add(_unitSupportBox);
+
+        // The per-city "support troops" option (#158). It sits just above the
+        // "Units Supported" heading, in the band between the resource map and it,
+        // so ticking it reads as a setting about the units listed below. Only shown
+        // when the interface ships checkbox art (index 0 checked, index 1 unchecked,
+        // the same convention the tax-rate locks and the options panel use).
+        var checkboxImages = _active.Look.CheckBoxes;
+        if (checkboxImages is { Length: >= 2 })
+        {
+            _supportTroopsCheckbox = new SupportTroopsCheckbox(this,
+                checkboxImages[1], checkboxImages[0], new Rectangle(7, 202, 186, 13));
+            Controls.Add(_supportTroopsCheckbox);
+        }
         Controls.Add(new CityLabel(this, _cityWindowProps.Labels["CityImprovements"]));
         Controls.Add(new ImprovementsBox(this));
         _citizensLabel = new CityLabel(this, _cityWindowProps.Labels["Citizens"]);

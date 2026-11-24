@@ -16,6 +16,20 @@ namespace Model.Core.Cities
         public bool ImprovementSold { get; set; }
 
         /// <summary>
+        /// A per-city option that forces the troops homed to this city to need
+        /// support: when it is on the city grants no free support at all, so every
+        /// unit whose <c>HomeCity</c> is this one ends up on support whatever the
+        /// government's free-unit budget would otherwise allow (#158).
+        /// <para>
+        /// Defaults to false, which keeps the existing behaviour, and so a city
+        /// loaded from a classic .sav or a scenario never picks the option up by
+        /// itself. It round-trips through the JSON save because <see cref="City"/> is
+        /// serialised whole; the legacy reader simply leaves it false.
+        /// </para>
+        /// </summary>
+        public bool SupportTroopsInCity { get; set; }
+
+        /// <summary>
         /// Whether this city has already paid the penalty for switching what it
         /// builds this turn. Civ II charges it once, so flipping back and forth in
         /// one turn costs no more than a single change.
