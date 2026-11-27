@@ -40,7 +40,7 @@ public class Civ2CorruptionMeasureTests
     private static Government Despotism() => new()
         { Level = 0, SettlersConsumption = 1, UnitTypesAlwaysFree = Array.Empty<int>(), Distance = -1 };
 
-    private static (Mock<IGame> game, Civilization civ, Map map) SetupMeasure()
+    private static (Mock<IGame> game, Civilization civ, Map map) SetupMeasure(bool flat = false)
     {
         var rules = new Rules
         {
@@ -57,9 +57,10 @@ public class Civ2CorruptionMeasureTests
         };
         rules.Cosmic.FoodEatenPerTurn = 2;
         var civ = new Civilization { Id = 1, Government = 5 }; // Republic
-        // A round-world map, like the classic saves the measurement came from:
-        // Utilities.DistanceTo then reads true Euclidean distance.
-        var map = new Map(false, 0) { XDim = 40, YDim = 12 };
+        // A round-world map by default, like the classic saves the measurement
+        // came from; Utilities.DistanceTo reads true Euclidean distance on both
+        // map kinds (rhYciv#127 / f227b), so the pair holds on flat earth too.
+        var map = new Map(flat, 0) { XDim = 40, YDim = 12 };
         map.Tile = new Tile[40, 12];
         for (int y = 0; y < 12; y++)
         {
@@ -82,9 +83,9 @@ public class Civ2CorruptionMeasureTests
         return (game, civ, map);
     }
 
-    private static (Mock<IGame> game, City city) MeasureCity(int terrainTrade)
+    private static (Mock<IGame> game, City city) MeasureCity(int terrainTrade, bool flat = false)
     {
-        var (game, civ, map) = SetupMeasure();
+        var (game, civ, map) = SetupMeasure(flat);
 
         var capital = new City { Owner = civ, Location = map.Tile[CapitalCol, CapitalRow], Size = 1 };
         capital.AddImprovement(new Improvement { Type = 1, Effects = { [Effects.Capital] = 0 } });
@@ -118,6 +119,28 @@ public class Civ2CorruptionMeasureTests
     public void Carmarthen_TradeSixteen_CorruptsToOne()
     {
         var (game, city) = MeasureCity(15);
+        city.CalculateOutput(5, game.Object); // Republic
+        Assert.Equal(16, city.TileTrade);
+        Assert.Equal(1, city.Corruption);
+    }
+
+    // f227b: on a flat map DistanceTo used to return the SQUARE, so these same
+    // tiles read 100, DistanceFactor hit the 32/16 caps, and both cities were
+    // corrupt everywhere. The measured pair must hold with the same unit on
+    // both map kinds -- same distance 10, same DistanceFactor 5, same figures.
+    [Fact]
+    public void Kells_TradeTen_CorruptsToZero_FlatMap()
+    {
+        var (game, city) = MeasureCity(9, flat: true);
+        city.CalculateOutput(5, game.Object); // Republic
+        Assert.Equal(10, city.TileTrade);
+        Assert.Equal(0, city.Corruption);
+    }
+
+    [Fact]
+    public void Carmarthen_TradeSixteen_CorruptsToOne_FlatMap()
+    {
+        var (game, city) = MeasureCity(15, flat: true);
         city.CalculateOutput(5, game.Object); // Republic
         Assert.Equal(16, city.TileTrade);
         Assert.Equal(1, city.Corruption);
