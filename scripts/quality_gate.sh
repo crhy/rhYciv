@@ -42,6 +42,9 @@ echo "Checking the Flatpak offline NuGet mirror..."
 echo "Checking that the build version and the AppStream version agree..."
 "$python_cmd" scripts/check_version_consistency.py
 
+echo "Checking that the river art joins across tile edges..."
+"$python_cmd" scripts/test_river_edge_join_strips.py
+
 echo "Restoring dependencies..."
 "$dotnet_cmd" restore rhYciv.sln
 
