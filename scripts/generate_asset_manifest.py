@@ -102,6 +102,10 @@ def attribution(relative: str) -> tuple[str, str, str, str, str]:
                 for n in (1, 2, 3)):
             # Mirrored and patchworked from each terrain's own painting.
             generator = "scripts/prepare_terrain_variants.py"
+        elif relative.endswith("/Units/settlers.png"):
+            # The settler unit is a family drawn by its own deterministic
+            # generator (rhYciv#200), not the general custom-texture importer.
+            generator = "scripts/generate_settler_family_art.py"
         elif "/Units/" in f"/{relative}" or "/Cities/" in f"/{relative}" or "/Flags/" in f"/{relative}" or "/Overlays/" in f"/{relative}":
             generator = "scripts/prepare_custom_textures.py"
         elif "/Terrain/Specials/" in f"/{relative}":
