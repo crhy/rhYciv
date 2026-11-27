@@ -42,6 +42,9 @@ echo "Checking the Flatpak offline NuGet mirror..."
 echo "Checking that the build version and the AppStream version agree..."
 "$python_cmd" scripts/check_version_consistency.py
 
+echo "Checking the rounded corner-disc shore masks and land masks..."
+"$python_cmd" scripts/test_corner_disc_masks.py
+
 echo "Restoring dependencies..."
 "$dotnet_cmd" restore rhYciv.sln
 
