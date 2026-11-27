@@ -56,10 +56,10 @@ all painted as of #18:
 | Terrain / slot | Civ II resource | Have art? |
 |---|---|---|
 | grassland row-2 pair | (shield) | reuses grassland 1/2 |
-| hills 1 | coal | **yes** — speckled lump painted by `scripts/generate_special_cutouts.py` (#18) |
+| hills 1 | coal | **yes** — coal benches keyed from `Other/a-coal-mine-from-above.jpg` by `scripts/generate_special_cutouts.py` (#18) |
 | mountains 1 | gold | **yes** — cut from `FOSSart/Other/gold.jpg` (#150) |
-| mountains 2 | iron | **yes** — banded grey ore, same script (#18) |
-| glacier 1 | ivory | **yes** — project-original tusk pair, same script (#18) |
+| mountains 2 | iron | **yes** — rust-brown ore scar keyed from the `Other` iron-mine painting, same script (#18) |
+| glacier 1 | ivory | **yes** — tusk mass keyed from `Other/ivory.jpg`, same script (#18) |
 | swamp 2 | peat / oil | **yes** — oil slick keyed from `terrain/alts/oil_slick.png`, same script (#18) |
 
 The four #18 markers are drawn by `scripts/generate_special_cutouts.py` and
@@ -132,7 +132,10 @@ Findings, so this does not have to be redone:
 gold, furs, silk, spice, oasis, ivory, fruit, pheasant, shield-grassland, and
 several "from above" mine/well shots) are **referenced by no runtime code** —
 except `gold.jpg`, which is the source for the mountain Gold special cutout
-(`Terrain/Specials/mountains_1.png`, issue #150). They predate the
+(`Terrain/Specials/mountains_1.png`, issue #150), and except the three #18/f242b
+sources `scripts/generate_special_cutouts.py` keys the coal, iron and ivory
+markers from: `a-coal-mine-from-above.jpg`, the `...iron-mine...766986932.jpg`
+painting, and `ivory.jpg`. They predate the
 `Terrain/Specials` pipeline. Either wire the rest into the Civilopedia resource
 pages or remove them; do not add more art to that folder.
 

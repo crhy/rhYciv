@@ -88,15 +88,20 @@ def attribution(relative: str) -> tuple[str, str, str, str, str]:
         "RaylibUI/FOSSart/Terrain/Specials/glacier_1.png",
         "RaylibUI/FOSSart/Terrain/Specials/swamp_2.png",
     }:
-        # Painted for issue crhy/rhYciv#18 by a deterministic drawing script.
-        # The three drawn markers are original vector work; the swamp-2 slick
-        # is keyed out of the project-original oil-slick alt painting, the way
-        # #150 keyed mountains_1 out of Other/gold.jpg.
+        # Painted for issue crhy/rhYciv#18 and keyed from project-original
+        # source art by its script: coal from Other/a-coal-mine-from-above.jpg,
+        # iron from the Other iron-mine painting, ivory from Other/ivory.jpg,
+        # and the oil slick from the ~/rhYcivtextures oil-slick alt painting --
+        # all keyed the way #150 keyed mountains_1 out of Other/gold.jpg.
         return (
             "generated-project-art",
             "crhy and rhYciv contributors",
             "GPL-3.0-only",
-            "docs/TEXTURE-GAP.md; input ~/rhYcivtextures/terrain/alts/oil_slick.png (swamp_2)",
+            "inputs RaylibUI/FOSSart/Other/a-coal-mine-from-above.jpg (hills_1), "
+            "RaylibUI/FOSSart/Other/looking-down-on-an-iron-mine-in-the-side-of-a-"
+            "snowy-mountain-peak-766986932.jpg (mountains_2), "
+            "RaylibUI/FOSSart/Other/ivory.jpg (glacier_1), "
+            "~/rhYcivtextures/terrain/alts/oil_slick.png (swamp_2)",
             "scripts/generate_special_cutouts.py",
         )
     if relative.startswith("RaylibUI/FOSSart/"):
