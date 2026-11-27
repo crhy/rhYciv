@@ -42,6 +42,9 @@ echo "Checking the Flatpak offline NuGet mirror..."
 echo "Checking that the build version and the AppStream version agree..."
 "$python_cmd" scripts/check_version_consistency.py
 
+echo "Checking that the coast tiles join across shared edges and cut their shallows (#155)..."
+"$python_cmd" scripts/test_coast_edge_join_shallows.py
+
 echo "Restoring dependencies..."
 "$dotnet_cmd" restore rhYciv.sln
 
