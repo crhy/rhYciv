@@ -33,6 +33,9 @@ echo "Checking for leftover generation matte in the art..."
 echo "Checking that the map-marker cutouts are present and fresh..."
 "$python_cmd" scripts/import_map_markers.py --check
 
+echo "Checking that the painted special-resource markers are present and keyed..."
+"$python_cmd" scripts/test_special_markers.py
+
 echo "Verifying Civilopedia text..."
 "$python_cmd" scripts/build_civilopedia_text.py --check
 
