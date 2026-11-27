@@ -33,6 +33,9 @@ echo "Checking for leftover generation matte in the art..."
 echo "Checking that the map-marker cutouts are present and fresh..."
 "$python_cmd" scripts/import_map_markers.py --check
 
+echo "Checking the settler art is a family, not a warrior clone..."
+"$python_cmd" scripts/test_settler_family_art.py
+
 echo "Verifying Civilopedia text..."
 "$python_cmd" scripts/build_civilopedia_text.py --check
 
