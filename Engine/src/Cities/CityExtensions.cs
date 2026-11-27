@@ -74,8 +74,27 @@ namespace RhyCiv.Engine
             {
                 var gov = (int)(city.WeLoveKingDay ? government + 1 : government);
 
-                var corruptionTenTenFactor = 15d / (4 + gov);
-                var wasteTenTenFactor = 15d / (4 + gov * 4);
+                // Sourced TenTen factors (Apolyton 62524, source (b)) keyed by
+                // government, not by the ruleset index: corruption Anarchy 15/4,
+                // Despotism 15/5, Monarchy 15/6, Republic 15/8; waste Anarchy
+                // 15/4, Despotism 15/5, Monarchy 15/12, Republic 15/24; and
+                // Communism, Fundamentalism and Democracy are always 0. The old
+                // 15/(4+index) and 15/(4+index*4) agreed with the source only by
+                // accident -- they gave Republic corruption 15/9 and Despotism
+                // waste 15/8 (rhYciv#6).
+                double corruptionDen, wasteDen;
+                switch ((GovernmentType)gov)
+                {
+                    case GovernmentType.Despotism: corruptionDen = 5; wasteDen = 5; break;
+                    case GovernmentType.Monarchy: corruptionDen = 6; wasteDen = 12; break;
+                    case GovernmentType.Republic: corruptionDen = 8; wasteDen = 24; break;
+                    case GovernmentType.Communism:
+                    case GovernmentType.Fundamentalism:
+                    case GovernmentType.Democracy: corruptionDen = 0; wasteDen = 0; break;
+                    default: corruptionDen = 4; wasteDen = 4; break; // Anarchy
+                }
+                var corruptionTenTenFactor = corruptionDen == 0 ? 0d : 15d / corruptionDen;
+                var wasteTenTenFactor = wasteDen == 0 ? 0d : 15d / wasteDen;
 
                 // https://apolyton.net/forum/miscellaneous/archives/civ2-strategy-archive/62524-corruption-and-waste
                 // The guide formula and the tested DistanceFactor formulation agree
