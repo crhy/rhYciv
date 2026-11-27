@@ -256,7 +256,7 @@ public class CivilopediaWindow : BaseDialog
                     {
                         Text = names[i],
                         Xoffset = 4 + iconWidth + iconOffset,
-                        TextSizeOverride = _active.Look.CivilopediaFontSize,
+                        TextSizeOverride = TextRendering.LegibleUiFontSize(_active.Look.CivilopediaFontSize),
                         VerticalAlignment = VerticalAlignment.Center,
 
                         // Advances the civilisation already has are marked, so the

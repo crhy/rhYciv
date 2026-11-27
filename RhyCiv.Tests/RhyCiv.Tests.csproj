@@ -22,6 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The pure font-size functions in RaylibUI are not reachable through the
+         project references (RaylibUI needs a GL context); compile them in. -->
+    <Compile Include="..\RaylibUI\TextRendering.cs" Link="TextRendering.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 
