@@ -147,14 +147,14 @@ namespace RhyCiv.Engine.NewGame
 
             var selectedTile = tiles.Count == 1 || config.StartTiles.Count == 0
                 ? tiles.First()
-                : tiles.OrderByDescending(t => DistanceToNearestStart(config, t)).First();
+                : tiles.OrderByDescending(t => NearestStartDistance(config, t)).First();
 
             config.StartTiles.Add(selectedTile);
             map.SetAsStartingLocation(selectedTile, civilization.Id);
             return selectedTile;
         }
 
-        private static double DistanceToNearestStart(GameInitializationConfig config, Tile tile)
+        private static double NearestStartDistance(GameInitializationConfig config, Tile tile)
         {
             var minDist = Utilities.DistanceTo(config.StartTiles[0], tile);
             for (var i = 1; i < config.StartTiles.Count; i++)
