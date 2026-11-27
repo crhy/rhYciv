@@ -32,13 +32,15 @@ public static class CityLoader
                 var props = Images.ExtractBitmapData(citySources[8 * row + col], active); // put into cache
                 cities.CityRectangle = new Rectangle(0, 0, props.Image.Width, props.Image.Height);
 
-                // Keep the classic sheet sprite as the UI/dialog source and the
-                // logical footprint that flag and size markers are placed against.
-                // The 300x300 FOSS art is attached separately for map rendering.
+                // Keep the classic sheet sprite as the UI source and the logical
+                // footprint that flag and size markers are placed against. The
+                // 300x300 FOSS art is attached separately for map rendering, and
+                // the 900px founding splash (#176) for the FOUNDED dialog.
                 sets[col] = new CityImage()
                 {
                     Image = citySources[8 * row + col],
                     MapImage = active.GetFossArtCityImage(row, col),
+                    SplashImage = active.GetFossArtCitySplash(row, col),
                     LogicalSize = new Vector2(props.Image.Width, props.Image.Height),
                     FlagLoc = props.Flag1,
                     SizeLoc = props.Flag2,

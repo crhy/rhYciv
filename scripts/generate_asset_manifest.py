@@ -102,6 +102,10 @@ def attribution(relative: str) -> tuple[str, str, str, str, str]:
                 for n in (1, 2, 3)):
             # Mirrored and patchworked from each terrain's own painting.
             generator = "scripts/prepare_terrain_variants.py"
+        elif "/Cities/" in f"/{relative}" and "/city_splash_" in f"/{relative}":
+            # The founding-popup splashes (#176) are cut from the rhYcivtextures city
+            # paintings by their own script, not the general texture cleaner.
+            generator = "scripts/build_founding_splashes.py"
         elif "/Units/" in f"/{relative}" or "/Cities/" in f"/{relative}" or "/Flags/" in f"/{relative}" or "/Overlays/" in f"/{relative}":
             generator = "scripts/prepare_custom_textures.py"
         elif "/Terrain/Specials/" in f"/{relative}":

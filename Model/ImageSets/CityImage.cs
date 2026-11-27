@@ -19,6 +19,18 @@ public class CityImage
     public IImageSource? MapImage { get; set; }
 
     /// <summary>
+    /// Optional crisp full-size art used by the founding-city (FOUNDED) dialog.
+    /// <para>
+    /// The classic 64x48 <see cref="Image"/> cell is a 4.7x shrink of the map
+    /// art; the dialog stretches it to hundreds of pixels, which is why the
+    /// founding popup smeared (#176). The 900px splash cut from the same
+    /// painting by scripts/build_founding_splashes.py is drawn instead when
+    /// present, the map art second, and the sheet cell never.
+    /// </para>
+    /// </summary>
+    public IImageSource? SplashImage { get; set; }
+
+    /// <summary>
     /// Size the city occupies in Civ2's logical map coordinates. This is the
     /// footprint <see cref="FlagLoc"/> and <see cref="SizeLoc"/> are measured
     /// against, so it must stay at the classic sprite's dimensions.

@@ -713,6 +713,24 @@ public abstract class ClassicInterface(IMain main) : IUserInterface
             $"city_{sizeIndex + 1:00}");
     }
 
+    /// <summary>
+    /// Crisp founding-popup art for a style row and size/walled column, found
+    /// exactly as <see cref="GetFossArtCityImage"/> finds the map art but
+    /// naming the city_splash_NN painting cut for the FOUNDED dialog (#176)
+    /// rather than the map cut.
+    /// </summary>
+    public IImageSource? GetFossArtCitySplash(int cityStyleIndex, int sizeIndex)
+    {
+        if (cityStyleIndex < 0 || cityStyleIndex >= FossArtCityStyleFolders.Length ||
+            sizeIndex < 0 || sizeIndex > 7)
+        {
+            return null;
+        }
+
+        return GetFossArtImage(Path.Combine("Cities", FossArtCityStyleFolders[cityStyleIndex]),
+            $"city_splash_{sizeIndex + 1:00}");
+    }
+
     private static IEnumerable<string> GetFossArtUnitNames(int unitType)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

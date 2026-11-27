@@ -163,8 +163,17 @@ public class BuildCity(GameScreen gameScreen) : Order(gameScreen, new Shortcut(K
             var foundedCityImage = _active.CityImages.Sets[foundedStyle][foundedSizeIdx];
             var foundedFlag = city.Owner.NormalColour >= 0 && city.Owner.NormalColour < _screen.Main.ActiveInterface.PlayerColours.Length
                 ? _screen.Main.ActiveInterface.PlayerColours[city.Owner.NormalColour] : _screen.Main.ActiveInterface.PlayerColours[city.OwnerId];
+            // #176: the dialog used the 64x48 sheet cell -- the 300x300 city art shrunk
+            // 4.7x, then stretched by the dialog to ~12x its size, which is the smear.
+            // Draw the founding splash (the 900px cut of the same painting the map art
+            // came from, scripts/build_founding_splashes.py) when it exists, and the
+            // map art otherwise; the dialog never draws the sheet cell itself.
+            // MapImage is set for every bundled CityImages set; if a set ever
+            // had neither, DialogImageElements and the dialog already tolerate
+            // the null and simply show no picture.
+            var foundedArt = foundedCityImage.SplashImage ?? foundedCityImage.MapImage!;
             var foundedImage = new DialogImageElements(
-                [foundedCityImage.Image, foundedFlag.Image], 2,
+                [foundedArt, foundedFlag.Image], 2,
                 coords: new[,]
                 {
                     { 0, 0 },
