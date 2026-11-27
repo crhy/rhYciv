@@ -82,6 +82,23 @@ def attribution(relative: str) -> tuple[str, str, str, str, str]:
             "project-original Civilopedia art listed in this manifest",
             "scripts/build_foss_icons.sh",
         )
+    if relative in {
+        "RaylibUI/FOSSart/Terrain/Specials/hills_1.png",
+        "RaylibUI/FOSSart/Terrain/Specials/mountains_2.png",
+        "RaylibUI/FOSSart/Terrain/Specials/glacier_1.png",
+        "RaylibUI/FOSSart/Terrain/Specials/swamp_2.png",
+    }:
+        # Painted for issue crhy/rhYciv#18 by a deterministic drawing script.
+        # The three drawn markers are original vector work; the swamp-2 slick
+        # is keyed out of the project-original oil-slick alt painting, the way
+        # #150 keyed mountains_1 out of Other/gold.jpg.
+        return (
+            "generated-project-art",
+            "crhy and rhYciv contributors",
+            "GPL-3.0-only",
+            "docs/TEXTURE-GAP.md; input ~/rhYcivtextures/terrain/alts/oil_slick.png (swamp_2)",
+            "scripts/generate_special_cutouts.py",
+        )
     if relative.startswith("RaylibUI/FOSSart/"):
         generator = "none"
         if "/People/" in f"/{relative}":
