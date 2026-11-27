@@ -50,19 +50,22 @@ oil), plains 1/2 (bison, grain), grassland 1/2 (pheasant, sheep), hills 2
 
 ## Missing — special-resource paintings
 
-Still the procedural coloured marker in `build_terrain1()`:
+The procedural coloured marker in `build_terrain1()` these rows fell back to —
+all painted as of #18:
 
 | Terrain / slot | Civ II resource | Have art? |
 |---|---|---|
 | grassland row-2 pair | (shield) | reuses grassland 1/2 |
-| hills 1 | coal | no |
+| hills 1 | coal | **yes** — speckled lump painted by `scripts/generate_special_cutouts.py` (#18) |
 | mountains 1 | gold | **yes** — cut from `FOSSart/Other/gold.jpg` (#150) |
-| mountains 2 | iron | no |
-| glacier 1 | ivory | no tusked-ivory art (seal + crab keyed in `terrain/alts/`) |
-| swamp 2 | peat / oil | no (swamp 1 uses sugarcane) |
+| mountains 2 | iron | **yes** — banded grey ore, same script (#18) |
+| glacier 1 | ivory | **yes** — project-original tusk pair, same script (#18) |
+| swamp 2 | peat / oil | **yes** — oil slick keyed from `terrain/alts/oil_slick.png`, same script (#18) |
 
-Unused source art still keyed and available in `~/rhYcivtextures/terrain/alts/`:
-oasis alt, grassland lawn/conifer variants, oil-slick alt, yak, seal, crab.
+The four #18 markers are drawn by `scripts/generate_special_cutouts.py` and
+pinned by `scripts/test_special_markers.py`. Unused source art still keyed and
+available in `~/rhYcivtextures/terrain/alts/`: oasis alt, grassland
+lawn/conifer variants, yak, seal, crab.
 
 ## Done: map markers (goody hut, killed-unit)
 
