@@ -6,7 +6,10 @@ namespace RhyCiv.Engine.MapObjects
     public static class Utilities
     {
         /// <summary>
-        /// Compute the square Euclidean distance between to tiles
+        /// Compute the Euclidean distance between two tiles -- the same unit on
+        /// both map kinds (rhYciv#127: a flat map used to return the square, so
+        /// the corruption/waste DistanceFactor read 100 for a city 10 squares
+        /// from the capital and capped at 32/16 almost everywhere).
         /// </summary>
         /// <param name="startTile"></param>
         /// <param name="tile"></param>
@@ -16,7 +19,8 @@ namespace RhyCiv.Engine.MapObjects
             if(startTile == tile) return 0;
             if (startTile.Map.Flat)
             {
-                return Math.Pow(startTile.X - tile.X, 2) + Math.Pow(startTile.Y - tile.Y, 2);
+                // No wrap on a flat earth; otherwise the plain Euclidean distance.
+                return Math.Sqrt(Math.Pow(startTile.X - tile.X, 2) + Math.Pow(startTile.Y - tile.Y, 2));
             }
             var diffX = Math.Abs(startTile.X - tile.X);
             var diffY = startTile.Y - tile.Y;
