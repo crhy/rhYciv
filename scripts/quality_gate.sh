@@ -42,6 +42,9 @@ echo "Checking the Flatpak offline NuGet mirror..."
 echo "Checking that the build version and the AppStream version agree..."
 "$python_cmd" scripts/check_version_consistency.py
 
+echo "Checking the mountain Gold special is the painted cutout, not the flat disc (#150)..."
+"$python_cmd" scripts/test_gold_icon_cutout.py
+
 echo "Restoring dependencies..."
 "$dotnet_cmd" restore rhYciv.sln
 
