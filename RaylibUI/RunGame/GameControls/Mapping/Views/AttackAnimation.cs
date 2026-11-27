@@ -14,7 +14,7 @@ internal class AttackAnimation : BaseGameView
 {
     public AttackAnimation(GameScreen gameScreen, CombatEventArgs args, IGameView? previousView, int viewHeight,
         int viewWidth, bool forceRedraw) : base(gameScreen, args.Location.FirstOrDefault(l => l != null) ?? gameScreen.Game.ActivePlayer.ActiveTile, previousView, viewHeight, viewWidth,
-        false, 70, args.Location.Where(l => l != null).ToList(), forceRedraw)
+        false, 45, args.Location.Where(l => l != null).ToList(), forceRedraw)
     {
         var active = gameScreen.Main.ActiveInterface;
         var game = gameScreen.Game;
@@ -46,19 +46,22 @@ internal class AttackAnimation : BaseGameView
                     .ToList());
             }
 
-            explosion += 5;
+            // Every 2nd combat round rather than every 5th: the same real rounds
+            // drive the exchange, but the health bars and the battle read finer
+            // and the whole thing lasts longer at the 45ms redraw.
+            explosion += 2;
         }
 
         ShowTheFallen(gameScreen, args, active, game);
     }
 
     /// <summary>
-    /// Number of frames the aftermath is held for. At this view's 70ms interval
-    /// that is a little under a second: long enough to see who was left standing
+    /// Number of frames the aftermath is held for. At this view's 45ms interval
+    /// that is a little over a second: long enough to see who was left standing
     /// and where, short enough not to be in the way when a war is being fought a
     /// dozen battles a turn.
     /// </summary>
-    private const int AftermathFrames = 12;
+    private const int AftermathFrames = 28;
 
     /// <summary>
     /// Holds the map still on the square where the loser fell, and marks it.
