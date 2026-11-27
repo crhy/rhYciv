@@ -348,6 +348,11 @@ def build_terrain2() -> None:
     for directory, stem, y in overlay_groups:
         for index in range(16):
             path = ART / "Terrain" / "Overlays" / directory / f"{stem}_{index % 8 + 1:02}.png"
+            if not path.exists():
+                # An overlay group whose files have been replaced by runtime bands
+                # (rivers are river_mask_*.png now, not river_*.png sprites) composes
+                # nothing; its procedural stroke rows below are the fallback.
+                continue
             with Image.open(path) as loaded:
                 item = contain(loaded, (64, 32))
             sheet.alpha_composite(item, (1 + 65 * (index % 8), y + 33 * (index // 8)))
