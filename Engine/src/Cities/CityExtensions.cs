@@ -72,13 +72,18 @@ namespace RhyCiv.Engine
             }
             else
             {
-                distance *= city.Location.Map.ScaleFactor;
                 var gov = (int)(city.WeLoveKingDay ? government + 1 : government);
 
                 var corruptionTenTenFactor = 15d / (4 + gov);
                 var wasteTenTenFactor = 15d / (4 + gov * 4);
 
                 // https://apolyton.net/forum/miscellaneous/archives/civ2-strategy-archive/62524-corruption-and-waste
+                // The guide formula and the tested DistanceFactor formulation agree
+                // on the shape and on the caps (Max. DistanceFactor 32 for
+                // corruption, Max. Distance 16 for waste); neither has a map-scale
+                // term, so distance reaches here in Civ II squares and nothing
+                // else (the former scale-factor multiplication was removed for
+                // rhYciv#127).
                 var corruption = totalTrade * Math.Min(32, distance) * corruptionTenTenFactor / 100;
 
                 var waste = (totalSheilds - city.Support) * Math.Min(16, distance) * wasteTenTenFactor / 100;
@@ -204,8 +209,16 @@ namespace RhyCiv.Engine
 
 
             Func<City, double> calculateDistance = government.Level < 1
-                ? c => Utilities.DistanceTo(c.Location, city.Location) + game.DifficultyLevel // TODO: work out the actual distance modifier based on difficulty
-                : c => Utilities.DistanceTo(c.Location, city.Location);
+                // DistanceFactor = Distance + DifficultyLevel from the tested
+                // Apolyton formulation, difficulty chieftain=0..deity=5 under
+                // Anarchy and Despotism and always 0 under Monarchy/Republic;
+                // tile X is stored doubled (x = 2 * column + row % 2), so half
+                // Utilities.DistanceTo is the distance in Civ II map squares --
+                // the figure the measured Kells/Carmarthen pair brackets at 4-5
+                // for a city four columns and six rows from the capital
+                // (rhYciv#127; docs/CIV2-COMPARISON.md).
+                ? c => Utilities.DistanceTo(c.Location, city.Location) / 2 + game.DifficultyLevel
+                : c => Utilities.DistanceTo(c.Location, city.Location) / 2;
 
             distance =
                 city.Owner.Cities.Where(c => c.ImprovementExists(Effects.Capital))

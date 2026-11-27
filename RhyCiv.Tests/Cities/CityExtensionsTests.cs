@@ -168,9 +168,12 @@ public class CityExtensionsTests
         
         Assert.Equal(2, city.FoodProduction);
         Assert.Equal(1, city.TotalProduction);
-        Assert.Equal(1, city.Trade);
+        // No capital in the game, so the distance defaults to MaxDistance and
+        // caps at 32 for corruption / 16 for waste (rhYciv#127):
+        // corruption = 1 * 32 * (15/4) / 100 = 1.2 -> 1; waste = 1 * 16 * (15/4) / 100 = 0.6 -> 0.
+        Assert.Equal(0, city.Trade); // 1 - 1
         Assert.Equal(0, city.Waste);
-        Assert.Equal(0, city.Corruption);
+        Assert.Equal(1, city.Corruption);
         Assert.Equal(1, city.Production); // TotalProduction (1) - Support (0) - Waste (0)
         Assert.Equal(2, city.FoodConsumption); // Size (1) * FoodEatenPerTurn (2)
         Assert.Equal(0, city.SurplusHunger);
@@ -251,17 +254,18 @@ public class CityExtensionsTests
         cityTile.Terrain.Shields = 100;
         city.WorkedTiles.Add(cityTile);
         
-        // ScaleFactor = 0.1. Effective distance = 10 * 0.1 = 1.0.
+        // Distance fixed at 10 squares for this government; there is no map
+        // scale term (rhYciv#127).
         // Trade = 99 (low organization).
-        // corruption = 99 * 1.0 * (15/4) / 100 = 3.7125 -> 3.
-        // waste = 100 * 1.0 * (15/4) / 100 = 3.75 -> 3.
+        // corruption = 99 * 10 * (15/4) / 100 = 37.125 -> 37.
+        // waste = 99 * 10 * (15/4) / 100 = 37.125 -> 37.
         
         city.CalculateOutput(0, game.Object);
         
-        Assert.Equal(3, city.Corruption);
-        Assert.Equal(3, city.Waste);
-        Assert.Equal(96, city.Trade); // 99 - 3
-        Assert.Equal(96, city.Production); // 99 - 3
+        Assert.Equal(37, city.Corruption);
+        Assert.Equal(37, city.Waste);
+        Assert.Equal(62, city.Trade); // 99 - 37
+        Assert.Equal(62, city.Production); // 99 - 37
     }
 
     [Fact]
