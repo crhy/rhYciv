@@ -348,6 +348,14 @@ def build_terrain2() -> None:
     for directory, stem, y in overlay_groups:
         for index in range(16):
             path = ART / "Terrain" / "Overlays" / directory / f"{stem}_{index % 8 + 1:02}.png"
+            if not path.exists():
+                # The painted river set ships as river_mask_NN[_M].png and
+                # river_mouth_*.png runtime bands, not as river_NN.png sprites,
+                # so this group composes nothing. The procedural stroke rows
+                # below stay as its fallback; inventing river art here would
+                # duplicate the painted bands that already pin the map (issue
+                # crhy/rhYciv#18).
+                continue
             with Image.open(path) as loaded:
                 item = contain(loaded, (64, 32))
             sheet.alpha_composite(item, (1 + 65 * (index % 8), y + 33 * (index // 8)))
