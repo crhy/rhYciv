@@ -59,6 +59,24 @@ def contain(source: Image.Image, size: tuple[int, int], padding: int = 0) -> Ima
     return result
 
 
+def fit_canvas(source: Image.Image, size: tuple[int, int]) -> Image.Image:
+    """Scale a whole overlay canvas into a cell, keeping the canvas geometry.
+
+    contain() crops to the art first; an overlay painted on a canvas that *is*
+    the tile (the river bands are, at 8x per scripts/prepare_river_overlays.py)
+    must keep the canvas bounds so a segment lines up with the segment on the
+    neighbouring tile instead of filling whatever it happens to touch.
+    """
+    source = source.convert("RGBA")
+    scale = min(size[0] / source.width, size[1] / source.height)
+    width = max(1, round(source.width * scale))
+    height = max(1, round(source.height * scale))
+    scaled = source.resize((width, height), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", size, (0, 0, 0, 0))
+    canvas.alpha_composite(scaled, ((size[0] - width) // 2, (size[1] - height) // 2))
+    return canvas
+
+
 def terrain_source(name: str, variant: int = 1) -> Path:
     """Base terrain art, preferring a PNG diamond over the legacy square JPEG.
 
@@ -348,16 +366,27 @@ def build_terrain2() -> None:
     for directory, stem, y in overlay_groups:
         for index in range(16):
             path = ART / "Terrain" / "Overlays" / directory / f"{stem}_{index % 8 + 1:02}.png"
+            from_mask = False
             if not path.exists():
-                # The painted river set ships as river_mask_NN[_M].png and
-                # river_mouth_*.png runtime bands, not as river_NN.png sprites,
-                # so this group composes nothing. The procedural stroke rows
-                # below stay as its fallback; inventing river art here would
-                # duplicate the painted bands that already pin the map (issue
-                # crhy/rhYciv#18).
-                continue
+                if directory != "Rivers":
+                    # No art for this overlay group; the procedural strokes drawn
+                    # below are its fallback.
+                    continue
+                # The painted river ships as river_mask_NN[_M].png runtime bands,
+                # never as river_NN.png sprites (UI.Classic/ImageLoader/
+                # TerrainLoader.cs LoadRiverBands). UI.CompatAlternate reads these
+                # very rows at runtime, so an empty cell there loses every river:
+                # compose the matching mask band, in the same 00..15 mask order
+                # the Classic loader indexes them by (issue crhy/rhYciv#18).
+                path = ART / "Terrain" / "Overlays" / directory / f"river_mask_{index:02}.png"
+                if not path.exists():
+                    raise FileNotFoundError(
+                        f"{ART / 'Terrain' / 'Overlays' / directory}/"
+                        f"{stem}_{index % 8 + 1:02}.png and river_mask_{index:02}.png are both "
+                        f"missing, so TERRAIN2 river cell {index} would be left empty")
+                from_mask = True
             with Image.open(path) as loaded:
-                item = contain(loaded, (64, 32))
+                item = fit_canvas(loaded, (64, 32)) if from_mask else contain(loaded, (64, 32))
             sheet.alpha_composite(item, (1 + 65 * (index % 8), y + 33 * (index // 8)))
 
     draw = ImageDraw.Draw(sheet)
