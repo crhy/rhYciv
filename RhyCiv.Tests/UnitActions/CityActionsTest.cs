@@ -5,6 +5,7 @@ using Model.Core;
 using Model.Core.Advances;
 using Model.Core.Cities;
 using Model.Core.GameRules;
+using Model.Constants;
 using Model.Core.Mapping;
 using Model.Core.Production;
 using Model.Core.Units;
@@ -134,6 +135,65 @@ public class CityActionsTest
         Assert.Equal(1, game.Object.CitiesBuiltSoFar[civ]);
         Assert.Equal(city, tile.CityHere);
         Assert.Equal(city, tile.WorkedBy);
+    }
+
+    // crash-20260906-233052.log and crash-20260916-001130.log (#203): founding the
+    // first city of a civ ran the Capital-improvement search straight over the ruleset's
+    // improvement table, indexing game.Rules.Advances[i.Prerequisite] and
+    // AllowedAdvanceGroups[...AdvanceGroup] without checking the bounds first. A
+    // ruleset whose Capital improvement carried an out-of-range prerequisite (the format
+    // has a lot of them) threw System.IndexOutOfRangeException from BuildCity, killing
+    // the barbarian turn that had walked a settler onto a goody hut. Fixed in c50d669e
+    // (#205) by guarding the indexes; this locks that fix down. Remove the guards in
+    // CityActions.BuildCity and this test throws IndexOutOfRangeException again.
+    [Fact]
+    public void BuildCity_WithOutOfRangeCapitalPrerequisite_DoesNotCrash()
+    {
+        var game = new Mock<IGame>();
+        var civ = new Civilization { Id = 0, TribeName = "Romans", Government = 0, Advances = new bool[10] };
+        var unitDef = new UnitDefinition { Move = 10, Flags = new bool[20], Cost = 20 };
+        var unit = new Unit { Owner = civ, TypeDefinition = unitDef };
+
+        var map = new Map(true, 0) { XDim = 10, YDim = 10, Tile = new Tile[10, 10] };
+        for (int x = 0; x < 10; x++)
+            for (int y = 0; y < 10; y++)
+                map.Tile[x, y] = new Tile(x * 2, y, new Terrain { Name = "Plains", Type = TerrainType.Plains, Specials = Array.Empty<Special>() }, 0, map, x, new bool[2]);
+
+        var tile = map.Tile[0, 0];
+        unit.CurrentLocation = tile;
+
+        // A Capital improvement whose prerequisite index is past the end of the
+        // one-advance table -- exactly the bad-data shape that crashed the log.
+        var capital = new Improvement { Name = "Capital marker", Cost = 1 };
+        capital.Effects[Effects.Capital] = 1;
+        capital.Prerequisite = 999;
+
+        var rules = new Rules
+        {
+            Advances = [new Advance { Name = "None" }],
+            Improvements = [capital],
+            Cosmic = { FoodEatenPerTurn = 2 },
+            Governments = [new Government { Level = 0, SettlersConsumption = 1 }]
+        };
+
+        var mockProd = new Mock<IProductionOrder>();
+        mockProd.Setup(p => p.Cost).Returns(10);
+        mockProd.Setup(p => p.RequiredTech).Returns(AdvancesConstants.Nil);
+        mockProd.Setup(p => p.ExpiresTech).Returns(AdvancesConstants.Nil);
+        rules.ProductionOrders = [mockProd.Object];
+        ProductionPossibilities.InitializeProductionLists([civ], rules.ProductionOrders);
+
+        game.Setup(g => g.Rules).Returns(rules);
+        game.Setup(g => g.AllCities).Returns(new List<City>());
+        game.Setup(g => g.CitiesBuiltSoFar).Returns(new Dictionary<Civilization, int>());
+        game.Setup(g => g.History).Returns(new Mock<IHistory>().Object);
+        game.Setup(g => g.Maps).Returns(new List<Map> { map });
+        game.Setup(g => g.MaxDistance).Returns(100.0);
+        game.Setup(g => g.TerrainImprovements).Returns(new Dictionary<int, TerrainImprovement>());
+
+        var city = Record.Exception(() => CityActions.BuildCity(unit, game.Object, "Rome"));
+
+        Assert.Null(city);
     }
 
     private static Mock<IProductionOrder> Order(ItemType type, int cost = 40)
