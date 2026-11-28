@@ -23,20 +23,19 @@ public static class Fonts
     public const int FontSize = 20;
 
     /// <summary>
-    /// Prepares a loaded face for drawing at any size.
+    /// Prepares a loaded face for drawing.
     /// <para>
-    /// The atlases are rasterised at 96 to 112 pixels so headings stay sharp, but
-    /// most text is drawn between 14 and 20. Bilinear filtering takes only a 2x2
-    /// sample, so shrinking a glyph by five times sampled a twentieth of the pixels
-    /// it was covering and dropped most of the stroke: body text came out with
-    /// broken serifs and stems that flickered as the window moved. Mipmaps give the
-    /// small sizes something properly downsampled to read from.
+    /// The atlases are now baked at the size the text is drawn at (see FontPlan),
+    /// so there is nothing to mipmap away: a glyph is at most mildly downsampled,
+    /// and bilinear filtering takes that cleanly. Trilinear with mipmaps was the fix for the old oversized
+    /// 96-to-112 atlases, where a fivefold downscale needed the smaller mip levels;
+    /// at a baked-at-draw-size atlas it only blurs the strokes it no longer has to
+    /// shrink.
     /// </para>
     /// </summary>
     private static Font Prepare(Font font)
     {
-        font.Texture.GenMipmaps();
-        font.Texture.SetFilter(TextureFilter.Trilinear);
+        font.Texture.SetFilter(TextureFilter.Bilinear);
         return font;
     }
 

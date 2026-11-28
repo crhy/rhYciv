@@ -18,14 +18,14 @@ public class CivilopediaDescription : Listbox
         var fontSize = TextRendering.LegibleUiFontSize(active.Look.CivilopediaFontSize);
 
         string text = CivilopediaLoader.GetDescription(pedia, id);
-        var wrappedTexts = DialogUtils.GetWrappedTexts(text, Width, active.Look.LabelFont, fontSize);
+        var wrappedTexts = DialogUtils.GetWrappedTexts(text, Width, active.Look.CivilopediaFont, fontSize);
         var textHeight = Math.Max(1, (int)MathF.Ceiling(
-            TextRendering.Measure(active.Look.LabelFont, "Ag", fontSize, 0f).Y));
+            TextRendering.Measure(active.Look.CivilopediaFont, "Ag", fontSize, 0f).Y));
         var rows = Math.Max(1, Height / textHeight);
         if (wrappedTexts.Count > rows)
         {
             wrappedTexts = DialogUtils.GetWrappedTexts(text, Width - ScrollBar.ScrollbarDimDefault, 
-                active.Look.LabelFont, fontSize);
+                active.Look.CivilopediaFont, fontSize);
         }
 
         List<ListboxGroup> groups = [];

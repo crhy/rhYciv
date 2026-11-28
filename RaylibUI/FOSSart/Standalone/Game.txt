@@ -362,6 +362,7 @@ Global warming
 Cheat menu
 Editor menu
 Show the tutorial advice again
+Classic serif interface font
 @MESSAGEOPTIONS
 @title=City Report Options
 @width=380

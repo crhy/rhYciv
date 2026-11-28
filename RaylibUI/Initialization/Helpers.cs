@@ -135,14 +135,32 @@ public static class Helpers
     public static void LoadFonts()
     {
         var codepoints = TextCodepoints();
-        var tnr = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSerif-Regular.ttf")) ??
-                  throw new FileNotFoundException("Bundled Liberation Serif font was not found.");
-        Fonts.SetTnr(Font.LoadEx(tnr, 96, codepoints));
-        var bold = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSerif-Bold.ttf")) ??
-                   throw new FileNotFoundException("Bundled bold Liberation Serif font was not found.");
-        Fonts.SetBold(Font.LoadEx(bold, 112, codepoints));
-        var alternative = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSans-Regular.ttf")) ??
-                          throw new FileNotFoundException("Bundled Liberation Sans font was not found.");
-        Fonts.SetArial(Font.LoadEx(alternative, 96, codepoints));
+        var serif = FontPlan.InterfaceUsesSerif(Settings.InterfaceFont);
+
+        var sans = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSans-Regular.ttf")) ??
+                   throw new FileNotFoundException("Bundled Liberation Sans font was not found.");
+        var serifRegular = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSerif-Regular.ttf")) ??
+                           throw new FileNotFoundException("Bundled Liberation Serif font was not found.");
+        var serifBold = Utils.GetFilePath(Path.Combine("Fonts", "LiberationSerif-Bold.ttf")) ??
+                        throw new FileNotFoundException("Bundled bold Liberation Serif font was not found.");
+
+        // The interface chrome -- menus, dialogs, buttons and labels -- is drawn at
+        // the small legible sizes, so its atlas is baked at the size it is actually
+        // drawn at rather than a 96-pixel face scaled down to a smear of hairlines
+        // (crhy/rhYciv#66). Sans by default; the serif "Classic" option is kept for
+        // anybody who wants the original look back.
+        Fonts.SetArial(Font.LoadEx(serif ? serifRegular : sans, FontPlan.AtlasSizeFor(20), codepoints));
+
+        // Headings are drawn larger. In the classic look they carry the serif bold;
+        // otherwise they use the same sans as the body, since no separate bold sans
+        // is bundled and size alone is enough to tell a heading from body copy.
+        Fonts.SetBold(serif
+            ? Font.LoadEx(serifBold, FontPlan.AtlasSizeFor(34), codepoints)
+            : Font.LoadEx(sans, FontPlan.AtlasSizeFor(34), codepoints));
+
+        // The Civilopedia body keeps the serif face in either mode: long-form
+        // reference copy reads better with it, so it is period style rather than UI
+        // chrome and is left alone when the interface is switched to a sans.
+        Fonts.SetTnr(Font.LoadEx(serifRegular, FontPlan.AtlasSizeFor(22), codepoints));
     }
 }

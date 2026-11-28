@@ -53,6 +53,12 @@ public class InterfaceStyle
     public Font MenuFont { get; init; }
     public int MenuFontSize { get; init; }
     public int CivilopediaFontSize { get; init; }
+    /// <summary>
+    /// The face the Civilopedia body is drawn with. It is kept as a serif even when
+    /// the interface chrome moves to a sans: the encyclopedia is long-form reference
+    /// copy, where a serif reads better, rather than UI chrome.
+    /// </summary>
+    public Font CivilopediaFont { get; init; }
     public Font StatusPanelLabelFont { get; init; }
     public Color StatusPanelLabelColor { get; init; }
     public Color StatusPanelLabelColorShadow { get; init; }

@@ -81,6 +81,7 @@ public class CompatAlternateInterface(IMain main) : ClassicInterface(main)
         CityWindowFontSize = 16,
         MenuFont = Fonts.Arial,
         MenuFontSize = 14,
+        CivilopediaFont = Fonts.Tnr,
         StatusPanelLabelFont = Fonts.TnRbold,
         StatusPanelLabelColor = new Color(189, 189, 189, 255),
         StatusPanelLabelColorShadow = Color.Black,
@@ -564,7 +565,7 @@ public class CompatAlternateInterface(IMain main) : ClassicInterface(main)
         {
             ListboxType.Default => new ListboxLooks
             {
-                Font = Fonts.Tnr,
+                Font = Fonts.Arial,
                 FontSize = 18,
                 TextColorFront = Color.Black,
                 BoxBackgroundColor = new Color(67, 67, 67, 255)

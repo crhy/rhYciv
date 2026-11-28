@@ -5,6 +5,7 @@ using Model;
 using Model.Controls;
 using Model.Images;
 using Model.Input;
+using RaylibUI.Initialization;
 
 namespace RaylibUI.RunGame.Commands;
 
@@ -39,13 +40,13 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
             checkboxStates: (List<bool>)
             [
                 Settings.GlobalWarmingEnabled, Settings.CheatMenuEnabled, Settings.EditorMenuEnabled,
-                false
+                false, Settings.InterfaceFont == InterfaceFontStyle.Classic
             ]);
     }
 
     private void DialogClick(string button, int _, IList<bool>? checkboxes, IDictionary<string, string>? _2)
     {
-        if (button != Labels.Ok || checkboxes is not { Count: >= 4 })
+        if (button != Labels.Ok || checkboxes is not { Count: >= 5 })
         {
             return;
         }
@@ -61,7 +62,19 @@ public class AdvancedSettings(GameScreen gameScreen) : IGameCommand
         var menusChanged = Settings.CheatMenuEnabled != checkboxes[1] ||
                            Settings.EditorMenuEnabled != checkboxes[2];
 
+        var classicSerif = checkboxes[4];
+        var fontChanged = Settings.InterfaceFont == InterfaceFontStyle.Classic != classicSerif;
+
         Settings.SetAdvancedSettings(checkboxes[0], checkboxes[1], checkboxes[2]);
+        Settings.SetInterfaceFont(classicSerif ? InterfaceFontStyle.Classic : InterfaceFontStyle.Sans);
+
+        if (fontChanged)
+        {
+            // Re-bake the atlases for the newly chosen typeface; the interface reads
+            // the same font slots, so the next frame picks up the swap without
+            // rebuilding any window.
+            Helpers.LoadFonts();
+        }
 
         if (menusChanged)
         {

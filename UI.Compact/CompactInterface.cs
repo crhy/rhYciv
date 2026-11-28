@@ -64,6 +64,7 @@ public class CompactInterface(IMain main) : ClassicInterface(main)
         MenuFont = Fonts.Arial,
         MenuFontSize = 14,
         CivilopediaFontSize = 22,
+        CivilopediaFont = Fonts.Tnr,
         StatusPanelLabelFont = Fonts.Arial,
         StatusPanelLabelColor = new Color(36, 36, 36, 255),
         StatusPanelLabelColorShadow = new Color(204, 204, 204, 255),
@@ -466,7 +467,7 @@ public class CompactInterface(IMain main) : ClassicInterface(main)
             {
                 BoxBackgroundColor = new Color(240, 240, 240, 255),
                 BoxLineColor = new Color(100, 100, 100, 255),
-                Font = Look.DefaultFont,
+                Font = Look.CivilopediaFont,
                 FontSize = Look.CivilopediaFontSize,
                 TextColorShadow = Color.Blank
             },

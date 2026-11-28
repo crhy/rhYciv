@@ -137,6 +137,30 @@ namespace RhyCiv.Engine
         public static bool EditorMenuEnabled { get; private set; }
 
         /// <summary>
+        /// Whether the interface chrome is drawn with a sans (the default, clearer
+        /// at small sizes) or the original serif. A presentation preference, kept
+        /// behind the advanced settings rather than being a rule the player opts
+        /// into. Defaults to <see cref="InterfaceFontStyle.Sans"/>.
+        /// </summary>
+        public static InterfaceFontStyle InterfaceFont { get; private set; } = InterfaceFontStyle.Sans;
+
+        /// <summary>
+        /// Picks the interface typeface and writes it out. The Civilopedia body
+        /// keeps its serif either way; this changes the menus, dialogs, buttons
+        /// and labels.
+        /// </summary>
+        public static void SetInterfaceFont(InterfaceFontStyle style)
+        {
+            if (InterfaceFont == style)
+            {
+                return;
+            }
+
+            InterfaceFont = style;
+            Save();
+        }
+
+        /// <summary>
         /// Records the advanced settings and writes them out. They persist between
         /// sessions: somebody who has turned the cheat menu on is not asked again
         /// next time they start the game.
@@ -276,7 +300,19 @@ namespace RhyCiv.Engine
             GlobalWarmingEnabled = ReadFlag(root, nameof(GlobalWarmingEnabled));
             CheatMenuEnabled = ReadFlag(root, nameof(CheatMenuEnabled));
             EditorMenuEnabled = ReadFlag(root, nameof(EditorMenuEnabled));
+            InterfaceFont = ReadInterfaceFont(root);
         }
+
+        /// <summary>
+        /// The saved interface typeface. Absent from files written before the option
+        /// existed, in which case the sans default is used.
+        /// </summary>
+        private static InterfaceFontStyle ReadInterfaceFont(JsonElement root) =>
+            root.TryGetProperty(nameof(InterfaceFont), out var element) &&
+            element.TryGetInt32(out var value) && value >= 0 &&
+            System.Enum.IsDefined(typeof(InterfaceFontStyle), value)
+                ? (InterfaceFontStyle) value
+                : InterfaceFontStyle.Sans;
 
         /// <summary>An advanced setting, absent from the file until it is turned on.</summary>
         private static bool ReadFlag(JsonElement root, string property) =>
@@ -442,6 +478,7 @@ namespace RhyCiv.Engine
             writer.WriteBoolean(nameof(GlobalWarmingEnabled), GlobalWarmingEnabled);
             writer.WriteBoolean(nameof(CheatMenuEnabled), CheatMenuEnabled);
             writer.WriteBoolean(nameof(EditorMenuEnabled), EditorMenuEnabled);
+            writer.WriteNumber(nameof(InterfaceFont), (int) InterfaceFont);
             writer.WriteStartArray(nameof(SeenTutorials));
             foreach (var tutorial in SeenTutorials)
             {

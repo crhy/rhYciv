@@ -243,6 +243,28 @@ namespace RaylibUI
                 }
             }
 
+            // RHYCIV_OPEN_MENU=NAME (or a zero-based index) opens that top-menu
+            // dropdown after start, so the menu bar in its open state can be
+            // captured headlessly the way a dialog or the city window can.
+            var openMenu = Environment.GetEnvironmentVariable("RHYCIV_OPEN_MENU");
+            if (!string.IsNullOrWhiteSpace(openMenu) && _activeScreen is RunGame.GameScreen menuScreen)
+            {
+                var menus = menuScreen.MenuBar.Controls.OfType<RunGame.GameControls.Menu.MenuLabel>().ToList();
+                var target = int.TryParse(openMenu, out var pos)
+                    ? menus.FirstOrDefault(label => label.Index == pos)
+                    : menus.FirstOrDefault(label => label.Text.Equals(openMenu, StringComparison.OrdinalIgnoreCase));
+                if (target != null)
+                {
+                    target.Activate();
+                    Console.WriteLine($"openmenu: {target.Text}");
+                }
+                else
+                {
+                    Console.WriteLine($"openmenu: no menu '{openMenu}' " +
+                                      $"({string.Join(", ", menus.Select(m => m.Text))})");
+                }
+            }
+
             return true;
         }
 

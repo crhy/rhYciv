@@ -22,6 +22,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The pure font-size and font-baking decisions in RaylibUI are not reachable
+         through the project references (RaylibUI needs a GL context); compile them
+         in so they can be tested. Their raylib P/Invokes are only ever called in
+         the Draw paths, which these tests do not touch. -->
+    <Compile Include="..\RaylibUI\TextRendering.cs" Link="TextRendering.cs" />
+    <Compile Include="..\RaylibUI\Initialization\FontPlan.cs" Link="FontPlan.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 
